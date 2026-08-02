@@ -12,36 +12,22 @@ logger = logging.getLogger("synovia.llm")
 
 class LLMService:
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").strip()
         self.ollama_model = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b").strip()
         self.client = None
-        self.use_ollama = False
 
-        # 1. Prioritize OpenAI API if a real API key is set in .env
-        if self.api_key and not self.api_key.startswith("sk-proj-your_actual"):
-            try:
+        # Initialize local Ollama engine exclusively
+        try:
+            resp = httpx.get("http://localhost:11434/api/tags", timeout=2.0)
+            if resp.status_code == 200:
                 from openai import AsyncOpenAI
-                self.client = AsyncOpenAI(api_key=self.api_key)
-                self.use_ollama = False
-                logger.info("OpenAI API client initialized successfully using OPENAI_API_KEY.")
-            except Exception as e:
-                logger.warning(f"Failed to initialize OpenAI client: {e}")
-
-        # 2. Fallback to local Ollama server if OpenAI key is not set
-        if not self.client:
-            try:
-                resp = httpx.get("http://localhost:11434/api/tags", timeout=1.5)
-                if resp.status_code == 200:
-                    self.use_ollama = True
-                    from openai import AsyncOpenAI
-                    self.client = AsyncOpenAI(
-                        base_url=self.ollama_url,
-                        api_key="ollama"
-                    )
-                    logger.info(f"Ollama local server detected at {self.ollama_url}. Using local model: {self.ollama_model}")
-            except Exception:
-                pass
+                self.client = AsyncOpenAI(
+                    base_url=self.ollama_url,
+                    api_key="ollama"
+                )
+                logger.info(f"Ollama local LLM engine connected at {self.ollama_url}. Active model: {self.ollama_model}")
+        except Exception as e:
+            logger.warning(f"Ollama local engine connection notice: {e}. Utilizing smart domain synthesizer fallback.")
 
     async def generate_structured_json(
         self,
@@ -50,14 +36,13 @@ class LLMService:
         fallback_data_generator: Optional[Any] = None
     ) -> Dict[str, Any]:
         """
-        Executes LLM completion expecting JSON output.
-        Prioritizes OpenAI API when key is set, falls back to Ollama or Smart Synthesizer.
+        Executes 100% local Ollama LLM completion expecting JSON output.
+        Falls back to Smart Synthesizer if Ollama server is unreachable.
         """
         if self.client:
             try:
-                model_name = self.ollama_model if self.use_ollama else "gpt-4o-mini"
                 response = await self.client.chat.completions.create(
-                    model=model_name,
+                    model=self.ollama_model,
                     messages=[
                         {"role": "system", "content": system_prompt + "\nReturn ONLY valid JSON format. Do not include markdown code ticks."},
                         {"role": "user", "content": user_prompt}
@@ -73,7 +58,7 @@ class LLMService:
                         clean_text = clean_text[4:]
                 return json.loads(clean_text)
             except Exception as e:
-                logger.error(f"LLM generation error ({'Ollama' if self.use_ollama else 'OpenAI'}): {e}. Utilizing fallback generator.")
+                logger.error(f"Ollama local LLM generation notice: {e}. Utilizing fallback generator.")
 
         # Artificial short thinking delay for smooth UX simulation when running in fallback mode
         await asyncio.sleep(1.2)
