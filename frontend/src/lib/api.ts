@@ -1,18 +1,15 @@
-const CLOUDFLARE_BACKEND = "https://headquarters-statistics-band-implement.trycloudflare.com";
+// Production Cloudflare Tunnel Backend URL (hardcoded for reliability)
+const PRODUCTION_BACKEND = "https://headquarters-statistics-band-implement.trycloudflare.com";
 
 export function getApiBaseUrl(): string {
-  // If NEXT_PUBLIC_API_URL is set and not localhost, use it
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
-    return envUrl.replace(/\/$/, "");
+  // Client-side: if running on Vercel (not localhost), always use the production backend
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") {
+      return PRODUCTION_BACKEND;
+    }
   }
-  
-  // If running in browser on Vercel or any non-localhost domain, default to Cloudflare backend
-  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    return CLOUDFLARE_BACKEND;
-  }
-
-  return (envUrl || "http://localhost:8000").replace(/\/$/, "");
+  return "http://localhost:8000";
 }
 
 export interface Project {

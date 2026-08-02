@@ -42,7 +42,7 @@ export default function Home() {
       fetchHistory();
     } catch (err) {
       console.error("Failed to start project execution:", err);
-      alert("Failed to connect to backend server. Make sure FastAPI server is running on http://localhost:8000.");
+      alert("Failed to connect to backend server. Please try again in a moment.");
     } finally {
       setIsSubmitting(false);
     }
