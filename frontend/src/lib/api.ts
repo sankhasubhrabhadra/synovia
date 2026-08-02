@@ -1,7 +1,18 @@
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+const CLOUDFLARE_BACKEND = "https://headquarters-statistics-band-implement.trycloudflare.com";
 
 export function getApiBaseUrl(): string {
-  return API_BASE;
+  // If NEXT_PUBLIC_API_URL is set and not localhost, use it
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+    return envUrl.replace(/\/$/, "");
+  }
+  
+  // If running in browser on Vercel or any non-localhost domain, default to Cloudflare backend
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return CLOUDFLARE_BACKEND;
+  }
+
+  return (envUrl || "http://localhost:8000").replace(/\/$/, "");
 }
 
 export interface Project {
@@ -19,7 +30,8 @@ const defaultHeaders: Record<string, string> = {
 };
 
 export async function createProject(idea: string, targetMarket?: string, userGoal?: string): Promise<Project> {
-  const response = await fetch(`${API_BASE}/api/projects`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects`, {
     method: "POST",
     headers: defaultHeaders,
     body: JSON.stringify({
@@ -37,7 +49,8 @@ export async function createProject(idea: string, targetMarket?: string, userGoa
 }
 
 export async function listProjects(limit: number = 200): Promise<Project[]> {
-  const response = await fetch(`${API_BASE}/api/projects?limit=${limit}`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects?limit=${limit}`, {
     headers: defaultHeaders,
   });
   if (!response.ok) {
@@ -47,7 +60,8 @@ export async function listProjects(limit: number = 200): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project> {
-  const response = await fetch(`${API_BASE}/api/projects/${id}`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects/${id}`, {
     headers: defaultHeaders,
   });
   if (!response.ok) {
@@ -57,7 +71,8 @@ export async function getProject(id: string): Promise<Project> {
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/api/projects/${id}`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects/${id}`, {
     method: "DELETE",
     headers: defaultHeaders,
   });
@@ -67,7 +82,8 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 export async function clearAllProjects(): Promise<void> {
-  const response = await fetch(`${API_BASE}/api/projects`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects`, {
     method: "DELETE",
     headers: defaultHeaders,
   });
@@ -77,9 +93,11 @@ export async function clearAllProjects(): Promise<void> {
 }
 
 export function getProjectStreamUrl(id: string): string {
-  return `${API_BASE}/api/projects/${id}/stream`;
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/api/projects/${id}/stream`;
 }
 
 export function getProjectPdfUrl(id: string): string {
-  return `${API_BASE}/api/projects/${id}/pdf`;
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/api/projects/${id}/pdf`;
 }
