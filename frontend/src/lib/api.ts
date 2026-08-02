@@ -30,8 +30,8 @@ export async function createProject(idea: string, targetMarket?: string, userGoa
   return response.json();
 }
 
-export async function listProjects(): Promise<Project[]> {
-  const response = await fetch(`${API_BASE_URL}/api/projects`);
+export async function listProjects(limit: number = 200): Promise<Project[]> {
+  const response = await fetch(`${API_BASE_URL}/api/projects?limit=${limit}`);
   if (!response.ok) {
     throw new Error(`Failed to list projects: ${response.statusText}`);
   }
@@ -44,6 +44,24 @@ export async function getProject(id: string): Promise<Project> {
     throw new Error(`Failed to fetch project ${id}: ${response.statusText}`);
   }
   return response.json();
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to delete project ${id}`);
+  }
+}
+
+export async function clearAllProjects(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/projects`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to clear all projects`);
+  }
 }
 
 export function getProjectStreamUrl(id: string): string {

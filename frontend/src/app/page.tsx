@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createProject, listProjects, getProject, Project } from "@/lib/api";
+import { createProject, listProjects, getProject, deleteProject, Project } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { LandingHero } from "@/components/LandingHero";
@@ -15,11 +15,11 @@ export default function Home() {
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Load project history on mount
+  // Load 100+ project history items on mount
   const fetchHistory = async () => {
     try {
       setIsLoadingHistory(true);
-      const data = await listProjects();
+      const data = await listProjects(200);
       setProjects(data);
     } catch (err) {
       console.error("Failed to load project history:", err);
@@ -63,6 +63,20 @@ export default function Home() {
     }
   };
 
+  // Handle deleting a single history item
+  const handleDeleteProject = async (id: string) => {
+    try {
+      await deleteProject(id);
+      if (activeProject?.id === id) {
+        setActiveProject(null);
+        setViewState("landing");
+      }
+      fetchHistory();
+    } catch (err) {
+      console.error("Failed to delete project:", err);
+    }
+  };
+
   // Reset to landing view
   const handleNewProjectClick = () => {
     setActiveProject(null);
@@ -94,12 +108,13 @@ export default function Home() {
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex">
-        {/* Left Sidebar */}
+        {/* Left Sidebar supporting 100+ items */}
         <Sidebar
           projects={projects}
           activeProjectId={activeProject?.id || null}
           onSelectProject={handleSelectProject}
           onNewProject={handleNewProjectClick}
+          onDeleteProject={handleDeleteProject}
           isLoading={isLoadingHistory}
         />
 

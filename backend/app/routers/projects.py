@@ -3,10 +3,11 @@ import json
 import asyncio
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Response
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Response, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import delete
 
 from app.database.session import get_db
 from app.database.models import ProjectDB
@@ -58,11 +59,18 @@ async def create_project(
     )
 
 @router.get("", response_model=List[ProjectResponse])
-async def list_projects(db: AsyncSession = Depends(get_db)):
+async def list_projects(
+    limit: int = Query(200, ge=1, le=1000, description="Max history items to return (supports 100+ work history)."),
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Retrieves all past generated startup projects.
+    Retrieves history of generated startup projects (supports 100+ projects).
     """
-    result = await db.execute(select(ProjectDB).order_by(ProjectDB.created_at.desc()))
+    result = await db.execute(
+        select(ProjectDB)
+        .order_by(ProjectDB.created_at.desc())
+        .limit(limit)
+    )
     projects = result.scalars().all()
     
     return [
@@ -97,6 +105,29 @@ async def get_project(project_id: str, db: AsyncSession = Depends(get_db)):
         updated_at=project.updated_at.isoformat(),
         blueprint=project.blueprint_json
     )
+
+@router.delete("/{project_id}", status_code=200)
+async def delete_project(project_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Deletes a specific project from history.
+    """
+    result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
+    project = result.scalars().first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    await db.delete(project)
+    await db.commit()
+    return {"message": f"Project {project_id} deleted successfully."}
+
+@router.delete("", status_code=200)
+async def clear_all_projects(db: AsyncSession = Depends(get_db)):
+    """
+    Clears all project history.
+    """
+    await db.execute(delete(ProjectDB))
+    await db.commit()
+    return {"message": "All project history cleared successfully."}
 
 @router.get("/{project_id}/stream")
 async def stream_project_execution(project_id: str, db: AsyncSession = Depends(get_db)):
