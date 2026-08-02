@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+backend/venv/
+backend/.venv/
+
+# Next.js Build
+frontend/.next/
+frontend/out/
+
+# Database & Environment
+backend/*.db
+backend/app/database/*.db
+.env
+backend/.env
+
+# Python Cache & Logs
+__pycache__/
+*.pyc
+*.log
+
+# Operating System
+.DS_Store
+Thumbs.db
