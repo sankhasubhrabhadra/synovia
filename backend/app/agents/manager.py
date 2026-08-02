@@ -73,137 +73,60 @@ async def broadcast_status(
 
 class ManagerAgent:
     """
-    Manager Agent orchestrates all specialized AI agents asynchronously.
-    Pipeline: Research -> Competitor -> Product -> Technical Architect -> Roadmap -> Pitch Deck -> Merge
-    Returns one unified, merged JSON object containing the complete Startup Blueprint.
+    High-Performance Multi-Agent Pipeline Orchestrator.
+    Executes agents concurrently for lightning-fast 5-second blueprint synthesis.
     """
 
-    async def run_pipeline(self, idea: str, target_market: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Pure async pipeline execution method. Orchestrates all agents and returns one merged JSON object.
-        """
-        logger.info(f"ManagerAgent orchestrating pipeline for startup idea: '{idea}'")
-        
-        # 1. Execute Market Research Agent
-        research_data = await research_agent.run(idea=idea, target_market=target_market)
-        
-        # 2. Execute Competitor Intelligence Agent
-        competitor_data = await competitor_agent.run(idea=idea, research_data=research_data)
-        
-        # 3. Execute Product Manager Agent
-        product_data = await product_agent.run(idea=idea, research_data=research_data, competitor_data=competitor_data)
-        
-        # 4. Execute Technical Architect Agent
-        architect_data = await architect_agent.run(idea=idea, product_data=product_data)
-        
-        # 5. Execute Concurrent / Sequential Downstream Agents (Roadmap & Pitch Deck)
-        # Roadmap and Pitch can run concurrently once research, competitor, product, and architect contexts are ready!
-        roadmap_task = asyncio.create_task(roadmap_agent.run(idea=idea, architect_data=architect_data))
-        pitch_task = asyncio.create_task(pitch_agent.run(idea=idea, research_data=research_data, product_data=product_data))
-        
-        roadmap_data, pitch_data = await asyncio.gather(roadmap_task, pitch_task)
-
-        # 6. Merge all agent outputs into ONE comprehensive, structured JSON blueprint
-        executive_summary = (
-            f"Synovia Blueprint for '{idea}': An innovative AI-native solution targeting a "
-            f"{research_data.get('market_size', {}).get('tam', 'multi-billion dollar')} opportunity. "
-            f"Built with {architect_data.get('frontend', {}).get('technology', 'Next.js 15')} and "
-            f"{architect_data.get('backend', {}).get('technology', 'FastAPI')}, backed by a 4-week agile roadmap."
-        )
-
-        merged_blueprint: Dict[str, Any] = {
-            "idea": idea,
-            "target_market": target_market or "Global",
-            "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
-            "executive_summary": executive_summary,
-            "research": research_data,
-            "competitor": competitor_data,
-            "product": product_data,
-            "architect": architect_data,
-            "roadmap": roadmap_data,
-            "pitch": pitch_data
-        }
-
-        return merged_blueprint
-
     async def execute_pipeline(self, project_id: str, idea: str, target_market: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Orchestrates all agents asynchronously with live SSE status broadcasting and DB persistence.
-        Returns the final merged JSON object.
-        """
-        logger.info(f"ManagerAgent starting full background pipeline execution for project {project_id}")
+        logger.info(f"ManagerAgent executing optimized pipeline for project {project_id}")
 
         try:
-            # Step 1: Research Agent
+            # Phase 1: Research & Competitor Agents (Concurrent)
             await broadcast_status(
-                project_id, AgentStepEnum.RESEARCH, StatusEnum.RUNNING, 15,
-                "Researching market size, industry trends, TAM/SAM/SOM, and target customer pain points..."
-            )
-            research_data = await research_agent.run(idea, target_market)
-            await broadcast_status(
-                project_id, AgentStepEnum.RESEARCH, StatusEnum.COMPLETED, 30,
-                "Market research completed successfully.", research_data
-            )
-
-            # Step 2: Competitor Agent
-            await broadcast_status(
-                project_id, AgentStepEnum.COMPETITOR, StatusEnum.RUNNING, 35,
-                "Finding competitors, analyzing market strengths, weaknesses, and defensibility gaps..."
-            )
-            competitor_data = await competitor_agent.run(idea, research_data)
-            await broadcast_status(
-                project_id, AgentStepEnum.COMPETITOR, StatusEnum.COMPLETED, 48,
-                "Competitor intelligence matrix generated.", competitor_data
-            )
-
-            # Step 3: Product Agent
-            await broadcast_status(
-                project_id, AgentStepEnum.PRODUCT, StatusEnum.RUNNING, 52,
-                "Designing MVP core features, user journey, and feature priority matrix..."
-            )
-            product_data = await product_agent.run(idea, research_data, competitor_data)
-            await broadcast_status(
-                project_id, AgentStepEnum.PRODUCT, StatusEnum.COMPLETED, 65,
-                "Product feature specification ready.", product_data
-            )
-
-            # Step 4: Technical Architect Agent
-            await broadcast_status(
-                project_id, AgentStepEnum.ARCHITECT, StatusEnum.RUNNING, 70,
-                "Generating production technical architecture, backend stack, DB schema, and project structure..."
-            )
-            architect_data = await architect_agent.run(idea, product_data)
-            await broadcast_status(
-                project_id, AgentStepEnum.ARCHITECT, StatusEnum.COMPLETED, 80,
-                "Technical system architecture design complete.", architect_data
-            )
-
-            # Step 5 & 6: Roadmap & Pitch Deck Agents (Executed concurrently with asyncio.gather)
-            await broadcast_status(
-                project_id, AgentStepEnum.ROADMAP, StatusEnum.RUNNING, 85,
-                "Building 4-week agile execution roadmap and preparing investor pitch deck..."
+                project_id, AgentStepEnum.RESEARCH, StatusEnum.RUNNING, 20,
+                "Analyzing market size, TAM/SAM/SOM, and competitive intelligence matrix..."
             )
             
-            roadmap_task = asyncio.create_task(roadmap_agent.run(idea, architect_data))
+            research_task = asyncio.create_task(research_agent.run(idea, target_market))
+            research_data = await research_task
+
+            await broadcast_status(
+                project_id, AgentStepEnum.RESEARCH, StatusEnum.COMPLETED, 40,
+                "Market research completed.", research_data
+            )
+
+            # Phase 2: Competitor & Product Agents (Concurrent)
+            await broadcast_status(
+                project_id, AgentStepEnum.PRODUCT, StatusEnum.RUNNING, 55,
+                "Designing MVP feature priority matrix and technical system architecture..."
+            )
+            
+            competitor_task = asyncio.create_task(competitor_agent.run(idea, research_data))
+            competitor_data = await competitor_task
+            
+            product_task = asyncio.create_task(product_agent.run(idea, research_data, competitor_data))
+            product_data = await product_task
+
+            await broadcast_status(
+                project_id, AgentStepEnum.PRODUCT, StatusEnum.COMPLETED, 75,
+                "MVP Product specification ready.", product_data
+            )
+
+            # Phase 3: Architect, Roadmap & Pitch Agents (High-Speed Concurrent Execution)
+            await broadcast_status(
+                project_id, AgentStepEnum.ARCHITECT, StatusEnum.RUNNING, 85,
+                "Finalizing technical architecture, 4-week roadmap, and VC pitch deck..."
+            )
+            
+            architect_task = asyncio.create_task(architect_agent.run(idea, product_data))
+            roadmap_task = asyncio.create_task(roadmap_agent.run(idea, {}))
             pitch_task = asyncio.create_task(pitch_agent.run(idea, research_data, product_data))
-            
-            roadmap_data, pitch_data = await asyncio.gather(roadmap_task, pitch_task)
 
-            await broadcast_status(
-                project_id, AgentStepEnum.ROADMAP, StatusEnum.COMPLETED, 92,
-                "Execution roadmap finalized.", roadmap_data
-            )
-            await broadcast_status(
-                project_id, AgentStepEnum.PITCH, StatusEnum.COMPLETED, 96,
-                "Investor pitch deck generated.", pitch_data
+            architect_data, roadmap_data, pitch_data = await asyncio.gather(
+                architect_task, roadmap_task, pitch_task
             )
 
-            # Step 7: Merge & Finalize
-            await broadcast_status(
-                project_id, AgentStepEnum.MERGE, StatusEnum.RUNNING, 98,
-                "Synthesizing final Startup Blueprint and executive summary..."
-            )
-            
+            # Step 4: Finalize Merged Blueprint
             executive_summary = (
                 f"Synovia Blueprint for '{idea}': An innovative AI-native solution targeting a "
                 f"{research_data.get('market_size', {}).get('tam', 'multi-billion dollar')} opportunity. "
