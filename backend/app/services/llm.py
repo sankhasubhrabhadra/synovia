@@ -18,28 +18,30 @@ class LLMService:
         self.client = None
         self.use_ollama = False
 
-        # Check if Ollama local server is active
-        try:
-            resp = httpx.get("http://localhost:11434/api/tags", timeout=1.5)
-            if resp.status_code == 200:
-                self.use_ollama = True
-                from openai import AsyncOpenAI
-                self.client = AsyncOpenAI(
-                    base_url=self.ollama_url,
-                    api_key="ollama"
-                )
-                logger.info(f"Ollama local server detected at {self.ollama_url}. Using model: {self.ollama_model}")
-        except Exception:
-            pass
-
-        # Fallback to standard OpenAI if Ollama isn't running and OpenAI key is provided
-        if not self.client and self.api_key:
+        # 1. Prioritize OpenAI API if a real API key is set in .env
+        if self.api_key and not self.api_key.startswith("sk-proj-your_actual"):
             try:
                 from openai import AsyncOpenAI
                 self.client = AsyncOpenAI(api_key=self.api_key)
-                logger.info("OpenAI API client initialized successfully.")
+                self.use_ollama = False
+                logger.info("OpenAI API client initialized successfully using OPENAI_API_KEY.")
             except Exception as e:
-                logger.warning(f"Failed to initialize AsyncOpenAI client: {e}")
+                logger.warning(f"Failed to initialize OpenAI client: {e}")
+
+        # 2. Fallback to local Ollama server if OpenAI key is not set
+        if not self.client:
+            try:
+                resp = httpx.get("http://localhost:11434/api/tags", timeout=1.5)
+                if resp.status_code == 200:
+                    self.use_ollama = True
+                    from openai import AsyncOpenAI
+                    self.client = AsyncOpenAI(
+                        base_url=self.ollama_url,
+                        api_key="ollama"
+                    )
+                    logger.info(f"Ollama local server detected at {self.ollama_url}. Using local model: {self.ollama_model}")
+            except Exception:
+                pass
 
     async def generate_structured_json(
         self,
@@ -49,7 +51,7 @@ class LLMService:
     ) -> Dict[str, Any]:
         """
         Executes LLM completion expecting JSON output.
-        Supports Ollama local LLM server (http://localhost:11434/v1), OpenAI API, and Smart Fallback.
+        Prioritizes OpenAI API when key is set, falls back to Ollama or Smart Synthesizer.
         """
         if self.client:
             try:
