@@ -14,7 +14,7 @@ class LLMService:
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").strip()
-        self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2").strip()
+        self.ollama_model = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b").strip()
         self.client = None
         self.use_ollama = False
 
