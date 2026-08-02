@@ -1,4 +1,22 @@
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("SYNOVIA_API_URL");
+    if (saved && saved.trim()) {
+      return saved.trim().replace(/\/$/, "");
+    }
+  }
+  return (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+}
+
+export function setApiBaseUrl(url: string): void {
+  if (typeof window !== "undefined") {
+    if (url && url.trim()) {
+      localStorage.setItem("SYNOVIA_API_URL", url.trim().replace(/\/$/, ""));
+    } else {
+      localStorage.removeItem("SYNOVIA_API_URL");
+    }
+  }
+}
 
 export interface Project {
   id: string;
@@ -10,16 +28,17 @@ export interface Project {
   blueprint?: any;
 }
 
-const defaultHeaders = {
+const getHeaders = () => ({
   "Content-Type": "application/json",
   "bypass-tunnel-reminder": "true",
   "ngrok-skip-browser-warning": "true",
-};
+});
 
 export async function createProject(idea: string, targetMarket?: string, userGoal?: string): Promise<Project> {
-  const response = await fetch(`${API_BASE_URL}/api/projects`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects`, {
     method: "POST",
-    headers: defaultHeaders,
+    headers: getHeaders(),
     body: JSON.stringify({
       idea,
       target_market: targetMarket,
@@ -35,8 +54,9 @@ export async function createProject(idea: string, targetMarket?: string, userGoa
 }
 
 export async function listProjects(limit: number = 200): Promise<Project[]> {
-  const response = await fetch(`${API_BASE_URL}/api/projects?limit=${limit}`, {
-    headers: defaultHeaders,
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects?limit=${limit}`, {
+    headers: getHeaders(),
   });
   if (!response.ok) {
     throw new Error(`Failed to list projects: ${response.statusText}`);
@@ -45,8 +65,9 @@ export async function listProjects(limit: number = 200): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project> {
-  const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
-    headers: defaultHeaders,
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects/${id}`, {
+    headers: getHeaders(),
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch project ${id}: ${response.statusText}`);
@@ -55,9 +76,10 @@ export async function getProject(id: string): Promise<Project> {
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects/${id}`, {
     method: "DELETE",
-    headers: defaultHeaders,
+    headers: getHeaders(),
   });
   if (!response.ok) {
     throw new Error(`Failed to delete project ${id}`);
@@ -65,9 +87,10 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 export async function clearAllProjects(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/projects`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/api/projects`, {
     method: "DELETE",
-    headers: defaultHeaders,
+    headers: getHeaders(),
   });
   if (!response.ok) {
     throw new Error(`Failed to clear all projects`);
@@ -75,9 +98,11 @@ export async function clearAllProjects(): Promise<void> {
 }
 
 export function getProjectStreamUrl(id: string): string {
-  return `${API_BASE_URL}/api/projects/${id}/stream`;
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/api/projects/${id}/stream`;
 }
 
 export function getProjectPdfUrl(id: string): string {
-  return `${API_BASE_URL}/api/projects/${id}/pdf`;
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/api/projects/${id}/pdf`;
 }
