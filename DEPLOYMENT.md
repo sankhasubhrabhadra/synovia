@@ -1,63 +1,71 @@
-# Synovia — Production Deployment Guide
+# 🚀 Synovia — Production & Deployment Guide
 
-This guide explains how to deploy Synovia live to production on **Railway** (Backend) and **Vercel** (Frontend).
+Synovia is an Autonomous Multi-Agent Startup Synthesizer featuring an AI Co-Founder system.
 
----
-
-## 📌 Prerequisites
-
-1. A [GitHub](https://github.com) account.
-2. An account on [Railway.app](https://railway.app) (or [Render.com](https://render.com)).
-3. An account on [Vercel.com](https://vercel.com).
-4. An OpenAI API Key from [platform.openai.com](https://platform.openai.com).
+- **Frontend**: Next.js 16 (React 19, TailwindCSS, Framer Motion) — Deployed on **Vercel**
+- **Backend**: FastAPI (Python 3.10+, SQLAlchemy, SQLite) — Runs on **Local Laptop (Cloudflare Tunnel)** or **Render.com / Railway**
+- **LLM Engine**: 100% Local Ollama (`qwen2.5:1.5b`) with fallback domain-aware synthesizer
 
 ---
 
-## Step 1: Push Code to GitHub
+## 💻 Method 1: Local Laptop Backend (Current Active Setup)
 
-```bash
-cd C:\Users\Lenovo\.gemini\antigravity\scratch\synovia
+Run the backend locally on your laptop and expose it securely via Cloudflare Tunnel.
 
-git init
-git add .
-git commit -m "Deploy Synovia Autonomous AI Co-Founder"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/synovia.git
-git push -u origin main
+### 1. Requirements
+- Python 3.10+
+- Node.js 18+
+- [Ollama](https://ollama.com) with `qwen2.5:1.5b` (`ollama pull qwen2.5:1.5b`)
+- [Cloudflare Tunnel (`cloudflared`)](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/)
+
+### 2. Quick Start (1-Click)
+Double-click `Start_Synovia.bat` on your Desktop or run:
+
+```cmd
+start_synovia.bat
 ```
 
----
-
-## Step 2: Deploy Backend to Railway
-
-1. Log in to [Railway.app](https://railway.app).
-2. Click **New Project** -> **Deploy from GitHub repo** -> Select `synovia`.
-3. Go to **Service Settings**:
-   - **Root Directory**: `backend`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-4. Go to **Variables** tab and add:
-   - `OPENAI_API_KEY` = `sk-your-openai-api-key`
-   - `PORT` = `8000`
-5. Go to **Settings** -> **Networking** -> Click **Generate Domain**.
-6. Copy your public Railway backend URL (e.g. `https://synovia-backend.up.railway.app`).
+This starts:
+1. Local Ollama Server (`http://localhost:11434`)
+2. FastAPI Backend (`http://localhost:8000`)
+3. Cloudflare Public HTTPS Tunnel
 
 ---
 
-## Step 3: Deploy Frontend to Vercel
+## ☁️ Method 2: 24/7 Cloud Backend (Render.com)
 
-1. Log in to [Vercel.com](https://vercel.com).
-2. Click **Add New** -> **Project** -> Import `synovia`.
-3. Configure Project:
-   - **Framework Preset**: Next.js
-   - **Root Directory**: `frontend`
-4. Expand **Environment Variables** and add:
-   - `NEXT_PUBLIC_API_URL` = `https://synovia-backend.up.railway.app` (your Railway backend URL from Step 2)
-5. Click **Deploy**.
+Deploy the backend to Render for 100% uptime without keeping your laptop on.
+
+### 1. Render Configuration
+- **Repository**: Connect your GitHub repo (`synovia`)
+- **Root Directory**: `backend`
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+### 2. Environment Variables
+- `PORT` = `8000`
 
 ---
 
-## 🎉 Live Production Setup Complete!
+## 🌐 Frontend Deployment (Vercel)
 
-- Your frontend is live at `https://synovia.vercel.app`
-- Your backend is live at `https://synovia-backend.up.railway.app`
+1. Connect your GitHub repository to [Vercel](https://vercel.com).
+2. Set **Root Directory** to `frontend`.
+3. Click **Deploy**. Vercel will automatically build and publish your app at `https://synovia.vercel.app`.
+
+---
+
+## 📁 Repository Structure
+
+```text
+synovia/
+├── backend/                # FastAPI Multi-Agent Engine
+│   ├── app/                # Routers, Agents, Models, Services
+│   ├── requirements.txt    # Python dependencies
+│   └── .env                # Backend environment config
+├── frontend/               # Next.js Web Application
+│   ├── src/                # Components, API client, App routes
+│   └── package.json        # Node.js dependencies
+├── DEPLOYMENT.md           # Production Deployment Guide
+└── start_synovia.bat       # 1-Click Windows Launcher
+```
