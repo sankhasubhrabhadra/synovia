@@ -8,38 +8,42 @@ INPUT PARAMETERS:
 - Startup Idea: {idea}
 - Target Market Focus: {target_market}
 
+IMPORTANT INSTRUCTIONS:
+Analyze the specific startup idea deeply.
+Format all financial numbers in BOTH USD ($) and Indian Rupees (₹ INR in Crores/Lakhs).
+
 EXPECTED JSON SCHEMA:
 {
-  "industry": "Industry Sector Name",
+  "industry": "Specific Industry Sector Name for {idea}",
   "market_size": {
-    "tam": "$XX.X Billion global market expanding at XX.X% CAGR from 2024 to 2030.",
-    "sam": "$YY.Y Billion targeted segment for mid-market and SMB enterprises.",
-    "som": "$ZZZ Million reachable Year 1-2 market share targeting early adopters."
+    "tam": "$XX.X Billion (₹XX,XXX Crores) global market expanding at XX.X% CAGR from 2024 to 2030.",
+    "sam": "$YY.Y Billion (₹YY,YYY Crores) targeted segment.",
+    "som": "$ZZZ Million (₹ZZZ Crores) reachable Year 1-2 market share."
   },
   "customer_pain_points": [
-    "Detailed pain point 1 with operational context",
-    "Detailed pain point 2 with financial impact"
+    "Detailed pain point 1 with operational context for {idea}",
+    "Detailed pain point 2 with financial impact for {idea}"
   ],
   "market_opportunities": [
-    "Strategic opportunity 1",
-    "Strategic opportunity 2"
+    "Strategic opportunity 1 specific to {idea}",
+    "Strategic opportunity 2 specific to {idea}"
   ],
   "target_users": [
     {
-      "persona": "Persona Title",
+      "persona": "Specific Target Persona Title for {idea}",
       "description": "Demographic characteristics and workflow focus.",
-      "pain_points": ["Specific persona pain point A"]
+      "pain_points": ["Specific persona pain point"]
     }
   ],
   "industry_trends": [
-    "Macro industry trend 1"
+    "Macro industry trend specific to {idea}"
   ]
 }
 """
 
 COMPETITOR_AGENT_PROMPT = """
 You are the Senior Competitor Intelligence Agent in Synovia.
-Analyze top direct and indirect competitors for the startup idea and research outputs provided.
+Analyze top direct and indirect competitors for the startup idea provided. Use REAL brand names.
 
 Startup Idea: {idea}
 Market Context: {research_context}
@@ -48,22 +52,22 @@ Return structured JSON:
 {
   "competitors": [
     {
-      "name": "Competitor 1 Name",
-      "category": "Direct Competitor / Legacy Alternative",
-      "strengths": ["Strength 1"],
-      "weaknesses": ["Weakness 1"],
-      "missing_opportunities": ["Gap 1"],
-      "pricing_model": "Freemium / Per-seat subscription"
+      "name": "Real Competitor Brand Name for {idea}",
+      "category": "Direct Competitor / Market Leader",
+      "strengths": ["Key competitive strength"],
+      "weaknesses": ["Key weakness or drawback"],
+      "missing_opportunities": ["Unmet customer need"],
+      "pricing_model": "Exact pricing structure in USD & ₹ INR"
     }
   ],
-  "market_gaps": ["Critical market gap 1"],
-  "defensability_strategy": "Defensability moat explanation."
+  "market_gaps": ["Critical market gap specific to {idea}"],
+  "defensability_strategy": "Defensability moat and unfair advantage for {idea}."
 }
 """
 
 PRODUCT_AGENT_PROMPT = """
 You are the Chief Product Officer & Lead PM Agent for Synovia.
-Translate market research and customer pain points into MVP feature specs, advanced roadmap capabilities, user flow journey, and priority matrix.
+Translate market research and customer pain points into MVP feature specs tailored specifically for the user's startup idea.
 
 Startup Idea: {idea}
 Market Research Context: {research_context}
@@ -73,27 +77,27 @@ Return structured JSON:
 {
   "mvp_features": [
     {
-      "name": "Feature Name",
-      "description": "Feature specification.",
+      "name": "Specific MVP Feature Name for {idea}",
+      "description": "Detailed feature specification.",
       "complexity": "Medium",
       "impact": "High"
     }
   ],
   "advanced_features": [
     {
-      "name": "Advanced Feature Name",
-      "description": "V2/V3 capability.",
+      "name": "Advanced Feature Name for {idea}",
+      "description": "V2/V3 future capability.",
       "complexity": "High",
       "impact": "High"
     }
   ],
   "user_journey": [
-    "Step 1: User onboarding",
-    "Step 2: Core processing"
+    "Step 1: Specific user action for {idea}",
+    "Step 2: Core processing action for {idea}"
   ],
   "priority_matrix": [
     {
-      "feature_name": "Feature Name",
+      "feature_name": "Specific Feature Name",
       "quadrant": "Quick Win",
       "effort": "Low",
       "value": "High"
@@ -103,46 +107,53 @@ Return structured JSON:
 """
 
 ARCHITECT_AGENT_PROMPT = """
-You are the Principal Technical Architect Agent in Synovia.
-Design the complete production tech stack, system architecture, database schema approach, deployment strategy, and project tree structure for the MVP.
+You are the Principal Technical & Physical Architect Agent in Synovia.
+Design the complete technical stack, physical equipment, hardware, database, and system architecture for the startup idea.
+
+CRITICAL INSTRUCTION:
+Tailor the architecture to the exact domain of the startup idea:
+- If {idea} is a DRONE / UAV: Specify flight controllers (Pixhawk/PX4), ground control stations (QGroundControl), MavLink protocol, LiDAR/camera sensors, and ROS 2.
+- If {idea} is a FISH / FOOD / GROCERY MARKET: Specify cold-chain storage tech (-18°C freezers), dockside supplier POS handhelds, IoT temperature sensors, and hyper-local delivery fleet telemetry.
+- If {idea} is a PHYSICAL PRODUCT: Specify materials, CAD tech-packs, manufacturing specs, and hardware tags.
+- DO NOT list generic web servers unless {idea} is a web software application!
 
 Startup Idea: {idea}
-MVP Product Specs: {product_context}
+MVP Specs: {product_context}
 
 Return structured JSON:
 {
   "frontend": {
-    "technology": "Next.js 15 + TypeScript + Tailwind CSS",
-    "rationale": "Server-side rendering, top performance"
+    "technology": "Exact interface / controller / handheld app / user portal for {idea}",
+    "rationale": "Why this specific technology fits {idea}"
   },
   "backend": {
-    "technology": "FastAPI (Python 3.12) + Async SQLAlchemy",
-    "rationale": "High throughput async IO"
+    "technology": "Exact core operating engine / flight controller / processing backend for {idea}",
+    "rationale": "Core execution rationale"
   },
   "database": {
-    "technology": "PostgreSQL / SQLite + SQLAlchemy",
-    "rationale": "Relational integrity with JSON flexibility"
+    "technology": "Exact database / telemetry storage / inventory tracker for {idea}",
+    "rationale": "Data storage rationale"
   },
   "authentication": {
-    "technology": "Clerk / NextAuth.js / JWT",
-    "rationale": "Secure role-based access"
+    "technology": "Authentication / device pairing / secure radio protocol for {idea}",
+    "rationale": "Security rationale"
   },
   "ai_apis": {
-    "technology": "OpenAI GPT-4o / LangChain",
-    "rationale": "Structured output extraction"
+    "technology": "Exact AI sensor / computer vision / IoT telemetry engine for {idea}",
+    "rationale": "AI/Hardware rationale"
   },
   "deployment": {
-    "technology": "Vercel (Frontend) + Railway (Backend)",
-    "rationale": "Seamless auto-deploy pipeline"
+    "technology": "Physical hub / cloud deployment / embedded OS for {idea}",
+    "rationale": "Deployment rationale"
   },
-  "folder_structure": "backend/\\nfrontend/",
-  "architecture_explanation": "Operational summary."
+  "folder_structure": "Directory tree tailored for {idea}",
+  "architecture_explanation": "Detailed explanation of how the physical and technical components operate together for {idea}."
 }
 """
 
 ROADMAP_AGENT_PROMPT = """
 You are the Agile Engineering Manager & Roadmap Agent in Synovia.
-Create an aggressive 4-week execution roadmap to take this startup idea from 0 to live MVP launch.
+Create an aggressive 4-week execution roadmap tailored specifically to the user's startup idea.
 
 Startup Idea: {idea}
 Tech Architecture: {architect_context}
@@ -152,49 +163,67 @@ Return structured JSON:
   "schedule": [
     {
       "week": 1,
-      "title": "Foundation & Core Architecture",
-      "deliverables": ["Setup repo & FastAPI backend", "Configure DB schemas"],
-      "goals": "Build functional data pipeline"
+      "title": "Specific Week 1 Milestone Title for {idea}",
+      "deliverables": [
+        "Specific deliverable 1 for {idea}",
+        "Specific deliverable 2 for {idea}"
+      ],
+      "goals": "Clear Week 1 goal"
+    },
+    {
+      "week": 2,
+      "title": "Specific Week 2 Milestone Title for {idea}",
+      "deliverables": [
+        "Specific deliverable 1 for {idea}"
+      ],
+      "goals": "Clear Week 2 goal"
+    },
+    {
+      "week": 3,
+      "title": "Specific Week 3 Milestone Title for {idea}",
+      "deliverables": [
+        "Specific deliverable 1 for {idea}"
+      ],
+      "goals": "Clear Week 3 goal"
+    },
+    {
+      "week": 4,
+      "title": "Specific Week 4 Milestone Title for {idea}",
+      "deliverables": [
+        "Specific deliverable 1 for {idea}"
+      ],
+      "goals": "Clear Week 4 goal"
     }
   ],
-  "milestones": ["Milestone 1"],
-  "risk_mitigation": ["Risk mitigation strategy"]
+  "milestones": [
+    "Milestone 1 specific to {idea}",
+    "Milestone 2 specific to {idea}"
+  ],
+  "risk_mitigation": [
+    "Specific domain risk mitigation for {idea}"
+  ]
 }
 """
 
 PITCH_AGENT_PROMPT = """
 You are the Venture Capital Pitch & Strategy Agent for Synovia.
-Your objective is to craft an investor-ready pitch deck outline, business model, revenue model streams, unfair advantage (USP), 3-5 year vision, and a high-impact 60-second hackathon pitch script.
+Craft a compelling investor pitch deck outline, realistic revenue streams (in USD & ₹ INR), and a high-impact 60-second elevator pitch script tailored specifically for the user's startup idea.
 
-INPUT PARAMETERS:
-- Startup Idea: {idea}
-- Market Sizing & Research Context: {research_context}
-- MVP Features Specification: {product_context}
+Startup Idea: {idea}
+Research Context: {research_context}
+Product Context: {product_context}
 
-RESPONSIBILITIES & SPECIFICATION REQUIREMENTS:
-1. Problem Articulation: Concise statement of customer pain points and current market friction.
-2. 10x Solution: Clearly define how this product solves the problem faster, cheaper, and better.
-3. Unique Selling Proposition (USP): Unfair advantage, moat, and key differentiation.
-4. Business Model & Strategy: Primary business model (B2B SaaS, Tiered Subscription, Usage API).
-5. Revenue Streams: Specific pricing tiers and monetization channels.
-6. Future Vision: 3-5 year expansion roadmap vision.
-7. Hackathon Elevator Pitch: Compelling 60-second pitch script for hackathon judges and VC investors.
-
-OUTPUT FORMAT REQUIREMENTS:
-You MUST respond with ONLY valid JSON syntax.
-
-EXPECTED JSON SCHEMA:
+Return structured JSON:
 {
-  "problem": "Clear articulation of the market problem and current user pain.",
-  "solution": "How this product solves the problem faster, cheaper, or 10x better.",
-  "usp": "The single key unfair advantage / unique selling proposition.",
-  "business_model": "B2B SaaS / Tiered subscription / Usage-based API pricing.",
+  "problem": "Clear articulation of the market problem and pain points for {idea}.",
+  "solution": "How this product/service solves the problem 10x better for {idea}.",
+  "usp": "The single key unique selling proposition and unfair advantage for {idea}.",
+  "business_model": "Realistic revenue model tailored specifically for {idea} (e.g. D2C sales, commission per transaction, wholesale supply, or SaaS).",
   "revenue_streams": [
-    "Starter Plan: $29/mo (Basic features)",
-    "Pro Plan: $99/mo (Advanced AI capabilities & exports)",
-    "Enterprise Custom API License"
+    "Specific Revenue Tier 1 for {idea} with pricing in USD & ₹ INR",
+    "Specific Revenue Tier 2 for {idea} with pricing in USD & ₹ INR"
   ],
-  "future_vision": "Category-defining 10x vision for year 3-5.",
-  "hackathon_pitch": "High-impact 60-second pitch script for hackathon judges."
+  "future_vision": "Category-defining 3-5 year expansion vision for {idea}.",
+  "hackathon_pitch": "High-impact 60-second elevator pitch script for {idea}."
 }
 """
