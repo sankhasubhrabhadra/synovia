@@ -8,9 +8,9 @@ class AgentStepEnum(str, Enum):
     RESEARCH = "research"
     COMPETITOR = "competitor"
     PRODUCT = "product"
-    ARCHITECT = "architect"
     ROADMAP = "roadmap"
     PITCH = "pitch"
+    VALIDATION = "validation"
     MERGE = "merge"
     COMPLETED = "completed"
 
@@ -74,20 +74,6 @@ class ProductOutput(BaseModel):
     user_journey: List[str]
     priority_matrix: List[PriorityMatrixItem]
 
-class TechStackLayer(BaseModel):
-    technology: str
-    rationale: str
-
-class ArchitectOutput(BaseModel):
-    frontend: TechStackLayer
-    backend: TechStackLayer
-    database: TechStackLayer
-    authentication: TechStackLayer
-    ai_apis: TechStackLayer
-    deployment: TechStackLayer
-    folder_structure: str
-    architecture_explanation: str
-
 class RoadmapWeek(BaseModel):
     week: int
     title: str
@@ -108,6 +94,22 @@ class PitchOutput(BaseModel):
     future_vision: str
     hackathon_pitch: str
 
+class ValidationOutput(BaseModel):
+    viability_score: int = Field(..., description="Startup Viability Score (0-100)")
+    innovation_score: int = Field(..., description="Innovation Score (0-100)")
+    market_opportunity_score: int = Field(..., description="Market Opportunity Score (0-100)")
+    feasibility_score: int = Field(..., description="Feasibility Score (0-100)")
+    scalability_score: int = Field(..., description="Scalability Score (0-100)")
+    major_business_risks: List[str]
+    technical_risks: List[str]
+    competitive_risks: List[str]
+    key_assumptions: List[str]
+    validation_recommendations: List[str]
+    next_best_actions: List[str]
+    suggested_first_customers: List[str]
+    long_term_growth_strategy: str
+    final_verdict: str
+
 class StartupBlueprint(BaseModel):
     project_id: str
     idea: str
@@ -115,9 +117,9 @@ class StartupBlueprint(BaseModel):
     research: Optional[ResearchOutput] = None
     competitor: Optional[CompetitorOutput] = None
     product: Optional[ProductOutput] = None
-    architect: Optional[ArchitectOutput] = None
     roadmap: Optional[RoadmapOutput] = None
     pitch: Optional[PitchOutput] = None
+    validation: Optional[ValidationOutput] = None
     executive_summary: Optional[str] = None
 
 class AgentProgressUpdate(BaseModel):

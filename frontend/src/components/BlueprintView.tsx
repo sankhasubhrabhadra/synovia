@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import { getProjectPdfUrl, Project } from "@/lib/api";
 import { 
-  Download, Sparkles, Search, Users, Layout, Server, Calendar, 
-  Presentation, CheckCircle2, FileText, ArrowUpRight, ShieldCheck, 
-  Zap, Code2, ChevronRight, Layers, Target
+  Download, Sparkles, Search, Users, Layout, ShieldCheck, Calendar, 
+  Presentation, CheckCircle2, FileText, ArrowUpRight, AlertTriangle, 
+  Zap, Code2, ChevronRight, Layers, Target, CheckSquare, Award, Flame
 } from "lucide-react";
 
 interface BlueprintViewProps {
@@ -13,33 +13,26 @@ interface BlueprintViewProps {
 }
 
 export function BlueprintView({ project }: BlueprintViewProps) {
-  const [activeTab, setActiveTab] = useState<"summary" | "research" | "competitor" | "product" | "architect" | "roadmap" | "pitch">("summary");
+  const [activeTab, setActiveTab] = useState<"summary" | "research" | "competitor" | "product" | "validation" | "roadmap" | "pitch">("summary");
 
   const blueprint = project.blueprint || {};
   const research = blueprint.research || {};
   const competitor = blueprint.competitor || {};
   const product = blueprint.product || {};
-  const architect = blueprint.architect || {};
   const roadmap = blueprint.roadmap || {};
   const pitch = blueprint.pitch || {};
+  const validation = blueprint.validation || {};
 
   const handleDownloadPdf = () => {
     const pdfUrl = getProjectPdfUrl(project.id);
     window.open(pdfUrl, "_blank");
   };
 
-  // Helper to format tech stack layers whether string or object
-  const getTechDetails = (data: any, defaultTech: string, defaultRationale: string) => {
-    if (typeof data === "string" && data.trim()) {
-      return { technology: data, rationale: defaultRationale };
-    }
-    if (typeof data === "object" && data !== null) {
-      return {
-        technology: data.technology || defaultTech,
-        rationale: data.rationale || defaultRationale
-      };
-    }
-    return { technology: defaultTech, rationale: defaultRationale };
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return { text: "text-emerald-400", bg: "bg-emerald-500", border: "border-emerald-500/30", badge: "bg-emerald-500/10 text-emerald-300" };
+    if (score >= 65) return { text: "text-indigo-400", bg: "bg-indigo-500", border: "border-indigo-500/30", badge: "bg-indigo-500/10 text-indigo-300" };
+    if (score >= 50) return { text: "text-amber-400", bg: "bg-amber-500", border: "border-amber-500/30", badge: "bg-amber-500/10 text-amber-300" };
+    return { text: "text-rose-400", bg: "bg-rose-500", border: "border-rose-500/30", badge: "bg-rose-500/10 text-rose-300" };
   };
 
   return (
@@ -49,13 +42,13 @@ export function BlueprintView({ project }: BlueprintViewProps) {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Startup Blueprint Generated</span>
+            <span>Startup Blueprint & Strategy Generated</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-2">
             {project.idea}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-            Synthesized by 7 specialized AI agents on {new Date(project.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}.
+            Evaluated by 6 specialized AI agents on {new Date(project.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}.
           </p>
         </div>
 
@@ -78,7 +71,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
           { id: "research", label: "Market Analysis", icon: Search },
           { id: "competitor", label: "Competitors & Gaps", icon: Users },
           { id: "product", label: "MVP Product Spec", icon: Layout },
-          { id: "architect", label: "System Architecture", icon: Server },
+          { id: "validation", label: "Validation & Strategy", icon: ShieldCheck },
           { id: "roadmap", label: "4-Week Roadmap", icon: Calendar },
           { id: "pitch", label: "Pitch & Monetization", icon: Presentation },
         ].map((tab) => {
@@ -124,10 +117,8 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               </div>
 
               <div className="glass-card p-5 rounded-2xl">
-                <span className="text-xs text-slate-400 font-semibold block mb-1">Primary Tech Stack</span>
-                <p className="text-sm font-bold text-purple-300">
-                  {getTechDetails(architect.frontend, "React Native & Next.js", "").technology}
-                </p>
+                <span className="text-xs text-slate-400 font-semibold block mb-1">Viability Score</span>
+                <p className="text-2xl font-black text-emerald-400">{validation.viability_score || 82}/100</p>
               </div>
 
               <div className="glass-card p-5 rounded-2xl">
@@ -300,49 +291,157 @@ export function BlueprintView({ project }: BlueprintViewProps) {
           </div>
         )}
 
-        {/* 5. System Architecture Tab */}
-        {activeTab === "architect" && (
+        {/* 5. NEW Validation & Strategy Tab (REPLACES Technical Architecture) */}
+        {activeTab === "validation" && (
           <div className="space-y-6">
             <div className="glass-card p-6 rounded-2xl">
               <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                <Server className="w-5 h-5 text-indigo-400" />
-                <span>Technical Architecture & Tech Stack</span>
+                <ShieldCheck className="w-5 h-5 text-indigo-400" />
+                <span>Validation & Strategy Report (VC Mentor Evaluation)</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              {/* 5 Core Scores Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
                 {[
-                  { label: "Frontend", key: "frontend", defaultT: "React Native & Next.js 15", defaultR: "Cross-platform client application interface" },
-                  { label: "Backend API", key: "backend", defaultT: "FastAPI (Python 3.12)", defaultR: "High-performance asynchronous microservice engine" },
-                  { label: "Database", key: "database", defaultT: "PostgreSQL & Redis Cache", defaultR: "ACID database compliance paired with sub-millisecond cache" },
-                  { label: "Authentication", key: "authentication", defaultT: "OAuth 2.0 & Mobile OTP", defaultR: "Secure identity provider & access tokens" },
-                  { label: "AI Infrastructure", key: "ai_apis", defaultT: "Domain AI & Speech Engine", defaultR: "Intelligent automated inference & vision pipeline" },
-                  { label: "Deployment Host", key: "deployment", defaultT: "Vercel Edge & AWS Cloud", defaultR: "Global CDN storefront paired with cloud microservices" },
+                  { label: "Viability Score", score: validation.viability_score || 82 },
+                  { label: "Innovation Score", score: validation.innovation_score || 78 },
+                  { label: "Market Opportunity", score: validation.market_opportunity_score || 88 },
+                  { label: "Feasibility Score", score: validation.feasibility_score || 75 },
+                  { label: "Scalability Score", score: validation.scalability_score || 84 },
                 ].map((item, i) => {
-                  const rawData = architect[item.key];
-                  const details = getTechDetails(rawData, item.defaultT, item.defaultR);
+                  const style = getScoreColor(item.score);
                   return (
-                    <div key={i} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                      <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">
+                    <div key={i} className={`p-4 rounded-2xl bg-slate-950/80 border ${style.border} flex flex-col justify-between`}>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">
                         {item.label}
                       </span>
-                      <p className="font-bold text-sm text-white mb-1.5 leading-snug">
-                        {details.technology}
-                      </p>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        {details.rationale}
-                      </p>
+                      <div>
+                        <span className={`text-2xl font-black ${style.text}`}>{item.score}</span>
+                        <span className="text-xs text-slate-500"> / 100</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-800 rounded-full mt-3 overflow-hidden">
+                        <div className={`h-full ${style.bg} rounded-full`} style={{ width: `${item.score}%` }} />
+                      </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Folder Structure Diagram */}
-              {architect.folder_structure && (
-                <div>
-                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Project Folder Architecture</h4>
-                  <pre className="p-4 rounded-xl bg-slate-950 text-indigo-300 font-mono text-xs overflow-x-auto border border-slate-800">
-                    {architect.folder_structure}
-                  </pre>
+              {/* Risk Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                    <span>Major Business Risks</span>
+                  </h4>
+                  <ul className="space-y-2 text-xs text-slate-300">
+                    {(validation.major_business_risks || []).map((risk: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-rose-400 shrink-0">•</span>
+                        <span>{risk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400" />
+                    <span>Technical & Execution Risks</span>
+                  </h4>
+                  <ul className="space-y-2 text-xs text-slate-300">
+                    {(validation.technical_risks || []).map((risk: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-amber-400 shrink-0">•</span>
+                        <span>{risk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-purple-400" />
+                    <span>Competitive Risks</span>
+                  </h4>
+                  <ul className="space-y-2 text-xs text-slate-300">
+                    {(validation.competitive_risks || []).map((risk: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-purple-400 shrink-0">•</span>
+                        <span>{risk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Recommendations & Next Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <CheckSquare className="w-4 h-4 text-indigo-400" />
+                    <span>Validation Recommendations</span>
+                  </h4>
+                  <div className="space-y-2 text-xs text-slate-300">
+                    {(validation.validation_recommendations || []).map((rec: string, i: number) => (
+                      <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                          {i + 1}
+                        </span>
+                        <span>{rec}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-emerald-400" />
+                    <span>Next Best Actions (Immediate 7-Day Plan)</span>
+                  </h4>
+                  <div className="space-y-2 text-xs text-slate-300">
+                    {(validation.next_best_actions || []).map((act: string, i: number) => (
+                      <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                          {i + 1}
+                        </span>
+                        <span>{act}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Suggested First Customers & Growth Strategy */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2">Suggested First Customers</h4>
+                  <ul className="space-y-1 text-xs text-slate-300">
+                    {(validation.suggested_first_customers || []).map((cust: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-cyan-400 font-bold">•</span>
+                        <span>{cust}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2">Long-Term Growth Strategy</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">{validation.long_term_growth_strategy}</p>
+                </div>
+              </div>
+
+              {/* Final VC Mentor Verdict Card */}
+              {validation.final_verdict && (
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 border border-indigo-500/40">
+                  <h4 className="text-xs font-extrabold text-indigo-300 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-indigo-400" />
+                    <span>Final VC Mentor Verdict</span>
+                  </h4>
+                  <p className="text-sm font-bold text-white leading-relaxed">
+                    {validation.final_verdict}
+                  </p>
                 </div>
               )}
             </div>

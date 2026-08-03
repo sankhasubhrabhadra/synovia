@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { getProjectStreamUrl, Project } from "@/lib/api";
 import { 
-  Bot, Search, Users, Layout, Server, Calendar, Presentation, 
+  Bot, Search, Users, Layout, ShieldCheck, Calendar, Presentation, 
   CheckCircle2, Loader2, Clock, Sparkles, Terminal, Activity, ArrowRight
 } from "lucide-react";
 
@@ -26,9 +26,9 @@ const AGENTS_LIST = [
   { id: "research", name: "Market Research Agent", icon: Search, role: "TAM/SAM/SOM & Personas", userMessage: "Researching market size & customer pain points..." },
   { id: "competitor", name: "Competitor Intelligence Agent", icon: Users, role: "Strengths, Weaknesses & Gaps", userMessage: "Finding competitors & market defensibility gaps..." },
   { id: "product", name: "Product Manager Agent", icon: Layout, role: "MVP Features & Priority Matrix", userMessage: "Designing MVP specs & user journey..." },
-  { id: "architect", name: "Technical Architect Agent", icon: Server, role: "Tech Stack & Folder Structure", userMessage: "Generating production system architecture..." },
   { id: "roadmap", name: "Agile Roadmap Agent", icon: Calendar, role: "4-Week Schedule & Milestones", userMessage: "Building 4-week execution roadmap..." },
   { id: "pitch", name: "VC Pitch Strategy Agent", icon: Presentation, role: "USP, Business Model & Pitch", userMessage: "Preparing investor pitch deck & 60s pitch..." },
+  { id: "validation", name: "Validation & Strategy Mentor", icon: ShieldCheck, role: "VC Scores, Risks & Verdict", userMessage: "Evaluating startup viability, risks & mentor verdict..." },
 ];
 
 export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScreenProps) {
@@ -70,7 +70,6 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
     };
   }, [project.id, onExecutionComplete]);
 
-  // Helper to determine status of each agent card
   const getAgentStatus = (agentId: string) => {
     const agentLogs = logs.filter((l) => l.step === agentId);
     if (agentLogs.some((l) => l.status === "completed")) return "completed";

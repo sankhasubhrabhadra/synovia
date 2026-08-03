@@ -13,8 +13,8 @@ class PDFReportGenerator:
     @staticmethod
     def generate_blueprint_pdf(blueprint: Dict[str, Any]) -> bytes:
         """
-        Generates a sleek, executive investor-ready PDF blueprint document.
-        Handles nested dictionaries and string formats cleanly.
+        Generates a sleek, VC-ready startup blueprint & validation PDF document.
+        Replaces Technical Architecture with Validation & Strategy Report.
         """
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -30,6 +30,7 @@ class PDFReportGenerator:
         ACCENT = colors.HexColor("#4F46E5")  # Indigo 600
         SECONDARY = colors.HexColor("#334155")
         LIGHT_BG = colors.HexColor("#F8FAFC")
+        SUCCESS = colors.HexColor("#059669")
         
         title_style = ParagraphStyle(
             "DocTitle",
@@ -96,7 +97,6 @@ class PDFReportGenerator:
 
         elements = []
 
-        # Clean string helper
         def clean(val: str) -> str:
             if not val:
                 return ""
@@ -104,7 +104,7 @@ class PDFReportGenerator:
 
         # Title & Banner
         idea_title = clean(blueprint.get("idea", "Startup Blueprint")).title()
-        elements.append(Paragraph("SYNOVIA // AUTONOMOUS STARTUP BLUEPRINT", tagline_style))
+        elements.append(Paragraph("SYNOVIA // STARTUP BLUEPRINT & VALIDATION REPORT", tagline_style))
         elements.append(Paragraph(f"Blueprint: {idea_title}", title_style))
         elements.append(Paragraph(f"<b>Generated:</b> {blueprint.get('created_at', '2026-08-03')} | <b>Target Market:</b> {blueprint.get('target_market', 'Global')}", body_style))
         elements.append(HRFlowable(width="100%", thickness=1.5, color=ACCENT, spaceBefore=8, spaceAfter=12))
@@ -164,7 +164,7 @@ class PDFReportGenerator:
                     comp_table_data.append([
                         Paragraph(f"<b>{comp_name}</b><br/><font size=8 color='#64748B'>{comp_cat}</font>", body_style),
                         Paragraph("<br/>".join(strengths_list) if strengths_list else "Established market brand", bullet_style),
-                        Paragraph("<br/>".join(weaknesses_list) if weaknesses_list else "High pricing & legacy Tech", bullet_style),
+                        Paragraph("<br/>".join(weaknesses_list) if weaknesses_list else "High pricing & legacy workflow", bullet_style),
                     ])
                 t_comp = Table(comp_table_data, colWidths=[125, 202, 203])
                 t_comp.setStyle(TableStyle([
@@ -196,58 +196,69 @@ class PDFReportGenerator:
                     elements.append(Paragraph(f"• <b>{fname}:</b> {fdesc}", bullet_style))
             elements.append(Spacer(1, 8))
 
-        # 5. Technical Architecture (Robust parsing for dict or string)
-        architect = blueprint.get("architect", {})
-        if architect:
-            elements.append(Paragraph("5. Technical Architecture & Tech Stack", h1_style))
+        # 5. Validation & Strategy Report (REPLACES Technical Architecture)
+        validation = blueprint.get("validation", {})
+        if validation:
+            elements.append(Paragraph("5. Validation & Strategy Report (VC & Mentor Evaluation)", h1_style))
             
-            def parse_layer(layer_data: Any, default_tech: str, default_rat: str) -> tuple[str, str]:
-                if isinstance(layer_data, dict):
-                    tech = clean(layer_data.get("technology", layer_data.get("name", default_tech)))
-                    rat = clean(layer_data.get("rationale", layer_data.get("description", default_rat)))
-                    return tech or default_tech, rat or default_rat
-                elif isinstance(layer_data, str) and layer_data.strip():
-                    return clean(layer_data), default_rat
-                return default_tech, default_rat
-
-            # Smart defaults if physical product or web stack
-            idea_lower = blueprint.get("idea", "").lower()
-            is_hardware = any(k in idea_lower for k in ["backpack", "bag", "hardware", "shoe", "bottle", "watch", "wearable"])
-            
-            if is_hardware:
-                tech_layers = [
-                    ("Frontend / Mobile App", parse_layer(architect.get("frontend"), "React Native / Next.js 15 Web Portal", "Mobile companion app for IoT tracking & D2C Storefront")),
-                    ("Backend Services", parse_layer(architect.get("backend"), "FastAPI (Python) + Node.js Microservices", "Order management, IoT Telemetry API, & Payment Webhooks")),
-                    ("Database & Storage", parse_layer(architect.get("database"), "PostgreSQL + Redis Cache", "ACID transactional integrity for orders & fast session caching")),
-                    ("Authentication & Security", parse_layer(architect.get("authentication"), "JWT + OAuth 2.0 (Google/Apple Sign-In)", "Secure user auth and device pairing encryption")),
-                    ("Hardware / AI Specs", parse_layer(architect.get("ai_apis"), "Nordic BLE / Biometric Fingerprint Sensor", "Low-power Bluetooth 5.2 telemetry & TSA biometric locking")),
-                    ("Production Hosting", parse_layer(architect.get("deployment"), "Vercel (Web) + AWS / Railway (Backend)", "Global CDN edge distribution with auto-scaling container API"))
-                ]
-            else:
-                tech_layers = [
-                    ("Frontend", parse_layer(architect.get("frontend"), "Next.js 15 + TypeScript + Tailwind CSS", "Server-side rendering & responsive UI")),
-                    ("Backend API", parse_layer(architect.get("backend"), "FastAPI (Python 3.12) + Async SQLAlchemy", "High-throughput async IO & microservices")),
-                    ("Database", parse_layer(architect.get("database"), "PostgreSQL + Redis Cache", "Relational data integrity & fast caching")),
-                    ("Authentication", parse_layer(architect.get("authentication"), "Clerk / NextAuth.js + JWT", "Role-based access control")),
-                    ("AI Infrastructure", parse_layer(architect.get("ai_apis"), "OpenAI GPT-4o / Gemini 1.5 Flash API", "Structured output extraction & natural language processing")),
-                    ("Deployment / Cloud", parse_layer(architect.get("deployment"), "Vercel (Frontend) + Render / AWS (Backend)", "Global Edge deployment with automated CI/CD"))
-                ]
-
-            tech_data = [[Paragraph("<b>Layer</b>", h2_style), Paragraph("<b>Technology & Implementation Rationale</b>", h2_style)]]
-            for layer_name, (tech_val, rationale) in tech_layers:
-                tech_data.append([
-                    Paragraph(f"<b>{layer_name}</b>", body_style),
-                    Paragraph(f"<b>{tech_val}</b><br/><font size=8.5 color='#475569'>{rationale}</font>", body_style)
-                ])
-            
-            t_tech = Table(tech_data, colWidths=[130, 400])
-            t_tech.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#E2E8F0")),
+            # Scores Table
+            score_data = [
+                [Paragraph("<b>Viability Score</b>", h2_style), Paragraph(f"<b>{validation.get('viability_score', 80)} / 100</b>", h2_style),
+                 Paragraph("<b>Innovation Score</b>", h2_style), Paragraph(f"<b>{validation.get('innovation_score', 75)} / 100</b>", h2_style)],
+                [Paragraph("<b>Market Opportunity</b>", h2_style), Paragraph(f"<b>{validation.get('market_opportunity_score', 85)} / 100</b>", h2_style),
+                 Paragraph("<b>Feasibility Score</b>", h2_style), Paragraph(f"<b>{validation.get('feasibility_score', 70)} / 100</b>", h2_style)],
+                [Paragraph("<b>Scalability Score</b>", h2_style), Paragraph(f"<b>{validation.get('scalability_score', 82)} / 100</b>", h2_style),
+                 Paragraph("<b>Overall Evaluation</b>", h2_style), Paragraph(f"<b>{clean(validation.get('final_verdict', 'PROCEED')).split(':')[0]}</b>", h2_style)],
+            ]
+            t_scores = Table(score_data, colWidths=[130, 135, 130, 135])
+            t_scores.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), LIGHT_BG),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
                 ('PADDING', (0,0), (-1,-1), 5),
             ]))
-            elements.append(t_tech)
+            elements.append(t_scores)
+            elements.append(Spacer(1, 6))
+
+            # Major Risks
+            b_risks = validation.get("major_business_risks", [])
+            if b_risks:
+                elements.append(Paragraph("<b>Major Business & Market Risks:</b>", h2_style))
+                for r in b_risks:
+                    elements.append(Paragraph(f"• {clean(r)}", bullet_style))
+
+            t_risks = validation.get("technical_risks", [])
+            if t_risks:
+                elements.append(Paragraph("<b>Technical & Operational Risks:</b>", h2_style))
+                for r in t_risks:
+                    elements.append(Paragraph(f"• {clean(r)}", bullet_style))
+
+            c_risks = validation.get("competitive_risks", [])
+            if c_risks:
+                elements.append(Paragraph("<b>Competitive Risks:</b>", h2_style))
+                for r in c_risks:
+                    elements.append(Paragraph(f"• {clean(r)}", bullet_style))
+
+            # Validation & Next Actions
+            rec_actions = validation.get("validation_recommendations", [])
+            if rec_actions:
+                elements.append(Paragraph("<b>Actionable Validation Recommendations:</b>", h2_style))
+                for act in rec_actions:
+                    elements.append(Paragraph(f"• {clean(act)}", bullet_style))
+
+            first_cust = validation.get("suggested_first_customers", [])
+            if first_cust:
+                elements.append(Paragraph("<b>Suggested First Customers:</b>", h2_style))
+                for cust in first_cust:
+                    elements.append(Paragraph(f"• {clean(cust)}", bullet_style))
+
+            # Growth Strategy & Verdict
+            growth = clean(validation.get("long_term_growth_strategy", ""))
+            if growth:
+                elements.append(Paragraph(f"<b>Long-Term Growth Strategy:</b> {growth}", body_style))
+
+            verdict = clean(validation.get("final_verdict", ""))
+            if verdict:
+                elements.append(Paragraph(f"<b>Final VC Mentor Verdict:</b> {verdict}", ParagraphStyle("VerdictStyle", parent=body_style, fontName="Helvetica-Bold", textColor=ACCENT)))
             elements.append(Spacer(1, 8))
 
         # 6. Execution Roadmap
