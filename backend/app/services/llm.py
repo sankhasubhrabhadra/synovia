@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import logging
 import asyncio
 import httpx
@@ -12,24 +13,24 @@ logger = logging.getLogger("synovia.llm")
 
 class LLMService:
     """
-    Multi-Provider High-Performance LLM Engine for Synovia.
-    Supports Google Gemini API, Groq, OpenAI, OpenRouter, local Ollama, and Deep Domain Synthesizer.
+    Multi-Provider Deep Reasoning LLM Engine for Synovia.
+    Leverages Llama 3.1 8B (Ollama), Google Gemini API, Groq, or OpenAI for deep 1-2 min thinking.
     """
     def __init__(self):
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
         self.openai_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1").strip()
-        self.ollama_model = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b").strip()
+        self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.1:8b").strip()
 
         if self.gemini_key:
             logger.info("Google Gemini API engine active for deep reasoning.")
         elif self.groq_key:
-            logger.info("Groq Llama 3 engine active for deep reasoning.")
+            logger.info("Groq Llama 3.3 70B engine active for deep reasoning.")
         elif self.openai_key:
             logger.info("OpenAI GPT-4o engine active.")
         else:
-            logger.info("Local Ollama & Deep Domain Intelligence engine active (45s deep thinking timeout).")
+            logger.info(f"Local Ollama {self.ollama_model} Deep Reasoning engine active (90s thinking window).")
 
     async def generate_structured_json(
         self,
@@ -39,17 +40,17 @@ class LLMService:
     ) -> Dict[str, Any]:
         """
         Executes structured JSON completion with multi-provider fallback.
-        Allows up to 45 seconds for local LLM deep reasoning.
+        Allows up to 90 seconds for local Llama 3.1 8B deep thinking.
         """
-        indian_context_instruction = (
-            "\nIMPORTANT INSTRUCTION:\n"
-            "Provide a deep, realistic, highly specific analysis tailored precisely to the user's exact startup idea.\n"
-            "Format all financial, market size, pricing, and revenue metrics in BOTH USD ($) and Indian Rupees (₹ INR in Crores/Lakhs).\n"
-            "DO NOT use generic template placeholders. Use real brand names, real tech stacks, and real hardware/software specs.\n"
-            "Return ONLY valid JSON syntax."
+        instruction = (
+            "\nIMPORTANT INSTRUCTIONS:\n"
+            "Take your time to think deeply and reason thoroughly about the specific startup idea.\n"
+            "DO NOT give generic template answers. Provide specific real-world brand names, real tech stacks, and realistic metrics.\n"
+            "Format all financial and pricing metrics in BOTH USD ($) and Indian Rupees (₹ INR in Crores/Lakhs).\n"
+            "Return ONLY a valid JSON object starting with '{' and ending with '}'."
         )
         
-        full_system_prompt = system_prompt + indian_context_instruction
+        full_system_prompt = system_prompt + instruction
 
         # 1. Try Gemini API if key is present
         if self.gemini_key:
@@ -61,18 +62,18 @@ class LLMService:
                     }],
                     "generationConfig": {
                         "response_mime_type": "application/json",
-                        "temperature": 0.4,
-                        "max_output_tokens": 1500
+                        "temperature": 0.3,
+                        "max_output_tokens": 2000
                     }
                 }
-                async with httpx.AsyncClient(timeout=15.0) as client:
+                async with httpx.AsyncClient(timeout=20.0) as client:
                     resp = await client.post(url, json=payload)
                     if resp.status_code == 200:
                         data = resp.json()
                         text = data["candidates"][0]["content"]["parts"][0]["text"]
                         return json.loads(text)
             except Exception as e:
-                logger.warning(f"Gemini API call notice ({e}). Falling back to local deep engine.")
+                logger.warning(f"Gemini API call notice ({e}). Falling back to local Llama 3.1 8B engine.")
 
         # 2. Try Groq API if key is present
         if self.groq_key:
@@ -84,12 +85,12 @@ class LLMService:
                         {"role": "system", "content": full_system_prompt},
                         {"role": "user", "content": user_prompt}
                     ],
-                    "temperature": 0.4,
-                    "max_tokens": 1500,
+                    "temperature": 0.3,
+                    "max_tokens": 2000,
                     "response_format": {"type": "json_object"}
                 }
                 headers = {"Authorization": f"Bearer {self.groq_key}"}
-                async with httpx.AsyncClient(timeout=15.0) as client:
+                async with httpx.AsyncClient(timeout=20.0) as client:
                     resp = await client.post(url, json=payload, headers=headers)
                     if resp.status_code == 200:
                         data = resp.json()
@@ -98,8 +99,9 @@ class LLMService:
             except Exception as e:
                 logger.warning(f"Groq API call notice ({e}). Falling back.")
 
-        # 3. Try Local Ollama with 45-second deep thinking window
+        # 3. Try Local Ollama (llama3.1:8b) with 90-second deep thinking window
         try:
+            logger.info(f"Invoking local Ollama {self.ollama_model} model for deep thinking...")
             url = f"{self.ollama_url}/chat/completions"
             payload = {
                 "model": self.ollama_model,
@@ -107,24 +109,25 @@ class LLMService:
                     {"role": "system", "content": full_system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.4,
-                "max_tokens": 1200
+                "temperature": 0.3,
+                "max_tokens": 1800
             }
-            async with httpx.AsyncClient(timeout=45.0) as client:
+            async with httpx.AsyncClient(timeout=90.0) as client:
                 resp = await client.post(url, json=payload)
                 if resp.status_code == 200:
                     text = resp.json()["choices"][0]["message"]["content"]
-                    clean_text = text.strip()
-                    if clean_text.startswith("```"):
-                        clean_text = clean_text.split("```")[1]
-                        if clean_text.startswith("json"):
-                            clean_text = clean_text[4:]
-                    return json.loads(clean_text)
+                    logger.info(f"Ollama {self.ollama_model} completed deep reasoning successfully!")
+                    
+                    # Extract valid JSON from response
+                    match = re.search(r'\{.*\}', text, re.DOTALL)
+                    if match:
+                        return json.loads(match.group(0))
+                    return json.loads(text)
         except Exception as e:
-            logger.info(f"Local LLM deep reasoning notice ({e}). Utilizing Deep Domain Intelligence Synthesizer.")
+            logger.warning(f"Local LLM reasoning notice ({e}). Utilizing Deep Domain Intelligence Synthesizer.")
 
         # 4. Fallback: Deep Domain Intelligence Synthesizer
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.5)
         if callable(fallback_data_generator):
             return fallback_data_generator()
 
