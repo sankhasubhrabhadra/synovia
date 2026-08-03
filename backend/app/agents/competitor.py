@@ -38,43 +38,22 @@ class CompetitorAgent:
                     "competitors": [
                         {
                             "name": "DJI Enterprise (Mavic 3E / Matrice 350) & Skydio (Skydio X2)",
-                            "category": "Global Commercial & Industrial Drone Incumbents",
-                            "strengths": [
-                                "Dominant global market share & advanced optical gimbal hardware",
-                                "Autonomous 360-degree obstacle avoidance algorithms"
-                            ],
-                            "weaknesses": [
-                                "Extremely high price points ($8,000 - $25,000 / ₹6.5 Lakhs - ₹20 Lakhs)",
-                                "Closed proprietary software ecosystem preventing custom AI payload integration",
-                                "Geopolitical data privacy concerns & import restrictions in India"
-                            ],
-                            "missing_opportunities": [
-                                "Affordable localized commercial drones with open AI developer SDKs",
-                                "Zero-configuration DGCA Type-Certified Make-in-India hardware"
-                            ],
+                            "category": "Global Commercial Drone Incumbents",
+                            "strengths": ["Dominant global market share & advanced optical gimbal hardware", "Autonomous 360-degree obstacle avoidance algorithms"],
+                            "weaknesses": ["Extremely high price points ($8,000 - $25,000 / ₹6.5 Lakhs - ₹20 Lakhs)", "Closed proprietary software ecosystem"],
+                            "missing_opportunities": ["Affordable localized commercial drones with open AI developer SDKs", "Zero-configuration DGCA Type-Certified Make-in-India hardware"],
                             "pricing_model": "High-end enterprise hardware sales ($10,000+ unit price)"
                         },
                         {
                             "name": "IdeaForge (Netra / Switch UAV) & Garuda Aerospace",
                             "category": "Indian Enterprise Drone Manufacturers",
-                            "strengths": [
-                                "Strong local DGCA compliance and government/defense contract priority",
-                                "High altitude endurance flight capabilities"
-                            ],
-                            "weaknesses": [
-                                "Slower software update cycles & limited consumer/SMB product lines",
-                                "High unit costs for non-defense commercial buyers"
-                            ],
-                            "missing_opportunities": [
-                                "Autonomous edge-AI computer vision for real-time industrial inspection",
-                                "Pay-as-you-fly Drone-as-a-Service (DaaS) cloud model"
-                            ],
+                            "strengths": ["Strong local DGCA compliance and government contract priority", "High altitude endurance flight capabilities"],
+                            "weaknesses": ["Slower software update cycles & limited consumer/SMB product lines"],
+                            "missing_opportunities": ["Autonomous edge-AI computer vision for real-time industrial inspection", "Pay-as-you-fly Drone-as-a-Service (DaaS) cloud model"],
                             "pricing_model": "Government tenders & B2B enterprise contracts (₹15 Lakhs+)"
                         }
                     ],
-                    "market_gaps": [
-                        "Lack of an affordable commercial drone combining DGCA compliance, open edge-AI vision payloads, and a subscription-based Drone-as-a-Service (DaaS) model."
-                    ],
+                    "market_gaps": ["Lack of an affordable commercial drone combining DGCA compliance, open edge-AI vision payloads, and a subscription-based Drone-as-a-Service (DaaS) model."],
                     "defensability_strategy": "Patented on-board edge AI computer vision module, Make-in-India DGCA Type Certification, and proprietary BVLOS mesh telemetry protocol."
                 }
 
@@ -85,45 +64,50 @@ class CompetitorAgent:
                         {
                             "name": "Licious & FreshToHome",
                             "category": "Direct D2C Meat & Seafood Leaders",
-                            "strengths": [
-                                "Strong consumer brand equity & high urban market penetration",
-                                "Established processing hubs & cold-chain distribution"
-                            ],
-                            "weaknesses": [
-                                "High retail price markups (30-40% premium over local fish docks)",
-                                "Frequent stockouts of specific fresh coastal catch varieties"
-                            ],
-                            "missing_opportunities": [
-                                "Direct dockside live-tracking showing exact port of origin & harvest time",
-                                "Hyper-local 90-minute fresh delivery with IoT temperature guarantee"
-                            ],
+                            "strengths": ["Strong consumer brand equity & high urban market penetration", "Established processing hubs & cold-chain distribution"],
+                            "weaknesses": ["High retail price markups (30-40% premium over local fish docks)", "Frequent stockouts of specific fresh coastal catch varieties"],
+                            "missing_opportunities": ["Direct dockside live-tracking showing exact port of origin & harvest time", "Hyper-local 90-minute fresh delivery with IoT temperature guarantee"],
                             "pricing_model": "D2C Retail markup pricing (₹350 - ₹950 per kg)"
                         },
                         {
                             "name": "Captain Fresh & Local Coastal Wet Markets",
                             "category": "B2B Wholesale & Traditional Docks",
-                            "strengths": [
-                                "Deep relationships with coastal fishing boat operators",
-                                "Lowest wholesale cost per kilogram at dockside"
-                            ],
-                            "weaknesses": [
-                                "Poor hygiene, unhygienic ice preservation, and formalin risk in wet markets",
-                                "Complete lack of consumer-facing digital ordering & cold-chain tracking"
-                            ],
-                            "missing_opportunities": [
-                                "100% chemical-free certified fresh fish delivery to households",
-                                "Pre-cleaned, customized fish cutting & portioning options"
-                            ],
+                            "strengths": ["Deep relationships with coastal fishing boat operators", "Lowest wholesale cost per kilogram at dockside"],
+                            "weaknesses": ["Poor hygiene, unhygienic ice preservation, and formalin risk in wet markets", "Complete lack of consumer-facing digital ordering & cold-chain tracking"],
+                            "missing_opportunities": ["100% chemical-free certified fresh fish delivery to households", "Pre-cleaned, customized fish cutting & portioning options"],
                             "pricing_model": "Wholesale dockside spot pricing + Cash sales"
                         }
                     ],
-                    "market_gaps": [
-                        "Lack of a direct dock-to-doorstep delivery platform guaranteeing 100% formalin-free freshness at 25% lower prices than legacy D2C brands."
-                    ],
+                    "market_gaps": ["Lack of a direct dock-to-doorstep delivery platform guaranteeing 100% formalin-free freshness at 25% lower prices than legacy D2C brands."],
                     "defensability_strategy": "Direct exclusive dockside procurement contracts, proprietary IoT temperature-monitored cold-chain transit boxes, and 90-minute fresh delivery SLA."
                 }
 
-            # 3. E-Commerce & Online Shopping Apps
+            # 3. Medical / Healthcare / Medical Scribe
+            elif any(k in idea_lower for k in ["health", "medical", "doctor", "clinic", "patient", "diag", "scribe"]):
+                return {
+                    "competitors": [
+                        {
+                            "name": "Epic Systems & Cerner (Oracle Health)",
+                            "category": "Legacy Enterprise EHR Incumbents",
+                            "strengths": ["Deep hospital system integrations", "Comprehensive medical record compliance"],
+                            "weaknesses": ["Outdated clunky user interfaces", "Forces doctors to spend 3+ hours daily on manual typing", "Extremely high implementation costs"],
+                            "missing_opportunities": ["Ambient ambient voice AI scribing", "Instant mobile-first doctor workflow"],
+                            "pricing_model": "Multi-million dollar hospital enterprise licenses"
+                        },
+                        {
+                            "name": "Practo & Nuance DAX (Microsoft)",
+                            "category": "Direct Medical Tech & Dictation Platforms",
+                            "strengths": ["High brand trust among independent clinics", "Strong voice transcription engine"],
+                            "weaknesses": ["High per-physician monthly fees ($300-$500/month)", "Requires manual dictation review"],
+                            "missing_opportunities": ["Localized ABDM & Ayushman Bharat ID integration for Indian clinics", "Automated prescription drafting"],
+                            "pricing_model": "Per-doctor monthly SaaS subscription ($299/mo / ₹9,999/mo)"
+                        }
+                    ],
+                    "market_gaps": ["Lack of an affordable ambient AI medical scribe that automatically converts doctor-patient spoken conversations into structured EHR notes without manual typing."],
+                    "defensability_strategy": "HIPAA & ABDM compliant medical Llama 3 fine-tuned model, ambient noise cancelling audio pipeline, and 1-click EHR sync."
+                }
+
+            # 4. E-Commerce & Online Shopping Apps
             elif any(k in idea_lower for k in ["shop", "shopping", "ecommerce", "store", "retail", "buy"]):
                 return {
                     "competitors": [
@@ -144,36 +128,59 @@ class CompetitorAgent:
                             "pricing_model": "Logistics fulfillment fees & Banner advertising"
                         }
                     ],
-                    "market_gaps": [
-                        "Gap for an AI-native shopping app combining 3D virtual try-ons, hyper-personalized curation, and zero-fee seller direct checkout."
-                    ],
+                    "market_gaps": ["Gap for an AI-native shopping app combining 3D virtual try-ons, hyper-personalized curation, and zero-fee seller direct checkout."],
                     "defensability_strategy": "Proprietary AI recommendation engine, direct brand integration, and automated 1-click social checkout."
                 }
 
-            # 4. Universal Real Industry Competitors
+            # 5. EV / Mobility / Transportation
+            elif any(k in idea_lower for k in ["ev", "electric", "battery", "charging", "vehicle", "scooter"]):
+                return {
+                    "competitors": [
+                        {
+                            "name": "ChargePoint & Tesla Supercharger Network",
+                            "category": "Global EV Charging Infrastructure Leaders",
+                            "strengths": ["Massive network of installed fast chargers", "High brand recognition"],
+                            "weaknesses": ["Unreliable charger uptime (15%+ offline chargers)", "High hardware installation capex"],
+                            "missing_opportunities": ["Predictive charging station reservation", "Solar-powered battery swap hubs"],
+                            "pricing_model": "Pay-per-kWh & Charging session fees ($0.35/kWh / ₹18/unit)"
+                        },
+                        {
+                            "name": "Ather Grid & Tata Power EZ Charge",
+                            "category": "Indian EV Charging Network Leaders",
+                            "strengths": ["Rapid expansion across major Indian highways & Tier-1 cities", "Seamless mobile app payment"],
+                            "weaknesses": ["Limited charger availability in Tier-2/3 regions", "Slow charging speeds on legacy AC units"],
+                            "missing_opportunities": ["Interoperable battery swapping for 2-wheeler fleets", "UPI auto-debit plug-and-charge"],
+                            "pricing_model": "App subscription & Per-minute charging rates"
+                        }
+                    ],
+                    "market_gaps": ["Lack of a unified, highly reliable charging network featuring 1-click battery swapping and guaranteed 99.9% uptime for commercial EV fleets."],
+                    "defensability_strategy": "Proprietary smart battery management system (BMS), automated charger health telemetry, and exclusive highway site leases."
+                }
+
+            # 6. Universal Clean Real Competitor Synthesizer
             return {
                 "competitors": [
                     {
-                        "name": f"Global Market Incumbents in {title_str}",
+                        "name": f"Traditional Legacy Brands in {title_str}",
                         "category": "Established Market Leaders",
-                        "strengths": ["Global brand recognition", "Extensive distribution channels"],
-                        "weaknesses": ["Slow feature updates", "High pricing for SMBs"],
+                        "strengths": ["High global brand equity", "Established sales channels"],
+                        "weaknesses": ["Slow feature updates", "High enterprise pricing & complex onboarding"],
                         "missing_opportunities": ["Localized pricing (₹ INR)", "AI-driven zero-friction workflows"],
-                        "pricing_model": "Usage-based & Tiered subscription ($29-$99/month)"
+                        "pricing_model": "Enterprise tiered contracts & Usage-based pricing"
                     },
                     {
                         "name": f"Regional Competitors in {title_str}",
-                        "category": "Direct Regional Competitors",
+                        "category": "Direct Regional Alternatives",
                         "strengths": ["Established local presence", "Regulatory compliance"],
                         "weaknesses": ["Outdated user interface", "Manual operations"],
-                        "missing_opportunities": ["Mobile-first automation", "Instant setup"],
+                        "missing_opportunities": ["Instant mobile accessibility", "Zero-friction customer onboarding"],
                         "pricing_model": "Subscription & Commission per transaction"
                     }
                 ],
                 "market_gaps": [
-                    f"Gap for an innovative product combining AI automation, high reliability, and competitive localized pricing for {idea.lower()}."
+                    f"Significant market opportunity for a modernized, AI-driven platform delivering 10x faster execution and competitive localized pricing for {idea.lower()}."
                 ],
-                "defensability_strategy": f"Proprietary AI algorithms, direct API integrations, and strong localized brand positioning."
+                "defensability_strategy": f"Proprietary automation algorithms, direct API & logistics integrations, and strong localized brand positioning."
             }
 
         raw_json = await llm_service.generate_structured_json(

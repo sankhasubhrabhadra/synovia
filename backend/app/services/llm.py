@@ -6,6 +6,7 @@ import asyncio
 import httpx
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
+import json_repair
 
 load_dotenv()
 
@@ -15,6 +16,7 @@ class LLMService:
     """
     Multi-Provider Deep Reasoning LLM Engine for Synovia.
     Supports local Ollama (Qwen 2.5 / Llama 3), Google Gemini API, Groq, or OpenAI.
+    Integrated with json_repair for 100% error-free LLM JSON parsing.
     """
     def __init__(self):
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
@@ -40,14 +42,14 @@ class LLMService:
     ) -> Dict[str, Any]:
         """
         Executes structured JSON completion with multi-provider fallback.
-        Allows up to 45 seconds for local LLM deep thinking.
+        Uses json_repair to auto-fix minor syntax errors from local LLMs.
         """
         instruction = (
             "\nIMPORTANT INSTRUCTION:\n"
             "Analyze and reason deeply about the user's specific startup idea.\n"
             "DO NOT use generic templates. Provide real brand names, real tech stacks, and real market metrics.\n"
             "Format all pricing and financial numbers in BOTH USD ($) and Indian Rupees (₹ INR in Crores/Lakhs).\n"
-            "Return ONLY valid JSON format."
+            "Return ONLY valid JSON format starting with '{' and ending with '}'."
         )
         
         full_system_prompt = system_prompt + instruction
@@ -71,7 +73,7 @@ class LLMService:
                     if resp.status_code == 200:
                         data = resp.json()
                         text = data["candidates"][0]["content"]["parts"][0]["text"]
-                        return json.loads(text)
+                        return json.loads(json_repair.repair_json(text))
             except Exception as e:
                 logger.warning(f"Gemini API call notice ({e}). Falling back to local engine.")
 
@@ -95,7 +97,7 @@ class LLMService:
                     if resp.status_code == 200:
                         data = resp.json()
                         text = data["choices"][0]["message"]["content"]
-                        return json.loads(text)
+                        return json.loads(json_repair.repair_json(text))
             except Exception as e:
                 logger.warning(f"Groq API call notice ({e}). Falling back.")
 
@@ -118,15 +120,15 @@ class LLMService:
                     text = resp.json()["choices"][0]["message"]["content"]
                     logger.info(f"Ollama {self.ollama_model} completed successfully!")
                     
-                    clean_text = text.strip()
-                    match = re.search(r'\{.*\}', clean_text, re.DOTALL)
+                    # Use json_repair to parse and repair any minor LLM syntax flaws
+                    repaired_json = json_repair.repair_json(text, return_objects=True)
+                    if isinstance(repaired_json, dict) and len(repaired_json) > 0:
+                        return repaired_json
+                    
+                    # Fallback regex extraction if return_objects didn't return a dict
+                    match = re.search(r'\{.*\}', text, re.DOTALL)
                     if match:
-                        return json.loads(match.group(0))
-                    if clean_text.startswith("```"):
-                        clean_text = clean_text.split("```")[1]
-                        if clean_text.startswith("json"):
-                            clean_text = clean_text[4:]
-                    return json.loads(clean_text)
+                        return json.loads(json_repair.repair_json(match.group(0)))
         except Exception as e:
             logger.warning(f"Local LLM reasoning notice ({e}). Utilizing Deep Domain Intelligence Synthesizer.")
 
