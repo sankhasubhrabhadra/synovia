@@ -22,18 +22,15 @@ class CompetitorAgent:
         )
         
         user_prompt = (
-            f"Analyze real, existing direct and indirect competitors for: '{idea}'.\n"
-            "CRITICAL INSTRUCTION:\n"
-            "Include REAL company and brand names operating in this exact market sector.\n"
-            "If the idea is a drone: use DJI, Skydio, IdeaForge, Garuda Aerospace.\n"
-            "If the idea is a fish/seafood market: use Licious, FreshToHome, Captain Fresh.\n"
-            "DO NOT give camera companies for drones or food companies for software! Search Context: {search_results}"
+            f"Analyze real, existing direct and indirect competitors operating strictly within the market domain of: '{idea}'.\n"
+            f"Only include real companies and brand names that directly compete in '{idea}'.\n"
+            f"Web Search Results for Context: {search_results}"
         )
 
         def fallback_generator():
             idea_lower = idea.lower()
             words = [w.capitalize() for w in idea.split()[:3]]
-            title_str = " ".join(words) if words else "Incumbent"
+            title_str = " ".join(words) if words else "Market Incumbent"
             
             # 1. Drones & UAV Aerial Vehicles
             if any(k in idea_lower for k in ["drone", "uav", "aerial", "quadcopter", "flight"]):
@@ -76,10 +73,9 @@ class CompetitorAgent:
                         }
                     ],
                     "market_gaps": [
-                        "Lack of an affordable commercial drone combining DGCA compliance, open edge-AI vision payloads, and a subscription-based Drone-as-a-Service (DaaS) model.",
-                        "Existing commercial drones force buyers into $10,000+ upfront capex or rigid closed ecosystems."
+                        "Lack of an affordable commercial drone combining DGCA compliance, open edge-AI vision payloads, and a subscription-based Drone-as-a-Service (DaaS) model."
                     ],
-                    "defensability_strategy": "Patented on-board edge AI computer vision module, Make-in-India DGCA Type Certification, and proprietary BVLOS (Beyond Visual Line of Sight) mesh telemetry protocol."
+                    "defensability_strategy": "Patented on-board edge AI computer vision module, Make-in-India DGCA Type Certification, and proprietary BVLOS mesh telemetry protocol."
                 }
 
             # 2. Fish / Seafood / Fresh Food Market
@@ -95,8 +91,7 @@ class CompetitorAgent:
                             ],
                             "weaknesses": [
                                 "High retail price markups (30-40% premium over local fish docks)",
-                                "Frequent stockouts of specific fresh coastal catch varieties",
-                                "Inconsistent delivery SLAs during peak morning hours"
+                                "Frequent stockouts of specific fresh coastal catch varieties"
                             ],
                             "missing_opportunities": [
                                 "Direct dockside live-tracking showing exact port of origin & harvest time",
@@ -123,63 +118,62 @@ class CompetitorAgent:
                         }
                     ],
                     "market_gaps": [
-                        "Lack of a direct dock-to-doorstep delivery platform guaranteeing 100% formalin-free freshness at 25% lower prices than legacy D2C brands.",
-                        "Consumers are forced to choose between overpriced D2C meats or unhygienic local wet markets."
+                        "Lack of a direct dock-to-doorstep delivery platform guaranteeing 100% formalin-free freshness at 25% lower prices than legacy D2C brands."
                     ],
                     "defensability_strategy": "Direct exclusive dockside procurement contracts, proprietary IoT temperature-monitored cold-chain transit boxes, and 90-minute fresh delivery SLA."
                 }
 
-            # 3. Camera / Photography / Hardware
-            elif any(k in idea_lower for k in ["camera", "cam", "photo", "imaging", "lens", "video"]):
+            # 3. E-Commerce & Online Shopping Apps
+            elif any(k in idea_lower for k in ["shop", "shopping", "ecommerce", "store", "retail", "buy"]):
                 return {
                     "competitors": [
                         {
-                            "name": "GoPro (HERO 12/13) & Insta360 (X4/Ace Pro)",
-                            "category": "Direct Action Cam & 360 Creator Incumbents",
-                            "strengths": ["High global brand equity & rugged waterproof hardware", "Strong 360-degree capture software"],
-                            "weaknesses": ["Slow SD card file transfer to phone", "Frequent thermal overheating in 4K/60FPS mode", "High accessory costs"],
-                            "missing_opportunities": ["Instant 5G/Wi-Fi 6E auto-cloud backup", "Real-time AI voice & gesture auto-framing"],
-                            "pricing_model": "Hardware sales ($399 - $499 / ₹34,999 - ₹44,999)"
+                            "name": "Amazon & Flipkart (Walmart)",
+                            "category": "Direct E-Commerce Market Dominators",
+                            "strengths": ["Massive product catalog", "Established 1-day delivery logistics infrastructure"],
+                            "weaknesses": ["High seller commission fees (15-25%)", "Impersonal discovery & generic search interface"],
+                            "missing_opportunities": ["AI-driven 3D virtual try-ons", "Hyper-personalized social shopping feeds"],
+                            "pricing_model": "Seller marketplace commissions & Ad sponsorship"
                         },
                         {
-                            "name": "DJI (Osmo Action 4/Pocket 3) & Sony (Alpha series)",
-                            "category": "Premium Vlogging & Cinematic Gear",
-                            "strengths": ["Exceptional optical stabilization & 1-inch sensor low-light quality"],
-                            "weaknesses": ["High price points ($500-$1,500+ / ₹45,000-₹1,20,000)", "Fragile mechanical gimbals"],
-                            "missing_opportunities": ["Automated short-form AI video editing (Reels/Shorts ready)", "Affordable D2C pricing"],
-                            "pricing_model": "Retail & E-commerce hardware sales"
+                            "name": "Meesho & AJIO (Reliance)",
+                            "category": "Social Commerce & Value Fashion Competitors",
+                            "strengths": ["Zero-commission seller onboarding", "High Tier-2/3 Indian city user adoption"],
+                            "weaknesses": ["Higher product return rates", "Inconsistent quality control"],
+                            "missing_opportunities": ["Instant 10-minute quick-commerce delivery", "Real-time AI style advisors"],
+                            "pricing_model": "Logistics fulfillment fees & Banner advertising"
                         }
                     ],
                     "market_gaps": [
-                        "Lack of a compact, affordable 4K camera with zero-friction automatic AI cloud editing and instant social media export."
+                        "Gap for an AI-native shopping app combining 3D virtual try-ons, hyper-personalized curation, and zero-fee seller direct checkout."
                     ],
-                    "defensability_strategy": "On-device Qualcomm Vision AI auto-tracking chip, direct-to-cloud automated HLS sync pipeline, and proprietary magnetic mounting accessories."
+                    "defensability_strategy": "Proprietary AI recommendation engine, direct brand integration, and automated 1-click social checkout."
                 }
 
-            # 4. Universal Market-Specific Real Competitors
+            # 4. Universal Real Industry Competitors
             return {
                 "competitors": [
                     {
-                        "name": f"Global Industry Leaders in {title_str}",
-                        "category": "Established Market Incumbents",
-                        "strengths": ["Strong global distribution network", "High legacy brand awareness"],
-                        "weaknesses": ["Slow localized feature deployment", "High enterprise pricing & complex onboarding"],
-                        "missing_opportunities": ["AI-native automated workflows", "Localized regional pricing (₹ INR)"],
-                        "pricing_model": "Enterprise tiered contracts & Usage-based pricing"
+                        "name": f"Global Market Incumbents in {title_str}",
+                        "category": "Established Market Leaders",
+                        "strengths": ["Global brand recognition", "Extensive distribution channels"],
+                        "weaknesses": ["Slow feature updates", "High pricing for SMBs"],
+                        "missing_opportunities": ["Localized pricing (₹ INR)", "AI-driven zero-friction workflows"],
+                        "pricing_model": "Usage-based & Tiered subscription ($29-$99/month)"
                     },
                     {
                         "name": f"Regional Competitors in {title_str}",
-                        "category": "Direct Local Alternatives",
-                        "strengths": ["Familiarity with regional regulations", "Established local sales presence"],
-                        "weaknesses": ["Outdated user interface & manual processes", "Lack of mobile-first automation"],
-                        "missing_opportunities": ["Instant mobile accessibility", "Zero-friction customer onboarding"],
-                        "pricing_model": "Subscription & Transaction commission fees"
+                        "category": "Direct Regional Competitors",
+                        "strengths": ["Established local presence", "Regulatory compliance"],
+                        "weaknesses": ["Outdated user interface", "Manual operations"],
+                        "missing_opportunities": ["Mobile-first automation", "Instant setup"],
+                        "pricing_model": "Subscription & Commission per transaction"
                     }
                 ],
                 "market_gaps": [
-                    f"Gap for an innovative product combining zero-friction AI automation, mobile-first user experience, and competitive localized pricing for {idea.lower()}."
+                    f"Gap for an innovative product combining AI automation, high reliability, and competitive localized pricing for {idea.lower()}."
                 ],
-                "defensability_strategy": f"Proprietary automation algorithms, direct API & logistics integrations, and strong localized brand positioning."
+                "defensability_strategy": f"Proprietary AI algorithms, direct API integrations, and strong localized brand positioning."
             }
 
         raw_json = await llm_service.generate_structured_json(
