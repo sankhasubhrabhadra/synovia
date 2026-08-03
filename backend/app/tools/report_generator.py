@@ -3,7 +3,7 @@ import io
 import logging
 from typing import Dict, Any
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
@@ -14,6 +14,7 @@ class PDFReportGenerator:
     def generate_startup_blueprint_pdf(blueprint: Dict[str, Any]) -> bytes:
         """
         Generates a sleek, executive investor-ready PDF blueprint document.
+        Handles nested dictionaries and string formats cleanly.
         """
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -34,8 +35,8 @@ class PDFReportGenerator:
             "DocTitle",
             parent=styles["Normal"],
             fontName="Helvetica-Bold",
-            fontSize=24,
-            leading=28,
+            fontSize=22,
+            leading=26,
             textColor=PRIMARY,
             spaceAfter=4
         )
@@ -43,21 +44,21 @@ class PDFReportGenerator:
         tagline_style = ParagraphStyle(
             "DocTagline",
             parent=styles["Normal"],
-            fontName="Helvetica",
-            fontSize=11,
-            leading=14,
+            fontName="Helvetica-Bold",
+            fontSize=10,
+            leading=13,
             textColor=ACCENT,
-            spaceAfter=15
+            spaceAfter=10
         )
         
         h1_style = ParagraphStyle(
             "Heading1_Custom",
             parent=styles["Normal"],
             fontName="Helvetica-Bold",
-            fontSize=15,
-            leading=18,
+            fontSize=14,
+            leading=17,
             textColor=ACCENT,
-            spaceBefore=14,
+            spaceBefore=12,
             spaceAfter=6
         )
 
@@ -65,10 +66,10 @@ class PDFReportGenerator:
             "Heading2_Custom",
             parent=styles["Normal"],
             fontName="Helvetica-Bold",
-            fontSize=12,
-            leading=15,
+            fontSize=11,
+            leading=14,
             textColor=PRIMARY,
-            spaceBefore=8,
+            spaceBefore=6,
             spaceAfter=4
         )
 
@@ -76,73 +77,77 @@ class PDFReportGenerator:
             "Body_Custom",
             parent=styles["Normal"],
             fontName="Helvetica",
-            fontSize=10,
-            leading=14,
+            fontSize=9.5,
+            leading=13.5,
             textColor=SECONDARY,
-            spaceAfter=6
+            spaceAfter=5
         )
 
         bullet_style = ParagraphStyle(
             "Bullet_Custom",
             parent=styles["Normal"],
             fontName="Helvetica",
-            fontSize=9.5,
-            leading=13,
+            fontSize=9,
+            leading=12.5,
             textColor=SECONDARY,
-            leftIndent=12,
-            firstLineIndent=-8,
+            leftIndent=10,
             spaceAfter=3
         )
 
         elements = []
 
+        # Clean string helper
+        def clean(val: str) -> str:
+            if not val:
+                return ""
+            return str(val).replace("■", "").strip()
+
         # Title & Banner
-        idea_title = blueprint.get("idea", "Startup Blueprint")
-        elements.append(Paragraph("SYNOVIA // STARTUP BLUEPRINT", tagline_style))
+        idea_title = clean(blueprint.get("idea", "Startup Blueprint")).title()
+        elements.append(Paragraph("SYNOVIA // AUTONOMOUS STARTUP BLUEPRINT", tagline_style))
         elements.append(Paragraph(f"Blueprint: {idea_title}", title_style))
-        elements.append(Paragraph(f"<b>Generated:</b> {blueprint.get('created_at', '2026')}", body_style))
-        elements.append(HRFlowable(width="100%", thickness=1.5, color=ACCENT, spaceBefore=10, spaceAfter=15))
+        elements.append(Paragraph(f"<b>Generated:</b> {blueprint.get('created_at', '2026-08-03')} | <b>Target Market:</b> {blueprint.get('target_market', 'Global')}", body_style))
+        elements.append(HRFlowable(width="100%", thickness=1.5, color=ACCENT, spaceBefore=8, spaceAfter=12))
 
         # 1. Executive Summary
-        exec_summary = blueprint.get("executive_summary", "")
+        exec_summary = clean(blueprint.get("executive_summary", ""))
         if exec_summary:
             elements.append(Paragraph("1. Executive Summary", h1_style))
             elements.append(Paragraph(exec_summary, body_style))
-            elements.append(Spacer(1, 10))
+            elements.append(Spacer(1, 8))
 
-        # 2. Market Research
+        # 2. Market Analysis
         research = blueprint.get("research", {})
         if research:
             elements.append(Paragraph("2. Market Analysis & Target Audience", h1_style))
-            elements.append(Paragraph(f"<b>Industry:</b> {research.get('industry', 'N/A')}", body_style))
+            elements.append(Paragraph(f"<b>Industry Focus:</b> {clean(research.get('industry', 'Technology'))}", body_style))
             
-            # Market Size Table
             m_size = research.get("market_size", {})
             m_data = [
-                [Paragraph("<b>TAM (Total Addressable Market)</b>", body_style), Paragraph(m_size.get("tam", ""), body_style)],
-                [Paragraph("<b>SAM (Serviceable Addressable Market)</b>", body_style), Paragraph(m_size.get("sam", ""), body_style)],
-                [Paragraph("<b>SOM (Serviceable Obtainable Market)</b>", body_style), Paragraph(m_size.get("som", ""), body_style)],
+                [Paragraph("<b>TAM (Total Addressable Market)</b>", body_style), Paragraph(clean(m_size.get("tam", "Multi-Billion Dollar Opportunity")), body_style)],
+                [Paragraph("<b>SAM (Serviceable Addressable Market)</b>", body_style), Paragraph(clean(m_size.get("sam", "High-growth Target Segment")), body_style)],
+                [Paragraph("<b>SOM (Serviceable Obtainable Market)</b>", body_style), Paragraph(clean(m_size.get("som", "Year 1-2 Achievable Target")), body_style)],
             ]
-            t_market = Table(m_data, colWidths=[200, 330])
+            t_market = Table(m_data, colWidths=[190, 340])
             t_market.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,-1), LIGHT_BG),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
-                ('PADDING', (0,0), (-1,-1), 6),
+                ('PADDING', (0,0), (-1,-1), 5),
             ]))
             elements.append(t_market)
-            elements.append(Spacer(1, 8))
+            elements.append(Spacer(1, 6))
 
             pains = research.get("customer_pain_points", [])
             if pains:
-                elements.append(Paragraph("<b>Customer Pain Points:</b>", h2_style))
+                elements.append(Paragraph("<b>Key Customer Pain Points:</b>", h2_style))
                 for pain in pains:
-                    elements.append(Paragraph(f"• {pain}", bullet_style))
-            elements.append(Spacer(1, 10))
+                    elements.append(Paragraph(f"• {clean(pain)}", bullet_style))
+            elements.append(Spacer(1, 8))
 
         # 3. Competitor Analysis
         competitor = blueprint.get("competitor", {})
         if competitor:
-            elements.append(Paragraph("3. Competitor Analysis & Gaps", h1_style))
+            elements.append(Paragraph("3. Competitor Intelligence & Market Gaps", h1_style))
             comps = competitor.get("competitors", [])
             if comps:
                 comp_table_data = [[
@@ -151,93 +156,133 @@ class PDFReportGenerator:
                     Paragraph("<b>Weaknesses / Gaps</b>", h2_style)
                 ]]
                 for c in comps:
+                    comp_name = clean(c.get('name', 'Market Player'))
+                    comp_cat = clean(c.get('category', 'Competitor'))
+                    strengths_list = [f"• {clean(s)}" for s in c.get('strengths', [])]
+                    weaknesses_list = [f"• {clean(w)}" for w in c.get('weaknesses', [])]
+                    
                     comp_table_data.append([
-                        Paragraph(f"<b>{c.get('name')}</b><br/><font size=8 color='#64748B'>{c.get('category')}</font>", body_style),
-                        Paragraph("<br/>".join([f"• {s}" for s in c.get('strengths', [])]), bullet_style),
-                        Paragraph("<br/>".join([f"• {w}" for w in c.get('weaknesses', [])]), bullet_style),
+                        Paragraph(f"<b>{comp_name}</b><br/><font size=8 color='#64748B'>{comp_cat}</font>", body_style),
+                        Paragraph("<br/>".join(strengths_list) if strengths_list else "Established market brand", bullet_style),
+                        Paragraph("<br/>".join(weaknesses_list) if weaknesses_list else "High pricing & legacy Tech", bullet_style),
                     ])
-                t_comp = Table(comp_table_data, colWidths=[120, 205, 205])
+                t_comp = Table(comp_table_data, colWidths=[125, 202, 203])
                 t_comp.setStyle(TableStyle([
                     ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#E2E8F0")),
                     ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
                     ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                    ('PADDING', (0,0), (-1,-1), 6),
+                    ('PADDING', (0,0), (-1,-1), 5),
                 ]))
                 elements.append(t_comp)
-            elements.append(Spacer(1, 10))
+            
+            moat = clean(competitor.get("defensability_strategy", ""))
+            if moat:
+                elements.append(Paragraph(f"<b>Defensability & Moat Strategy:</b> {moat}", body_style))
+            elements.append(Spacer(1, 8))
 
         # 4. Product Features
         product = blueprint.get("product", {})
         if product:
-            elements.append(Paragraph("4. Product Specification & MVP Features", h1_style))
+            elements.append(Paragraph("4. Product Specification & Core MVP Features", h1_style))
             mvp_feats = product.get("mvp_features", [])
             if mvp_feats:
-                elements.append(Paragraph("<b>Core MVP Features:</b>", h2_style))
                 for f in mvp_feats:
-                    name = f.get("name") if isinstance(f, dict) else f
-                    desc = f.get("description", "") if isinstance(f, dict) else ""
-                    elements.append(Paragraph(f"• <b>{name}:</b> {desc}", bullet_style))
-            elements.append(Spacer(1, 10))
+                    if isinstance(f, dict):
+                        fname = clean(f.get("name", "Feature"))
+                        fdesc = clean(f.get("description", ""))
+                    else:
+                        fname = clean(str(f))
+                        fdesc = ""
+                    elements.append(Paragraph(f"• <b>{fname}:</b> {fdesc}", bullet_style))
+            elements.append(Spacer(1, 8))
 
-        # 5. Technical Architecture
+        # 5. Technical Architecture (Robust parsing for dict or string)
         architect = blueprint.get("architect", {})
         if architect:
-            elements.append(Paragraph("5. Technical Architecture", h1_style))
-            tech_layers = [
-                ("Frontend", architect.get("frontend", {})),
-                ("Backend", architect.get("backend", {})),
-                ("Database", architect.get("database", {})),
-                ("Authentication", architect.get("authentication", {})),
-                ("AI Infrastructure", architect.get("ai_apis", {})),
-                ("Deployment", architect.get("deployment", {})),
-            ]
-            tech_data = [[Paragraph("<b>Layer</b>", h2_style), Paragraph("<b>Technology & Rationale</b>", h2_style)]]
-            for layer_name, layer_obj in tech_layers:
-                tech_val = layer_obj.get("technology", "N/A") if isinstance(layer_obj, dict) else str(layer_obj)
-                rationale = layer_obj.get("rationale", "") if isinstance(layer_obj, dict) else ""
+            elements.append(Paragraph("5. Technical Architecture & Tech Stack", h1_style))
+            
+            def parse_layer(layer_data: Any, default_tech: str, default_rat: str) -> tuple[str, str]:
+                if isinstance(layer_data, dict):
+                    tech = clean(layer_data.get("technology", layer_data.get("name", default_tech)))
+                    rat = clean(layer_data.get("rationale", layer_data.get("description", default_rat)))
+                    return tech or default_tech, rat or default_rat
+                elif isinstance(layer_data, str) and layer_data.strip():
+                    return clean(layer_data), default_rat
+                return default_tech, default_rat
+
+            # Smart defaults if physical product or web stack
+            idea_lower = blueprint.get("idea", "").lower()
+            is_hardware = any(k in idea_lower for k in ["backpack", "bag", "hardware", "shoe", "bottle", "watch", "wearable"])
+            
+            if is_hardware:
+                tech_layers = [
+                    ("Frontend / Mobile App", parse_layer(architect.get("frontend"), "React Native / Next.js 15 Web Portal", "Mobile companion app for IoT tracking & D2C Storefront")),
+                    ("Backend Services", parse_layer(architect.get("backend"), "FastAPI (Python) + Node.js Microservices", "Order management, IoT Telemetry API, & Payment Webhooks")),
+                    ("Database & Storage", parse_layer(architect.get("database"), "PostgreSQL + Redis Cache", "ACID transactional integrity for orders & fast session caching")),
+                    ("Authentication & Security", parse_layer(architect.get("authentication"), "JWT + OAuth 2.0 (Google/Apple Sign-In)", "Secure user auth and device pairing encryption")),
+                    ("Hardware / AI Specs", parse_layer(architect.get("ai_apis"), "Nordic BLE / Biometric Fingerprint Sensor", "Low-power Bluetooth 5.2 telemetry & TSA biometric locking")),
+                    ("Production Hosting", parse_layer(architect.get("deployment"), "Vercel (Web) + AWS / Railway (Backend)", "Global CDN edge distribution with auto-scaling container API"))
+                ]
+            else:
+                tech_layers = [
+                    ("Frontend", parse_layer(architect.get("frontend"), "Next.js 15 + TypeScript + Tailwind CSS", "Server-side rendering & responsive UI")),
+                    ("Backend API", parse_layer(architect.get("backend"), "FastAPI (Python 3.12) + Async SQLAlchemy", "High-throughput async IO & microservices")),
+                    ("Database", parse_layer(architect.get("database"), "PostgreSQL + Redis Cache", "Relational data integrity & fast caching")),
+                    ("Authentication", parse_layer(architect.get("authentication"), "Clerk / NextAuth.js + JWT", "Role-based access control")),
+                    ("AI Infrastructure", parse_layer(architect.get("ai_apis"), "OpenAI GPT-4o / Gemini 1.5 Flash API", "Structured output extraction & natural language processing")),
+                    ("Deployment / Cloud", parse_layer(architect.get("deployment"), "Vercel (Frontend) + Render / AWS (Backend)", "Global Edge deployment with automated CI/CD"))
+                ]
+
+            tech_data = [[Paragraph("<b>Layer</b>", h2_style), Paragraph("<b>Technology & Implementation Rationale</b>", h2_style)]]
+            for layer_name, (tech_val, rationale) in tech_layers:
                 tech_data.append([
                     Paragraph(f"<b>{layer_name}</b>", body_style),
-                    Paragraph(f"<b>{tech_val}</b> - {rationale}", body_style)
+                    Paragraph(f"<b>{tech_val}</b><br/><font size=8.5 color='#475569'>{rationale}</font>", body_style)
                 ])
+            
             t_tech = Table(tech_data, colWidths=[130, 400])
             t_tech.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#E2E8F0")),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
                 ('PADDING', (0,0), (-1,-1), 5),
             ]))
             elements.append(t_tech)
-            elements.append(Spacer(1, 10))
+            elements.append(Spacer(1, 8))
 
         # 6. Execution Roadmap
         roadmap = blueprint.get("roadmap", {})
         if roadmap:
-            elements.append(Paragraph("6. 4-Week Execution Roadmap", h1_style))
+            elements.append(Paragraph("6. 4-Week Agile Execution Roadmap", h1_style))
             schedule = roadmap.get("schedule", [])
             for wk in schedule:
-                title = wk.get("title", f"Week {wk.get('week')}")
-                goals = wk.get("goals", "")
+                title = clean(wk.get("title", f"Week {wk.get('week')}"))
+                goals = clean(wk.get("goals", ""))
                 elements.append(Paragraph(f"<b>Week {wk.get('week')}: {title}</b>", h2_style))
                 if goals:
                     elements.append(Paragraph(f"<i>Focus:</i> {goals}", body_style))
                 for deliv in wk.get("deliverables", []):
-                    elements.append(Paragraph(f"• {deliv}", bullet_style))
-            elements.append(Spacer(1, 10))
+                    elements.append(Paragraph(f"• {clean(deliv)}", bullet_style))
+            elements.append(Spacer(1, 8))
 
         # 7. Pitch Deck & Monetization
         pitch = blueprint.get("pitch", {})
         if pitch:
-            elements.append(Paragraph("7. Investor Pitch & Monetization", h1_style))
-            elements.append(Paragraph(f"<b>Unique Value Proposition:</b> {pitch.get('usp', '')}", body_style))
-            elements.append(Paragraph(f"<b>Business Model:</b> {pitch.get('business_model', '')}", body_style))
+            elements.append(Paragraph("7. Investor Pitch & Business Monetization", h1_style))
+            elements.append(Paragraph(f"<b>Unique Value Proposition:</b> {clean(pitch.get('usp', ''))}", body_style))
+            elements.append(Paragraph(f"<b>Business Model:</b> {clean(pitch.get('business_model', ''))}", body_style))
+            
             revs = pitch.get("revenue_streams", [])
             if revs:
-                elements.append(Paragraph("<b>Revenue Streams:</b>", h2_style))
+                elements.append(Paragraph("<b>Monetization & Revenue Streams:</b>", h2_style))
                 for r in revs:
-                    elements.append(Paragraph(f"• {r}", bullet_style))
-            elements.append(Spacer(1, 8))
+                    elements.append(Paragraph(f"• {clean(r)}", bullet_style))
+            elements.append(Spacer(1, 6))
 
-            elements.append(Paragraph("<b>60-Second Elevator Pitch:</b>", h2_style))
-            elements.append(Paragraph(f"<i>\"{pitch.get('hackathon_pitch', '')}\"</i>", body_style))
+            pitch_script = clean(pitch.get('hackathon_pitch', ''))
+            if pitch_script:
+                elements.append(Paragraph("<b>60-Second Investor Elevator Pitch:</b>", h2_style))
+                elements.append(Paragraph(f"<i>\"{pitch_script}\"</i>", body_style))
 
         doc.build(elements)
         buffer.seek(0)
