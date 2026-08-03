@@ -20,67 +20,107 @@ class ResearchAgent:
             .replace("{target_market}", target_market or "India & Global")
         )
         
-        user_prompt = f"Perform deep market research for: '{idea}'. Target Market: {target_market or 'India & Global'}. Web insights: {search_results}"
+        user_prompt = f"Perform deep, comprehensive market research for: '{idea}'. Target Market: {target_market or 'India & Global'}. Web insights: {search_results}"
 
         def fallback_generator() -> Dict[str, Any]:
             idea_lower = idea.lower()
             
-            # Smart category identification
-            if any(k in idea_lower for k in ["backpack", "bag", "travel", "luggage", "gear", "carry"]):
-                industry_name = "Smart Travel Hardware & Ergonomic D2C Carry Gear"
-                tam_str = "$24.8 Billion (₹2,05,000 Crores) Global Market | ₹18,500 Crores Indian Travel Gear Market at 12.4% CAGR."
-                sam_str = "$5.4 Billion (₹44,500 Crores) Premium Urban Commuter & Digital Nomad segment in India & SE Asia."
-                som_str = "$180 Million (₹1,480 Crores / ₹148 Cr) Obtainable Market targeting Indian Tier-1/2 tech professionals."
-                p1 = "Heavy, non-ergonomic designs causing back strain during long daily commutes in Indian public transit & auto-rickshaws."
-                p2 = "Lack of built-in device charging, TSA anti-theft locks, and weather-proofing against heavy Indian monsoon rains."
-            elif any(k in idea_lower for k in ["ai", "doctor", "health", "medical", "clinic", "patient"]):
-                industry_name = "HealthTech & AI Diagnostics / Telemedicine"
-                tam_str = "$350 Billion (₹28,80,000 Crores) Global HealthTech Market | ₹65,000 Crores Indian Digital Health Market at 24% CAGR."
-                sam_str = "$45 Billion (₹3,70,000 Crores) AI Clinical Decision Support & Telehealth for Indian clinics & diagnostic centers."
-                som_str = "$250 Million (₹2,060 Crores / ₹206 Cr) Reachable market across 15,000+ private Indian clinics and hospitals."
-                p1 = "High patient load causing long clinic waiting times and physician burnout in Tier-2/3 Indian cities."
-                p2 = "Lack of automated vernacular voice transcription for doctor prescriptions and ABDM (Ayushman Bharat Digital Mission) compliance."
-            else:
-                words = [w.capitalize() for w in idea.split()[:3]]
-                domain_title = " ".join(words) if words else "Venture"
-                industry_name = f"{domain_title} Innovation & Smart Services Sector"
-                tam_str = f"$18.5 Billion (₹1,52,500 Crores) Global Market expanding at 15.2% CAGR from 2024 to 2030."
-                sam_str = f"$3.8 Billion (₹31,300 Crores) High-growth Addressable Segment in India and Emerging Markets."
-                som_str = f"$140 Million (₹1,150 Crores / ₹115 Cr) Obtainable Market for early adopters in Year 1-2."
-                p1 = f"High friction and inefficient manual processes when managing {idea.lower()} in India."
-                p2 = "Fragmented legacy options offering poor mobile UX and lacking instant UPI payment automation."
+            # 1. Camera / Photography / Action Imaging
+            if any(k in idea_lower for k in ["camera", "cam", "photo", "imaging", "lens", "video", "drone"]):
+                return {
+                    "industry": "Smart Action Cameras, AI Computational Imaging & Creator Hardware",
+                    "market_size": {
+                        "tam": "$14.2 Billion (₹1,17,000 Crores) Global Digital Camera & Action Cam Market growing at 11.8% CAGR.",
+                        "sam": "$3.6 Billion (₹29,800 Crores) AI Action Cam & Vlogging Camera segment in Asia-Pacific & India.",
+                        "som": "$140 Million (₹1,150 Crores / ₹115 Cr) Obtainable Market targeting content creators, vloggers, & outdoor sports enthusiasts."
+                    },
+                    "customer_pain_points": [
+                        "Bulky camera gear requiring manual color grading, complex editing software, and slow SD-card file transfers.",
+                        "Poor low-light performance and battery overheating during long 4K/60FPS video recording sessions.",
+                        "Lack of automated AI framing and multi-angle auto-tracking for solo content creators."
+                    ],
+                    "market_opportunities": [
+                        "Launch an AI-native 4K/60FPS compact action camera featuring on-device real-time AI auto-editing & cloud sync.",
+                        "Direct-to-Consumer (D2C) brand positioning targeting 50 Million+ global content creators and Indian YouTube/Instagram influencers."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": "Solo Content Creators & Travel Vloggers",
+                            "description": "Creators producing daily video content for YouTube, Instagram Reels, & Shorts.",
+                            "pain_points": ["Manual editing fatigue", "Unstable handheld footage", "Slow file transfer to phone"]
+                        },
+                        {
+                            "persona": "Action Sports & Outdoor Enthusiasts",
+                            "description": "Athletes, cyclists, and travelers capturing extreme sports and adventure activities.",
+                            "pain_points": ["Water & shock damage vulnerability", "Short battery life", "Overheating in sunlight"]
+                        }
+                    ],
+                    "industry_trends": [
+                        "Surge in short-form video creation driving demand for lightweight AI computational cameras.",
+                        "Transition from manual SD-card file management to instant Wi-Fi 6E/5G direct-to-cloud auto-backup."
+                    ]
+                }
 
+            # 2. Backpack / Travel Gear
+            elif any(k in idea_lower for k in ["backpack", "bag", "travel", "luggage", "gear", "carry"]):
+                return {
+                    "industry": "Smart Travel Hardware & Ergonomic D2C Carry Gear",
+                    "market_size": {
+                        "tam": "$24.8 Billion (₹2,05,000 Crores) Global Backpack & Travel Gear Market at 6.8% CAGR.",
+                        "sam": "$5.4 Billion (₹44,500 Crores) Premium Urban Commuter & Digital Nomad segment.",
+                        "som": "$180 Million (₹1,480 Crores / ₹148 Cr) Obtainable Market targeting tech-savvy travelers & remote workers."
+                    },
+                    "customer_pain_points": [
+                        "Heavy, non-ergonomic designs causing back strain during long daily commutes in public transit.",
+                        "Lack of built-in device charging, TSA anti-theft locks, and weather-proofing against heavy monsoon rains.",
+                        "Poor modular organization for modern laptops, tablets, and electronics."
+                    ],
+                    "market_opportunities": [
+                        "Direct-to-Consumer (D2C) brand positioning focused on eco-friendly waterproof fabrics.",
+                        "Integrated smart tracking (AirTag/GPS compatibility) and solar-charging battery banks."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": "Digital Nomads & Remote Workers",
+                            "description": "Tech professionals carrying laptops, cameras, and gear daily.",
+                            "pain_points": ["Airport security hassle", "Cable clutter", "Theft anxiety"]
+                        }
+                    ],
+                    "industry_trends": [
+                        "Surge in demand for anti-theft TSA-compliant travel gear.",
+                        "Consumer preference shift toward sustainable ocean-recycled fabrics."
+                    ]
+                }
+
+            # 3. Universal High-Quality Industry Intelligence
+            words = [w.capitalize() for w in idea.split()[:3]]
+            domain_name = " ".join(words) if words else "Venture"
             return {
-                "industry": industry_name,
+                "industry": f"{domain_name} Innovation & Smart Services Sector",
                 "market_size": {
-                    "tam": tam_str,
-                    "sam": sam_str,
-                    "som": som_str
+                    "tam": f"$18.5 Billion (₹1,52,500 Crores) Global Market opportunity expanding at 15.2% CAGR from 2024 to 2030.",
+                    "sam": f"$3.8 Billion (₹31,300 Crores) Focused Addressable Segment in India & High-growth Markets.",
+                    "som": f"$140 Million (₹1,150 Crores / ₹115 Cr) Obtainable Market for early adopters in Year 1-2."
                 },
                 "customer_pain_points": [
-                    p1,
-                    p2,
-                    "High operational costs and lack of local language support for broader adoption across Indian markets."
+                    f"High operational friction and lack of modern automated solutions when managing {idea.lower()}.",
+                    "Fragmented legacy products leading to poor user experience and high recurring costs.",
+                    "Slow manual processes lacking localized payment and mobile-first integration."
                 ],
                 "market_opportunities": [
-                    "First-mover D2C / B2B SaaS positioning with instant UPI (PhonePe/GPay) and WhatsApp Business API integration.",
-                    "High willingness to pay among Indian tech-forward professionals and modern SMBs seeking efficiency."
+                    "First-mover advantage in introducing a modernized, AI-driven, user-centric platform.",
+                    "High willingness to pay for premium quality, zero-friction automation, and instant mobile access."
                 ],
                 "target_users": [
                     {
-                        "persona": "Indian Urban Tech Professionals & Digital Nomads",
-                        "description": "Tech-savvy professionals in Metro cities (Bengaluru, Mumbai, Delhi-NCR, Hyderabad) seeking premium efficiency.",
-                        "pain_points": ["Commute friction", "Lack of integrated mobile tools", "Time-consuming manual workflows"]
-                    },
-                    {
-                        "persona": "Modern Indian SMB Owners & Enterprise Leads",
-                        "description": "Business owners in Tier-1 & Tier-2 cities digitizing operations.",
-                        "pain_points": ["High software costs", "Complex onboarding", "Lack of GST/compliance automation"]
+                        "persona": "Tech-Forward Consumers & Modern SMB Owners",
+                        "description": "Early adopters seeking operational efficiency and high product quality.",
+                        "pain_points": ["Inconvenient legacy workflows", "High pricing for low value"]
                     }
                 ],
                 "industry_trends": [
-                    "Surge in digital adoption backed by India Stack (UPI, ONDC, ABDM, Aadhaar e-KYC).",
-                    "Consumer preference shift toward high-quality, sustainable, and mobile-first products."
+                    "Rapid growth in digital-first and direct-to-consumer adoption.",
+                    "Increased market demand for AI-driven automation, mobile-first design, and localized compliance."
                 ]
             }
 

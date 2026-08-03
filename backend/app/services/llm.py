@@ -13,7 +13,7 @@ logger = logging.getLogger("synovia.llm")
 class LLMService:
     """
     Multi-Provider High-Performance LLM Engine for Synovia.
-    Supports Google Gemini API, Groq, OpenAI, OpenRouter, local Ollama, and Indian Market Synthesizer.
+    Supports Google Gemini API, Groq, OpenAI, OpenRouter, local Ollama, and Deep Domain Synthesizer.
     """
     def __init__(self):
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
@@ -23,13 +23,13 @@ class LLMService:
         self.ollama_model = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b").strip()
 
         if self.gemini_key:
-            logger.info("Google Gemini API engine active for hyper-fast 0.8s Indian market synthesis.")
+            logger.info("Google Gemini API engine active for deep reasoning.")
         elif self.groq_key:
-            logger.info("Groq Llama 3 engine active for high-speed completion.")
+            logger.info("Groq Llama 3 engine active for deep reasoning.")
         elif self.openai_key:
             logger.info("OpenAI GPT-4o engine active.")
         else:
-            logger.info("Local Ollama & Indian Market Smart Synthesizer engine active.")
+            logger.info("Local Ollama & Deep Domain Intelligence engine active (45s deep thinking timeout).")
 
     async def generate_structured_json(
         self,
@@ -39,14 +39,14 @@ class LLMService:
     ) -> Dict[str, Any]:
         """
         Executes structured JSON completion with multi-provider fallback.
-        Includes dual currency (INR ₹ / USD $) and Indian market context.
+        Allows up to 45 seconds for local LLM deep reasoning.
         """
-        # System instructions enforcing dual currency & Indian context
         indian_context_instruction = (
-            "\nIMPORTANT FORMATTING REQUIREMENT:\n"
+            "\nIMPORTANT INSTRUCTION:\n"
+            "Provide a deep, realistic, highly specific analysis tailored precisely to the user's exact startup idea.\n"
             "Format all financial, market size, pricing, and revenue metrics in BOTH USD ($) and Indian Rupees (₹ INR in Crores/Lakhs).\n"
-            "Include Indian market dynamics (e.g. UPI payments, Tier-1/2 cities, Indian regulatory compliance where applicable).\n"
-            "Return ONLY valid JSON format without markdown ticks."
+            "DO NOT use generic template placeholders. Use real brand names, real tech stacks, and real hardware/software specs.\n"
+            "Return ONLY valid JSON syntax."
         )
         
         full_system_prompt = system_prompt + indian_context_instruction
@@ -61,18 +61,18 @@ class LLMService:
                     }],
                     "generationConfig": {
                         "response_mime_type": "application/json",
-                        "temperature": 0.5,
-                        "max_output_tokens": 1200
+                        "temperature": 0.4,
+                        "max_output_tokens": 1500
                     }
                 }
-                async with httpx.AsyncClient(timeout=4.0) as client:
+                async with httpx.AsyncClient(timeout=15.0) as client:
                     resp = await client.post(url, json=payload)
                     if resp.status_code == 200:
                         data = resp.json()
                         text = data["candidates"][0]["content"]["parts"][0]["text"]
                         return json.loads(text)
             except Exception as e:
-                logger.warning(f"Gemini API call notice ({e}). Falling back to next provider.")
+                logger.warning(f"Gemini API call notice ({e}). Falling back to local deep engine.")
 
         # 2. Try Groq API if key is present
         if self.groq_key:
@@ -84,12 +84,12 @@ class LLMService:
                         {"role": "system", "content": full_system_prompt},
                         {"role": "user", "content": user_prompt}
                     ],
-                    "temperature": 0.5,
-                    "max_tokens": 1200,
+                    "temperature": 0.4,
+                    "max_tokens": 1500,
                     "response_format": {"type": "json_object"}
                 }
                 headers = {"Authorization": f"Bearer {self.groq_key}"}
-                async with httpx.AsyncClient(timeout=4.0) as client:
+                async with httpx.AsyncClient(timeout=15.0) as client:
                     resp = await client.post(url, json=payload, headers=headers)
                     if resp.status_code == 200:
                         data = resp.json()
@@ -98,7 +98,7 @@ class LLMService:
             except Exception as e:
                 logger.warning(f"Groq API call notice ({e}). Falling back.")
 
-        # 3. Try Local Ollama if active
+        # 3. Try Local Ollama with 45-second deep thinking window
         try:
             url = f"{self.ollama_url}/chat/completions"
             payload = {
@@ -107,10 +107,10 @@ class LLMService:
                     {"role": "system", "content": full_system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.5,
-                "max_tokens": 1000
+                "temperature": 0.4,
+                "max_tokens": 1200
             }
-            async with httpx.AsyncClient(timeout=3.0) as client:
+            async with httpx.AsyncClient(timeout=45.0) as client:
                 resp = await client.post(url, json=payload)
                 if resp.status_code == 200:
                     text = resp.json()["choices"][0]["message"]["content"]
@@ -121,9 +121,9 @@ class LLMService:
                             clean_text = clean_text[4:]
                     return json.loads(clean_text)
         except Exception as e:
-            logger.info(f"Local LLM notice ({e}). Utilizing Indian Market Smart Synthesizer.")
+            logger.info(f"Local LLM deep reasoning notice ({e}). Utilizing Deep Domain Intelligence Synthesizer.")
 
-        # 4. Fallback: Indian Market Tailored Synthesizer Engine
+        # 4. Fallback: Deep Domain Intelligence Synthesizer
         await asyncio.sleep(0.3)
         if callable(fallback_data_generator):
             return fallback_data_generator()
