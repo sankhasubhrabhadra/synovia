@@ -23,10 +23,12 @@ class PitchAgent:
             .replace("{product_context}", json.dumps(product_data, indent=2))
         )
         
-        user_prompt = f"Generate investor pitch deck components for: '{idea}'. Include dual currency pricing (₹ INR in Crores/Lakhs and $ USD)."
+        user_prompt = f"Generate realistic investor pitch deck components and a compelling 60-Second Elevator Pitch specifically for: '{idea}'. Include dual currency pricing (₹ INR in Crores/Lakhs and $ USD)."
 
         def fallback_generator() -> Dict[str, Any]:
             idea_lower = idea.lower()
+            words = [w.capitalize() for w in idea.split()[:3]]
+            title_str = " ".join(words) if words else "Venture"
             
             # 1. Camera / Video Hardware / Creator Tools
             if any(k in idea_lower for k in ["camera", "cam", "photo", "imaging", "lens", "video", "drone"]):
@@ -44,37 +46,35 @@ class PitchAgent:
                     "hackathon_pitch": f"Hi judges! Creators lose 70% of their day manually offloading SD cards and color grading raw video. Meet our AI Action Camera startup: the ultimate compact camera built for modern vloggers. We combine 4K/60FPS optical quality, on-device AI auto-tracking, and instant cloud sync—allowing creators to post Reels & Shorts seconds after recording!"
                 }
 
-            # 2. Backpack / Travel Hardware
-            elif any(k in idea_lower for k in ["backpack", "bag", "travel", "luggage", "carry"]):
+            # 2. Fresh Food / Seafood / Marketplace
+            elif any(k in idea_lower for k in ["fish", "food", "grocery", "market", "meat", "seafood", "delivery"]):
                 return {
-                    "problem": f"Daily urban commuters and digital nomads suffer from poorly organized, heavy backpacks that lack anti-theft security, monsoon water resistance, and modern device charging.",
-                    "solution": "A next-generation smart modular travel backpack featuring an ergonomic weight-distribution harness, TSA biometric locks, waterproof recycled fabrics, and built-in fast-charging power bank.",
-                    "usp": "Patented ergonomic load-lightening harness paired with TSA biometric fingerprint security at an affordable D2C price point.",
-                    "business_model": "Direct-to-Consumer (D2C) e-commerce e-retail supplemented by corporate tech gifting.",
+                    "problem": "Urban consumers and commercial kitchens struggle to source 100% fresh, formalin-free seafood due to unorganized local wet markets, unpredictable pricing, and severe cold-chain breakdown during transport.",
+                    "solution": f"A direct-from-dock online marketplace for {idea.lower()} connecting verified coastal fishermen directly to urban households and restaurants with temperature-monitored 90-minute delivery.",
+                    "usp": "Direct dockside procurement eliminating 4+ middleman markups, guaranteeing 100% chemical-free freshness with real-time temperature telemetry.",
+                    "business_model": "Marketplace Commission (15-20% take rate per order) + B2B Wholesale Supply Subscriptions for Restaurants & Hotels.",
                     "revenue_streams": [
-                        "Core Smart Backpack: ₹4,999 / $149 unit price (65% gross margin)",
-                        "Modular Accessories: ₹999 - ₹1,499 / $25-$40 (Tech organizers, rain covers)",
-                        "Corporate & Enterprise Custom Gifting: Bulk order volume contracts"
+                        "D2C Order Commission: 18% avg take-rate on consumer deliveries (Avg order value ₹750 / $9.50)",
+                        "B2B Commercial Kitchen Pass: ₹4,999/month ($60/mo) for guaranteed dockside wholesale pricing & priority delivery",
+                        "Exotic & Organic Seafood Line: Premium fresh catch tier yielding 35% gross margins"
                     ],
-                    "future_vision": "Expanding into an ecosystem of smart travel gear dominating the ₹18,500 Crore ($2.2B) Indian travel gear market.",
-                    "hackathon_pitch": f"Hi judges! Millions of commuters drag around heavy, unorganized backpacks every day. Meet our Smart Travel Backpack startup: built for modern remote workers with load reduction and biometric security!"
+                    "future_vision": f"Becoming the leading tech-enabled cold-chain supply network dominating the ₹45,000 Crore ($5.4B) fresh seafood market across India & Southeast Asia.",
+                    "hackathon_pitch": f"Hi judges! Buying fresh, chemical-free fish in modern cities is a nightmare of poor hygiene, hidden markups, and stale stock. Meet our Online Fresh Seafood Marketplace: we connect coastal fishing docks directly to urban doorsteps in 90 minutes. With real-time cold-chain tracking and fair dockside payouts, we deliver 100% freshness at 25% lower prices!"
                 }
 
-            # 3. Universal Real Tech Pitch
-            words = [w.capitalize() for w in idea.split()[:3]]
-            title_str = " ".join(words) if words else "Venture"
+            # 3. Universal Custom Tailored Investor Pitch Deck
             return {
-                "problem": f"Customers face high operational friction, high costs, and lack of localized solutions for '{idea}'.",
-                "solution": f"An innovative modern product engineered to solve customer pain points 10x faster with instant mobile & cloud integration.",
-                "usp": f"Proprietary design innovation delivering unmatched performance, seamless UPI payment integration, and high consumer value for {title_str}.",
-                "business_model": "Direct-to-Customer sales supplemented by recurring subscriptions and B2B enterprise tiering.",
+                "problem": f"Customers and businesses experience severe operational friction, high costs, and fragmented legacy tools when attempting to handle {idea.lower()}.",
+                "solution": f"A modern AI-powered platform for {title_str} engineered to streamline workflows, eliminate manual friction, and deliver 10x faster execution.",
+                "usp": f"Proprietary automation engine combined with localized UPI/card payments and seamless mobile-first user experience for {title_str}.",
+                "business_model": "Freemium SaaS / Tiered Monthly Subscription + Transactional Usage Fees.",
                 "revenue_streams": [
-                    "Starter Plan: ₹999/month ($12/mo) - Core features & basic usage",
-                    "Pro Business Plan: ₹3,999/month ($49/mo) - Advanced AI automation & analytics",
-                    "Enterprise Custom API License & Bulk Distribution"
+                    f"Starter Tier: ₹999/month ($12/mo) - Core features & essential automation for SMBs",
+                    f"Pro Business Tier: ₹3,999/month ($49/mo) - Advanced analytics, AI workflow automation & multi-user team seats",
+                    f"Enterprise Custom License: ₹25,000+/month ($300+/mo) - Dedicated SLA, custom API integration & volume volume tiering"
                 ],
-                "future_vision": "Category leadership expanding across India and emerging global markets.",
-                "hackathon_pitch": f"Hi judges! We are solving a major friction point for '{idea}'. Our innovative approach delivers a 10x better experience at half the cost. Join us in building the future of this category!"
+                "future_vision": f"Achieving category leadership in the emerging multi-billion dollar {idea.lower()} sector across India and global markets within 3 years.",
+                "hackathon_pitch": f"Hi judges! Current solutions for '{idea}' are outdated, overpriced, and frustrating to use. We built {title_str}: a modern, AI-first platform that automates core workflows and cuts execution time by 80%. With seamless mobile access and instant setup, we're building the new standard for this industry!"
             }
 
         raw_json = await llm_service.generate_structured_json(
