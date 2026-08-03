@@ -11,7 +11,7 @@ logger = logging.getLogger("synovia.report_generator")
 
 class PDFReportGenerator:
     @staticmethod
-    def generate_startup_blueprint_pdf(blueprint: Dict[str, Any]) -> bytes:
+    def generate_blueprint_pdf(blueprint: Dict[str, Any]) -> bytes:
         """
         Generates a sleek, executive investor-ready PDF blueprint document.
         Handles nested dictionaries and string formats cleanly.
