@@ -19,6 +19,7 @@ logger = logging.getLogger("synovia.router.projects")
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
 
 @router.post("", response_model=ProjectResponse, status_code=201)
+@router.post("/", response_model=ProjectResponse, status_code=201)
 async def create_project(
     payload: ProjectCreate,
     background_tasks: BackgroundTasks,
@@ -59,6 +60,7 @@ async def create_project(
     )
 
 @router.get("", response_model=List[ProjectResponse])
+@router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     limit: int = Query(200, ge=1, le=1000, description="Max history items to return (supports 100+ work history)."),
     db: AsyncSession = Depends(get_db)
@@ -106,58 +108,46 @@ async def get_project(project_id: str, db: AsyncSession = Depends(get_db)):
         blueprint=project.blueprint_json
     )
 
-@router.delete("/{project_id}", status_code=200)
-async def delete_project(project_id: str, db: AsyncSession = Depends(get_db)):
-    """
-    Deletes a specific project from history.
-    """
-    result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
-    project = result.scalars().first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    await db.delete(project)
-    await db.commit()
-    return {"message": f"Project {project_id} deleted successfully."}
-
-@router.delete("", status_code=200)
+@router.delete("", status_code=204)
+@router.delete("/", status_code=204)
 async def clear_all_projects(db: AsyncSession = Depends(get_db)):
     """
-    Clears all project history.
+    Deletes all projects from history database.
     """
     await db.execute(delete(ProjectDB))
     await db.commit()
-    return {"message": "All project history cleared successfully."}
+    return Response(status_code=204)
 
-@router.get("/{project_id}/stream")
-async def stream_project_execution(project_id: str, db: AsyncSession = Depends(get_db)):
+@router.delete("/{project_id}", status_code=204)
+async def delete_project(project_id: str, db: AsyncSession = Depends(get_db)):
     """
-    Server-Sent Events (SSE) endpoint providing real-time multi-agent execution updates.
+    Deletes a specific project from database history.
     """
     result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
     project = result.scalars().first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
+    await db.delete(project)
+    await db.commit()
+    return Response(status_code=204)
+
+@router.get("/{project_id}/stream")
+async def stream_project_events(project_id: str):
+    """
+    Server-Sent Events (SSE) streaming endpoint for live agent execution progress.
+    """
     async def event_generator():
         queue = asyncio.Queue()
         register_sse_listener(project_id, queue)
-        
         try:
-            # Yield historical logs first for reconnection resilience
-            if project.step_logs_json:
-                for log in project.step_logs_json:
-                    yield f"data: {json.dumps(log)}\n\n"
-            
-            # If already completed or failed, close stream
-            if project.status in [StatusEnum.COMPLETED.value, StatusEnum.FAILED.value]:
-                return
-
             while True:
                 data = await queue.get()
                 yield f"data: {json.dumps(data)}\n\n"
                 if data.get("step") == AgentStepEnum.COMPLETED.value or data.get("status") == StatusEnum.FAILED.value:
                     break
+        except asyncio.CancelledError:
+            pass
         finally:
             unregister_sse_listener(project_id, queue)
 
@@ -166,16 +156,17 @@ async def stream_project_execution(project_id: str, db: AsyncSession = Depends(g
 @router.get("/{project_id}/pdf")
 async def download_project_pdf(project_id: str, db: AsyncSession = Depends(get_db)):
     """
-    Generates and downloads investor-ready PDF startup blueprint.
+    Generates and returns an executive PDF report for the project blueprint.
     """
     result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
     project = result.scalars().first()
     if not project or not project.blueprint_json:
         raise HTTPException(status_code=404, detail="Project blueprint not ready or not found")
 
-    pdf_bytes = PDFReportGenerator.generate_startup_blueprint_pdf(project.blueprint_json)
-    filename = f"synovia-blueprint-{project_id[:8]}.pdf"
-    
+    generator = PDFReportGenerator()
+    pdf_bytes = generator.generate_blueprint_pdf(project.blueprint_json)
+
+    filename = f"Synovia_Blueprint_{project.idea[:15].replace(' ', '_')}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
