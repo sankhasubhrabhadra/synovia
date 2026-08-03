@@ -1,5 +1,5 @@
 // Production Cloudflare Tunnel Backend URL (hardcoded for reliability)
-const PRODUCTION_BACKEND = "https://quite-core-remember-milan.trycloudflare.com";
+const PRODUCTION_BACKEND = "https://ethernet-skirt-suzuki-ind.trycloudflare.com";
 
 export function getApiBaseUrl(): string {
   // Client-side: if running on Vercel (not localhost), always use the production backend
