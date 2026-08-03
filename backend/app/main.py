@@ -31,11 +31,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS for Next.js frontend communication
+# Proper CORS configuration for mobile and web clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[
+        "https://synovia.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "*"
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -45,9 +51,9 @@ app.include_router(projects_router)
 @app.get("/api/health")
 async def health_check():
     return {
-        "status": "healthy",
-        "service": "Synovia Multi-Agent System",
-        "version": "1.0.0"
+        "status": "online",
+        "service": "Synovia AI Startup Studio",
+        "timestamp": os.getenv("ENV", "production")
     }
 
 if __name__ == "__main__":

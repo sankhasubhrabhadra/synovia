@@ -24,6 +24,8 @@ export interface Project {
 
 const defaultHeaders: Record<string, string> = {
   "Content-Type": "application/json",
+  "bypass-tunnel-reminder": "true",
+  "ngrok-skip-browser-warning": "true",
 };
 
 export async function createProject(idea: string, targetMarket?: string, userGoal?: string): Promise<Project> {
