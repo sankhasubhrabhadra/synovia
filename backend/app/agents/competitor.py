@@ -25,7 +25,37 @@ class CompetitorAgent:
 
         def fallback_generator():
             idea_lower = idea.lower()
-            if any(k in idea_lower for k in ["backpack", "bag", "travel", "luggage", "carry"]):
+            
+            # 1. Camera / Action Cam / Video Hardware
+            if any(k in idea_lower for k in ["camera", "cam", "photo", "imaging", "lens", "video", "drone"]):
+                return {
+                    "competitors": [
+                        {
+                            "name": "GoPro (HERO 12/13) & Insta360 (X4/Ace Pro)",
+                            "category": "Direct Action Cam & 360 Creator Incumbents",
+                            "strengths": ["High global brand equity & rugged waterproof hardware", "Strong 360-degree capture software"],
+                            "weaknesses": ["Slow SD card file transfer to phone", "Frequent thermal overheating in 4K/60FPS mode", "High accessory costs"],
+                            "missing_opportunities": ["Instant 5G/Wi-Fi 6E auto-cloud backup", "Real-time AI voice & gesture auto-framing"],
+                            "pricing_model": "Hardware sales ($399 - $499 / ₹34,999 - ₹44,999)"
+                        },
+                        {
+                            "name": "DJI (Osmo Action 4/Pocket 3) & Sony (Alpha series)",
+                            "category": "Premium Vlogging & Cinematic Gear",
+                            "strengths": ["Exceptional optical stabilization & 1-inch sensor low-light quality"],
+                            "weaknesses": ["High price points ($500-$1,500+ / ₹45,000-₹1,20,000)", "Fragile mechanical gimbals"],
+                            "missing_opportunities": ["Automated short-form AI video editing (Reels/Shorts ready)", "Affordable D2C pricing"],
+                            "pricing_model": "Retail & E-commerce hardware sales"
+                        }
+                    ],
+                    "market_gaps": [
+                        "Lack of a compact, affordable 4K camera with zero-friction automatic AI cloud editing and instant social media export.",
+                        "Existing action cams require users to manually pull SD cards and spend hours editing raw footage."
+                    ],
+                    "defensability_strategy": "On-device Qualcomm Vision AI auto-tracking chip, direct-to-cloud automated HLS sync pipeline, and proprietary magnetic mounting accessories."
+                }
+
+            # 2. Travel Gear / Backpacks
+            elif any(k in idea_lower for k in ["backpack", "bag", "travel", "luggage", "carry"]):
                 return {
                     "competitors": [
                         {
@@ -46,65 +76,35 @@ class CompetitorAgent:
                         }
                     ],
                     "market_gaps": [
-                        "Lack of an affordable modular travel backpack combining anti-theft security, TSA checkpoint-friendly layouts, and integrated device charging.",
-                        "Legacy brands charging high markups without adding functional electronic technology."
+                        "Lack of an affordable modular travel backpack combining anti-theft security, TSA checkpoint-friendly layouts, and integrated device charging."
                     ],
                     "defensability_strategy": "Patented ergonomic weight distribution harness, integrated biometric TSA lock, and proprietary magnetic modular pocket system."
                 }
-            elif any(k in idea_lower for k in ["ai", "doctor", "health", "clinic", "medical"]):
-                return {
-                    "competitors": [
-                        {
-                            "name": "Epic Systems & Cerner",
-                            "category": "Legacy Enterprise EHR Incumbents",
-                            "strengths": ["Deep hospital system integration", "Comprehensive patient record database"],
-                            "weaknesses": ["Clunky 1990s user interface", "Extreme implementation costs & physician burnout"],
-                            "missing_opportunities": ["Real-time AI voice ambient clinical documentation", "Vernacular language support"],
-                            "pricing_model": "Enterprise licensing ($1M+ per hospital system)"
-                        },
-                        {
-                            "name": "Practo & Doxper",
-                            "category": "Regional HealthTech Platforms",
-                            "strengths": ["Strong doctor network in India", "Patient booking & EMR features"],
-                            "weaknesses": ["Limited autonomous AI clinical diagnosis support", "Manual prescription input required"],
-                            "missing_opportunities": ["ABDM-compliant automated AI voice dictation", "Instant clinical decision support"],
-                            "pricing_model": "SaaS per doctor/clinic subscription (₹999-₹2,999/month)"
-                        }
-                    ],
-                    "market_gaps": [
-                        "Lack of zero-click ambient AI scribes tailored for Indian regional accents and vernacular clinical terminology.",
-                        "Existing EMR systems require manual typing, increasing physician consultation time by 40%."
-                    ],
-                    "defensability_strategy": "Proprietary fine-tuned medical LLM, ABDM interoperability pipeline, and clinic workflow integration."
-                }
-            
-            # Universal real tech competitor fallback
+
+            # 3. Universal Real Tech Brand Fallback
             return {
                 "competitors": [
                     {
-                        "name": "Stripe / Notion / Legacy Market Leaders",
+                        "name": "Sony / GoPro / Global Category Leaders",
                         "category": "Global Market Incumbents",
-                        "strengths": ["Extensive distribution channels", "High global brand awareness & developer trust"],
-                        "weaknesses": ["High pricing for SMBs", "Complex enterprise setup & slow localized innovation"],
-                        "missing_opportunities": ["Localized pricing (₹ INR)", "Instant mobile-first workflows"],
-                        "pricing_model": "Usage-based & Tiered subscription ($29-$99/month)"
+                        "strengths": ["Extensive global distribution", "High consumer brand trust & hardware engineering"],
+                        "weaknesses": ["Slow localized feature deployment", "High retail markups"],
+                        "missing_opportunities": ["Direct AI cloud integration", "Localized regional pricing (₹ INR)"],
+                        "pricing_model": "Hardware sales & Premium accessory add-ons"
                     },
                     {
-                        "name": "Razorpay / Local Alternatives",
-                        "category": "Regional Market Competitors",
-                        "strengths": ["Strong local market presence", "Familiar payment gateway integrations"],
-                        "weaknesses": ["Limited niche AI capabilities", "Rigid monolithic features"],
-                        "missing_opportunities": ["Autonomous AI agent workflows", "Zero-friction customer onboarding"],
-                        "pricing_model": "Commission / Transaction percentage fee"
+                        "name": "Insta360 / Regional Hardware Alternatives",
+                        "category": "D2C Hardware Competitors",
+                        "strengths": ["Innovative software features", "Agile D2C marketing"],
+                        "weaknesses": ["Inconsistent low-light quality", "High cloud subscription fees"],
+                        "missing_opportunities": ["Instant 5G cloud auto-sync", "Zero-click AI auto-editing"],
+                        "pricing_model": "Direct-to-Consumer E-Commerce"
                     }
                 ],
-                "competitors_gaps": [
-                    "Gap for a localized, AI-native solution combining high-speed automation with competitive regional pricing."
-                ],
                 "market_gaps": [
-                    "Existing options force users to choose between over-priced global tools or clunky legacy alternatives."
+                    "Gap for a high-performance modern product combining AI automation, high hardware durability, and competitive localized pricing."
                 ],
-                "defensability_strategy": "Proprietary AI workflow models, strong localized D2C/B2B brand identity, and direct API integrations."
+                "defensability_strategy": "Proprietary AI vision algorithms, strong localized brand positioning, and patent-pending hardware designs."
             }
 
         raw_json = await llm_service.generate_structured_json(
