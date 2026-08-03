@@ -28,6 +28,20 @@ export function BlueprintView({ project }: BlueprintViewProps) {
     window.open(pdfUrl, "_blank");
   };
 
+  // Helper to format tech stack layers whether string or object
+  const getTechDetails = (data: any, defaultTech: string, defaultRationale: string) => {
+    if (typeof data === "string" && data.trim()) {
+      return { technology: data, rationale: defaultRationale };
+    }
+    if (typeof data === "object" && data !== null) {
+      return {
+        technology: data.technology || defaultTech,
+        rationale: data.rationale || defaultRationale
+      };
+    }
+    return { technology: defaultTech, rationale: defaultRationale };
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header Banner */}
@@ -111,7 +125,9 @@ export function BlueprintView({ project }: BlueprintViewProps) {
 
               <div className="glass-card p-5 rounded-2xl">
                 <span className="text-xs text-slate-400 font-semibold block mb-1">Primary Tech Stack</span>
-                <p className="text-sm font-bold text-purple-300">{architect.frontend?.technology || "Next.js 15 & FastAPI"}</p>
+                <p className="text-sm font-bold text-purple-300">
+                  {getTechDetails(architect.frontend, "React Native & Next.js", "").technology}
+                </p>
               </div>
 
               <div className="glass-card p-5 rounded-2xl">
@@ -295,25 +311,29 @@ export function BlueprintView({ project }: BlueprintViewProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {[
-                  { label: "Frontend", data: architect.frontend },
-                  { label: "Backend API", data: architect.backend },
-                  { label: "Database", data: architect.database },
-                  { label: "Authentication", data: architect.authentication },
-                  { label: "AI Infrastructure", data: architect.ai_apis },
-                  { label: "Deployment Host", data: architect.deployment },
-                ].map((item, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">
-                      {item.label}
-                    </span>
-                    <p className="font-bold text-sm text-white mb-1.5">
-                      {item.data?.technology || "Standard Stack"}
-                    </p>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      {item.data?.rationale}
-                    </p>
-                  </div>
-                ))}
+                  { label: "Frontend", key: "frontend", defaultT: "React Native & Next.js 15", defaultR: "Cross-platform client application interface" },
+                  { label: "Backend API", key: "backend", defaultT: "FastAPI (Python 3.12)", defaultR: "High-performance asynchronous microservice engine" },
+                  { label: "Database", key: "database", defaultT: "PostgreSQL & Redis Cache", defaultR: "ACID database compliance paired with sub-millisecond cache" },
+                  { label: "Authentication", key: "authentication", defaultT: "OAuth 2.0 & Mobile OTP", defaultR: "Secure identity provider & access tokens" },
+                  { label: "AI Infrastructure", key: "ai_apis", defaultT: "Domain AI & Speech Engine", defaultR: "Intelligent automated inference & vision pipeline" },
+                  { label: "Deployment Host", key: "deployment", defaultT: "Vercel Edge & AWS Cloud", defaultR: "Global CDN storefront paired with cloud microservices" },
+                ].map((item, i) => {
+                  const rawData = architect[item.key];
+                  const details = getTechDetails(rawData, item.defaultT, item.defaultR);
+                  return (
+                    <div key={i} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                      <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">
+                        {item.label}
+                      </span>
+                      <p className="font-bold text-sm text-white mb-1.5 leading-snug">
+                        {details.technology}
+                      </p>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {details.rationale}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Folder Structure Diagram */}
@@ -391,13 +411,27 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               {/* Monetization */}
               <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 mb-6">
                 <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Business Model & Revenue Streams</h4>
-                <p className="text-xs text-slate-300 mb-3">{pitch.business_model}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {(pitch.revenue_streams || []).map((rev: string, i: number) => (
-                    <div key={i} className="p-2.5 rounded bg-slate-900 text-xs text-indigo-200 border border-slate-800 text-center font-medium">
-                      {rev}
-                    </div>
-                  ))}
+                <p className="text-xs text-slate-300 mb-4">{pitch.business_model}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {(pitch.revenue_streams || []).map((rev: any, i: number) => {
+                    let formattedText = "";
+                    if (typeof rev === "string") {
+                      formattedText = rev;
+                    } else if (typeof rev === "object" && rev !== null) {
+                      const vals = Object.values(rev).filter(v => typeof v === "string");
+                      formattedText = vals.join(" — ");
+                    } else {
+                      formattedText = String(rev);
+                    }
+                    return (
+                      <div key={i} className="p-3.5 rounded-xl bg-slate-900/90 text-xs text-indigo-200 border border-slate-800 font-medium leading-relaxed flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 text-[10px] font-bold">
+                          {i + 1}
+                        </span>
+                        <span>{formattedText}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

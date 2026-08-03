@@ -23,7 +23,7 @@ class PitchAgent:
             .replace("{product_context}", json.dumps(product_data, indent=2))
         )
         
-        user_prompt = f"Generate realistic investor pitch deck components and a compelling 60-Second Elevator Pitch specifically for: '{idea}'. Include dual currency pricing (₹ INR in Crores/Lakhs and $ USD)."
+        user_prompt = f"Generate realistic investor pitch deck components and a compelling 60-Second Elevator Pitch specifically for: '{idea}'. Ensure 'revenue_streams' is a list of plain clear strings with pricing in ₹ INR and $ USD."
 
         def fallback_generator() -> Dict[str, Any]:
             idea_lower = idea.lower()
@@ -38,9 +38,9 @@ class PitchAgent:
                     "usp": "On-device Qualcomm Vision AI auto-tracking chip combined with zero-friction direct-to-cloud automated video proxy synthesis at half the price of legacy cinematic setups.",
                     "business_model": "Direct-to-Consumer (D2C) Hardware Sales (55% gross margin) + Recurring AI Cloud Storage & Short Video Editing Subscription.",
                     "revenue_streams": [
-                        "AI Action Camera Hardware: ₹29,999 / $399 unit price (₹13,500 manufacturing cost = 55% gross margin)",
+                        "AI Action Camera Hardware: ₹29,999 / $399 unit price (55% gross margin)",
                         "Creator Pro Cloud Storage & AI Short Video Pass: ₹499/month ($6.99/mo) recurring subscription",
-                        "Modular Accessory Packs: ₹1,499 - ₹3,499 / $25-$50 (Magnetic helmet mounts, ND filter sets, waterproof dive cases)"
+                        "Modular Accessory Packs: ₹1,499 - ₹3,499 / $25-$50 (Magnetic helmet mounts, ND filter sets)"
                     ],
                     "future_vision": "Dominating the $14.2 Billion global creator camera market by creating the universal AI hardware & cloud video ecosystem for content creators worldwide.",
                     "hackathon_pitch": "Hi judges! Creators lose 70% of their day manually offloading SD cards and color grading raw video. Meet our AI Action Camera startup: the ultimate compact camera built for modern vloggers. We combine 4K/60FPS optical quality, on-device AI auto-tracking, and instant cloud sync—allowing creators to post Reels & Shorts seconds after recording!"
@@ -130,6 +130,19 @@ class PitchAgent:
             user_prompt=user_prompt,
             fallback_data_generator=fallback_generator
         )
+
+        # Normalize revenue_streams list into clean strings if dictionaries were returned
+        if "revenue_streams" in raw_json and isinstance(raw_json["revenue_streams"], list):
+            clean_streams = []
+            for item in raw_json["revenue_streams"]:
+                if isinstance(item, str):
+                    clean_streams.append(item)
+                elif isinstance(item, dict):
+                    vals = [str(v) for v in item.values() if isinstance(v, (str, int, float))]
+                    clean_streams.append(" — ".join(vals))
+                else:
+                    clean_streams.append(str(item))
+            raw_json["revenue_streams"] = clean_streams
 
         try:
             validated = PitchOutput(**raw_json)
