@@ -93,7 +93,11 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
   let lastError: any = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const response = await fetch(`${primaryBaseUrl}${path}`, { ...options, headers });
+      const response = await fetch(`${primaryBaseUrl}${path}`, { 
+        ...options, 
+        mode: "cors",
+        headers 
+      });
       return response;
     } catch (err) {
       lastError = err;
@@ -106,13 +110,26 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
 
   // Fallback attempt to secondary backend
   try {
-    const fallbackResponse = await fetch(`${secondaryBaseUrl}${path}`, { ...options, headers });
+    const fallbackResponse = await fetch(`${secondaryBaseUrl}${path}`, { 
+      ...options, 
+      mode: "cors",
+      headers 
+    });
     return fallbackResponse;
   } catch (fallbackErr) {
     console.error("All backend connection attempts failed:", lastError || fallbackErr);
     throw new Error(
       "Unable to connect to Synovia Backend. Please check your internet connection or verify the server is active."
     );
+  }
+}
+
+export async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const response = await fetchResilient("/api/health");
+    return response.ok;
+  } catch {
+    return false;
   }
 }
 
