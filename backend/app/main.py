@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 from app.database.session import init_db
 from app.routers.projects import router as projects_router
-from app.routers.auth import router as auth_router
 
 load_dotenv()
 
@@ -35,22 +34,13 @@ app = FastAPI(
 # Proper CORS configuration for mobile and web clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://synovia.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:3000",
-        "*"
-    ],
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Dual-mount routes to support both local /api/projects AND Vercel Serverless /projects
-app.include_router(auth_router, prefix="/api")
-app.include_router(auth_router)
-
 app.include_router(projects_router, prefix="/api")
 app.include_router(projects_router)
 
