@@ -1,4 +1,4 @@
-const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://lancaster-bluetooth-layers-rocks.trycloudflare.com";
+const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://longitude-rentals-marathon-land.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
