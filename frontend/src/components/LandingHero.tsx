@@ -58,10 +58,10 @@ export function LandingHero({ onSubmitIdea, isSubmitting }: LandingHeroProps) {
 
       {/* Main Studio Prompt Box (Google AI Studio Styled) */}
       <motion.div 
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="studio-panel rounded-3xl p-5 sm:p-7 glow-gemini max-w-4xl mx-auto mb-10 relative overflow-hidden"
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="studio-panel gemini-border-beam rounded-3xl p-5 sm:p-7 glow-gemini max-w-4xl mx-auto mb-10 relative overflow-hidden"
       >
         {/* Studio Workspace Bar Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-800/80 text-xs font-semibold text-slate-400">

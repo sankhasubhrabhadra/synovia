@@ -159,7 +159,7 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
                 status === "completed"
                   ? "bg-slate-900/80 border-emerald-500/40 shadow-lg shadow-emerald-500/5"
                   : status === "running"
-                  ? "bg-blue-950/60 border-blue-500/60 glow-blue scale-[1.02]"
+                  ? "bg-blue-950/80 border-blue-500/80 glow-blue gemini-border-beam scanline-sweep scale-[1.02]"
                   : "bg-slate-950/40 border-slate-800/60 opacity-60"
               }`}
             >
