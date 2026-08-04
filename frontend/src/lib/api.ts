@@ -111,3 +111,9 @@ export function getProjectPdfUrl(id: string): string {
   const baseUrl = getApiBaseUrl();
   return `${baseUrl}/api/projects/${id}/pdf`;
 }
+
+export function getProjectPptUrl(id: string): string {
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/api/projects/${id}/ppt`;
+}
+

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { getProjectPdfUrl, Project } from "@/lib/api";
+import { getProjectPdfUrl, getProjectPptUrl, Project } from "@/lib/api";
 import { 
   Download, Sparkles, Search, Users, Layout, ShieldCheck, Calendar, 
   Presentation, CheckCircle2, FileText, ArrowUpRight, AlertTriangle, 
-  Zap, Code2, ChevronRight, Layers, Target, CheckSquare, Award, Flame
+  Zap, Code2, ChevronRight, Layers, Target, CheckSquare, Award, Flame, FileSpreadsheet
 } from "lucide-react";
 
 interface BlueprintViewProps {
@@ -26,6 +26,11 @@ export function BlueprintView({ project }: BlueprintViewProps) {
   const handleDownloadPdf = () => {
     const pdfUrl = getProjectPdfUrl(project.id);
     window.open(pdfUrl, "_blank");
+  };
+
+  const handleDownloadPpt = () => {
+    const pptUrl = getProjectPptUrl(project.id);
+    window.open(pptUrl, "_blank");
   };
 
   const getScoreColor = (score: number) => {
@@ -53,13 +58,21 @@ export function BlueprintView({ project }: BlueprintViewProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button
             onClick={handleDownloadPdf}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Download className="w-4 h-4" />
-            <span>Download Investor PDF</span>
+            <span>Download PDF</span>
+          </button>
+          
+          <button
+            onClick={handleDownloadPpt}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Presentation className="w-4 h-4 text-emerald-200" />
+            <span>Download PPT Pitch Deck</span>
           </button>
         </div>
       </div>

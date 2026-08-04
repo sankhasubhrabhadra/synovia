@@ -172,3 +172,24 @@ async def download_project_pdf(project_id: str, db: AsyncSession = Depends(get_d
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/{project_id}/ppt")
+async def download_project_ppt(project_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Generates and returns a 16:9 Widescreen PowerPoint (.pptx) Pitch Deck.
+    """
+    from app.tools.ppt_generator import ppt_report_generator
+    result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
+    project = result.scalars().first()
+    if not project or not project.blueprint_json:
+        raise HTTPException(status_code=404, detail="Project blueprint not ready or not found")
+
+    ppt_bytes = ppt_report_generator.create_deck(project.blueprint_json)
+
+    filename = f"Synovia_Pitch_Deck_{project.idea[:15].replace(' ', '_')}.pptx"
+    return Response(
+        content=ppt_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
