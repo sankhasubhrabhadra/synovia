@@ -1,4 +1,5 @@
-const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://longitude-rentals-marathon-land.trycloudflare.com";
+// Hardcoded active live Cloudflare HTTP/2 tunnel target
+const ACTIVE_TUNNEL_URL = "https://longitude-rentals-marathon-land.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
@@ -8,7 +9,7 @@ export function getApiBaseUrl(): string {
       return LOCALHOST_URL;
     }
   }
-  return CLOUDFLARE_TUNNEL_URL;
+  return ACTIVE_TUNNEL_URL;
 }
 
 export interface User {
@@ -66,7 +67,7 @@ export function getStoredUser(): User | null {
 }
 
 /**
- * Clean, ultra-reliable fetch wrapper with automatic retries and standard CORS compatibility.
+ * Resilient fetch wrapper with automatic retries against the active tunnel URL.
  */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
   const baseUrl = getApiBaseUrl();
