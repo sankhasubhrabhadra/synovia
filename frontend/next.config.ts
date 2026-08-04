@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const BACKEND_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://cst-beatles-blanket-chelsea.trycloudflare.com";
+const BACKEND_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://owned-brighton-guidelines-qualify.trycloudflare.com";
 
 const nextConfig: NextConfig = {
   async rewrites() {
