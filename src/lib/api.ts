@@ -4,11 +4,11 @@ const LOCALHOST_URL = "http://localhost:8000";
 export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
-    if (host !== "localhost" && host !== "127.0.0.1") {
-      return ""; // Use same-origin Vercel proxy rewrite (/api) for 100% CORS reliability
+    if (host === "localhost" || host === "127.0.0.1") {
+      return LOCALHOST_URL;
     }
   }
-  return LOCALHOST_URL;
+  return CLOUDFLARE_TUNNEL_URL;
 }
 
 export interface User {
@@ -70,13 +70,10 @@ const defaultHeaders: Record<string, string> = {
   "bypass-tunnel-reminder": "true",
 };
 
-/**
- * Ultra-resilient fetch wrapper:
- * 1. Tries same-origin Vercel Next.js proxy rewrite first.
- * 2. If Vercel proxy returns non-ok, retries directly against live Cloudflare tunnel URL.
- */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
+  const baseUrl = getApiBaseUrl();
   const token = getAuthToken();
+
   const headers: Record<string, string> = {
     ...defaultHeaders,
     ...(options.headers as Record<string, string> || {}),
@@ -86,24 +83,14 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const primaryUrl = `${getApiBaseUrl()}${path}`;
-  const fallbackUrl = `${CLOUDFLARE_TUNNEL_URL}${path}`;
+  const url = `${baseUrl}${path}`;
 
-  // Try primary same-origin Vercel proxy first
   try {
-    const res = await fetch(primaryUrl, { ...options, mode: "cors", headers });
-    if (res.ok) return res;
+    const response = await fetch(url, { ...options, mode: "cors", headers });
+    return response;
   } catch (err) {
-    console.warn("Same-origin Vercel proxy attempt failed, falling back to direct tunnel:", err);
-  }
-
-  // Fallback directly to Cloudflare Tunnel
-  try {
-    const resFallback = await fetch(fallbackUrl, { ...options, mode: "cors", headers });
-    return resFallback;
-  } catch (err) {
-    console.error("Direct tunnel fetch also failed:", err);
-    throw new Error("Unable to connect to Synovia Backend. Please check your internet connection or verify the server is active.");
+    console.error("API connection error:", err);
+    throw new Error("Unable to connect to Synovia Backend. Please verify the backend tunnel is active.");
   }
 }
 
@@ -190,10 +177,8 @@ export async function clearAllProjects(): Promise<void> {
 }
 
 export function getProjectStreamUrl(id: string): string {
-  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
-    return `/api/projects/${id}/stream`;
-  }
-  return `http://localhost:8000/api/projects/${id}/stream`;
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/api/projects/${id}/stream`;
 }
 
 export async function downloadProjectPdfFile(id: string, ideaName: string = "Blueprint"): Promise<void> {
