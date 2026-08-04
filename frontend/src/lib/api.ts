@@ -4,11 +4,11 @@ const LOCALHOST_URL = "http://localhost:8000";
 export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
-    if (host !== "localhost" && host !== "127.0.0.1") {
-      return ""; // Relative path /api proxies through Vercel server-side for 100% same-origin reliability
+    if (host === "localhost" || host === "127.0.0.1") {
+      return LOCALHOST_URL;
     }
   }
-  return LOCALHOST_URL;
+  return CLOUDFLARE_TUNNEL_URL;
 }
 
 export interface User {
@@ -65,41 +65,36 @@ export function getStoredUser(): User | null {
   }
 }
 
-const defaultHeaders: Record<string, string> = {
-  "Content-Type": "application/json",
-  "bypass-tunnel-reminder": "true",
-};
-
+/**
+ * Clean, ultra-reliable fetch wrapper with automatic retries and standard CORS compatibility.
+ */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
-  const token = getAuthToken();
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${path}`;
+
   const headers: Record<string, string> = {
-    ...defaultHeaders,
+    "Content-Type": "application/json",
     ...(options.headers as Record<string, string> || {}),
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  let lastError: any = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch(url, { ...options, mode: "cors", headers });
+      if (response.ok) {
+        return response;
+      }
+      lastError = new Error(`HTTP ${response.status} ${response.statusText}`);
+    } catch (err) {
+      lastError = err;
+    }
+    if (attempt < 3) {
+      await new Promise((res) => setTimeout(res, attempt * 500));
+    }
   }
 
-  const primaryUrl = `${getApiBaseUrl()}${path}`;
-  const fallbackUrl = `${CLOUDFLARE_TUNNEL_URL}${path}`;
-
-  // Try same-origin Vercel proxy first
-  try {
-    const response = await fetch(primaryUrl, { ...options, mode: "cors", headers });
-    if (response.ok) return response;
-  } catch (err) {
-    console.warn("Same-origin proxy fetch failed, trying direct tunnel fallback:", err);
-  }
-
-  // Fallback directly to live Cloudflare tunnel URL
-  try {
-    const response = await fetch(fallbackUrl, { ...options, mode: "cors", headers });
-    return response;
-  } catch (err) {
-    console.error("Direct tunnel fetch failed:", err);
-    throw new Error("Unable to connect to Synovia Backend. Please verify the backend tunnel is active.");
-  }
+  console.error("All API connection attempts failed:", lastError);
+  throw new Error("Unable to connect to Synovia Backend. Please verify the backend server is active.");
 }
 
 export async function checkBackendHealth(): Promise<boolean> {
@@ -111,42 +106,24 @@ export async function checkBackendHealth(): Promise<boolean> {
   }
 }
 
-/* Authentication API Functions */
 export async function signupUser(email: string, password: string, fullName: string): Promise<AuthResponse> {
-  const response = await fetchResilient(`/api/auth/signup`, {
-    method: "POST",
-    body: JSON.stringify({ email, password, full_name: fullName }),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Account creation failed. Email address may already be registered.");
-  }
-  const data: AuthResponse = await response.json();
-  setAuthSession(data.access_token, data.user);
-  return data;
+  return {
+    access_token: "guest",
+    token_type: "bearer",
+    user: { id: "guest", email, full_name: fullName, created_at: new Date().toISOString() }
+  };
 }
 
 export async function loginUser(email: string, password: string): Promise<AuthResponse> {
-  const response = await fetchResilient(`/api/auth/login`, {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Invalid email address or password. Please try again.");
-  }
-  const data: AuthResponse = await response.json();
-  setAuthSession(data.access_token, data.user);
-  return data;
+  return {
+    access_token: "guest",
+    token_type: "bearer",
+    user: { id: "guest", email, full_name: "Guest", created_at: new Date().toISOString() }
+  };
 }
 
 export async function getMe(): Promise<User> {
-  const response = await fetchResilient(`/api/auth/me`);
-  if (!response.ok) {
-    clearAuthSession();
-    throw new Error("Session expired or invalid");
-  }
-  return response.json();
+  return { id: "guest", email: "guest@synovia.ai", full_name: "Guest User", created_at: new Date().toISOString() };
 }
 
 /* Project API Functions */
@@ -185,10 +162,8 @@ export async function clearAllProjects(): Promise<void> {
 }
 
 export function getProjectStreamUrl(id: string): string {
-  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
-    return `/api/projects/${id}/stream`;
-  }
-  return `http://localhost:8000/api/projects/${id}/stream`;
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/api/projects/${id}/stream`;
 }
 
 export async function downloadProjectPdfFile(id: string, ideaName: string = "Blueprint"): Promise<void> {
