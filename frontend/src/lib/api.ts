@@ -12,6 +12,19 @@ export function getApiBaseUrl(): string {
   return LOCALHOST_URL;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
 export interface Project {
   id: string;
   idea: string;
@@ -22,6 +35,37 @@ export interface Project {
   blueprint?: any;
 }
 
+const TOKEN_KEY = "synovia_auth_token";
+const USER_KEY = "synovia_user_profile";
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAuthSession(token: string, user: User): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+export function clearAuthSession(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+
+export function getStoredUser(): User | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 const defaultHeaders: Record<string, string> = {
   "Content-Type": "application/json",
   "bypass-tunnel-reminder": "true",
@@ -29,13 +73,21 @@ const defaultHeaders: Record<string, string> = {
 };
 
 /**
- * Resilient fetch wrapper with automatic fallback between Cloudflare Tunnel and Localhost
+ * Resilient fetch wrapper with automatic fallback and JWT Authorization header
  */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
   const primaryBaseUrl = getApiBaseUrl();
   const secondaryBaseUrl = primaryBaseUrl === CLOUDFLARE_TUNNEL_URL ? LOCALHOST_URL : CLOUDFLARE_TUNNEL_URL;
 
-  const headers = { ...defaultHeaders, ...(options.headers as Record<string, string> || {}) };
+  const token = getAuthToken();
+  const headers: Record<string, string> = { 
+    ...defaultHeaders, 
+    ...(options.headers as Record<string, string> || {}) 
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   try {
     const response = await fetch(`${primaryBaseUrl}${path}`, { ...options, headers });
@@ -51,27 +103,61 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
   }
 }
 
-export async function createProject(idea: string, targetMarket?: string, userGoal?: string): Promise<Project> {
+/* Authentication API Functions */
+export async function signupUser(email: string, password: string, fullName: string): Promise<AuthResponse> {
+  const response = await fetchResilient(`/api/auth/signup`, {
+    method: "POST",
+    body: JSON.stringify({ email, password, full_name: fullName }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to sign up account");
+  }
+  const data: AuthResponse = await response.json();
+  setAuthSession(data.access_token, data.user);
+  return data;
+}
+
+export async function loginUser(email: string, password: string): Promise<AuthResponse> {
+  const response = await fetchResilient(`/api/auth/login`, {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Invalid email address or password");
+  }
+  const data: AuthResponse = await response.json();
+  setAuthSession(data.access_token, data.user);
+  return data;
+}
+
+export async function getMe(): Promise<User> {
+  const response = await fetchResilient(`/api/auth/me`);
+  if (!response.ok) {
+    clearAuthSession();
+    throw new Error("Session expired or invalid");
+  }
+  const data: User = await response.json();
+  return data;
+}
+
+/* Project API Functions */
+export async function createProject(idea: string, targetMarket?: string): Promise<Project> {
   const response = await fetchResilient(`/api/projects`, {
     method: "POST",
-    body: JSON.stringify({
-      idea,
-      target_market: targetMarket,
-      user_goal: userGoal,
-    }),
+    body: JSON.stringify({ idea, target_market: targetMarket }),
   });
-
   if (!response.ok) {
     throw new Error(`Failed to create project: ${response.statusText}`);
   }
-
   return response.json();
 }
 
 export async function listProjects(limit: number = 200): Promise<Project[]> {
   const response = await fetchResilient(`/api/projects?limit=${limit}`);
   if (!response.ok) {
-    throw new Error(`Failed to list projects: ${response.statusText}`);
+    throw new Error(`Failed to list projects`);
   }
   return response.json();
 }
@@ -79,7 +165,7 @@ export async function listProjects(limit: number = 200): Promise<Project[]> {
 export async function getProject(id: string): Promise<Project> {
   const response = await fetchResilient(`/api/projects/${id}`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch project ${id}: ${response.statusText}`);
+    throw new Error(`Failed to fetch project ${id}`);
   }
   return response.json();
 }
@@ -138,5 +224,3 @@ export async function downloadProjectPptFile(id: string, ideaName: string = "Pit
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
-
-

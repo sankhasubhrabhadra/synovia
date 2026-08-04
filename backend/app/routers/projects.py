@@ -3,7 +3,7 @@ import json
 import asyncio
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Response, Query
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Response, Query, Header
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -14,23 +14,38 @@ from app.database.models import ProjectDB
 from app.models.schemas import ProjectCreate, ProjectResponse, StatusEnum, AgentStepEnum
 from app.agents.manager import manager_agent, register_sse_listener, unregister_sse_listener
 from app.tools.report_generator import PDFReportGenerator
+from app.core.security import extract_token_from_header, decode_access_token
 
 logger = logging.getLogger("synovia.router.projects")
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
+
+def get_current_user_id(authorization: Optional[str] = Header(None)) -> Optional[str]:
+    """Helper to extract user_id from Authorization Bearer token header."""
+    token = extract_token_from_header(authorization)
+    if not token:
+        return None
+    payload = decode_access_token(token)
+    if not payload or "sub" not in payload:
+        return None
+    return payload["sub"]
 
 @router.post("", response_model=ProjectResponse, status_code=201)
 @router.post("/", response_model=ProjectResponse, status_code=201)
 async def create_project(
     payload: ProjectCreate,
     background_tasks: BackgroundTasks,
+    authorization: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Creates a new startup blueprint project and launches the multi-agent pipeline asynchronously.
+    Creates a new startup blueprint project and attaches current user_id.
     """
+    user_id = get_current_user_id(authorization) or "guest"
     project_id = str(uuid.uuid4())
+
     new_project = ProjectDB(
         id=project_id,
+        user_id=user_id,
         idea=payload.idea.strip(),
         status=StatusEnum.RUNNING.value,
         current_step=AgentStepEnum.MANAGER.value,
@@ -62,17 +77,23 @@ async def create_project(
 @router.get("", response_model=List[ProjectResponse])
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
-    limit: int = Query(200, ge=1, le=1000, description="Max history items to return (supports 100+ work history)."),
+    limit: int = Query(200, ge=1, le=1000, description="Max history items to return."),
+    authorization: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Retrieves history of generated startup projects (supports 100+ projects).
+    Retrieves project history strictly isolated for the logged-in user.
+    One user cannot view data belonging to another user.
     """
-    result = await db.execute(
-        select(ProjectDB)
-        .order_by(ProjectDB.created_at.desc())
-        .limit(limit)
-    )
+    user_id = get_current_user_id(authorization)
+
+    # Filter strictly by user_id if logged in, or guest/unassigned if guest
+    if user_id:
+        stmt = select(ProjectDB).where(ProjectDB.user_id == user_id).order_by(ProjectDB.created_at.desc()).limit(limit)
+    else:
+        stmt = select(ProjectDB).where((ProjectDB.user_id == "guest") | (ProjectDB.user_id == None)).order_by(ProjectDB.created_at.desc()).limit(limit)
+
+    result = await db.execute(stmt)
     projects = result.scalars().all()
     
     return [
@@ -89,14 +110,24 @@ async def list_projects(
     ]
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-async def get_project(project_id: str, db: AsyncSession = Depends(get_db)):
+async def get_project(
+    project_id: str, 
+    authorization: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Fetches details and generated blueprint for a specific project.
+    Fetches project blueprint details after validating user ownership.
     """
     result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
     project = result.scalars().first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    user_id = get_current_user_id(authorization)
+    # Enforce isolation: if project is owned by a specific user, verify user matches
+    if project.user_id and project.user_id != "guest":
+        if not user_id or user_id != project.user_id:
+            raise HTTPException(status_code=403, detail="Access denied: You do not have permission to view this project.")
 
     return ProjectResponse(
         id=project.id,
@@ -110,23 +141,36 @@ async def get_project(project_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.delete("", status_code=204)
 @router.delete("/", status_code=204)
-async def clear_all_projects(db: AsyncSession = Depends(get_db)):
+async def clear_all_projects(
+    authorization: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Deletes all projects from history database.
+    Deletes all projects belonging to the current user.
     """
-    await db.execute(delete(ProjectDB))
+    user_id = get_current_user_id(authorization) or "guest"
+    await db.execute(delete(ProjectDB).where(ProjectDB.user_id == user_id))
     await db.commit()
     return Response(status_code=204)
 
 @router.delete("/{project_id}", status_code=204)
-async def delete_project(project_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_project(
+    project_id: str, 
+    authorization: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Deletes a specific project from database history.
+    Deletes a specific project after verifying user ownership.
     """
     result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
     project = result.scalars().first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    user_id = get_current_user_id(authorization)
+    if project.user_id and project.user_id != "guest":
+        if not user_id or user_id != project.user_id:
+            raise HTTPException(status_code=403, detail="Access denied: You do not have permission to delete this project.")
 
     await db.delete(project)
     await db.commit()
@@ -192,4 +236,3 @@ async def download_project_ppt(project_id: str, db: AsyncSession = Depends(get_d
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
-

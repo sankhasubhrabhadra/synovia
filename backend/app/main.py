@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from app.database.session import init_db
 from app.routers.projects import router as projects_router
+from app.routers.auth import router as auth_router
 
 load_dotenv()
 
@@ -46,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(projects_router)
 
 @app.get("/api/health")
