@@ -107,13 +107,36 @@ export function getProjectStreamUrl(id: string): string {
   return `${baseUrl}/api/projects/${id}/stream`;
 }
 
-export function getProjectPdfUrl(id: string): string {
-  const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/api/projects/${id}/pdf`;
+export async function downloadProjectPdfFile(id: string, ideaName: string = "Blueprint"): Promise<void> {
+  const response = await fetchResilient(`/api/projects/${id}/pdf`);
+  if (!response.ok) {
+    throw new Error(`Failed to download PDF: ${response.statusText}`);
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Synovia_Blueprint_${ideaName.slice(0, 15).replace(/\s+/g, "_")}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
 }
 
-export function getProjectPptUrl(id: string): string {
-  const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/api/projects/${id}/ppt`;
+export async function downloadProjectPptFile(id: string, ideaName: string = "Pitch_Deck"): Promise<void> {
+  const response = await fetchResilient(`/api/projects/${id}/ppt`);
+  if (!response.ok) {
+    throw new Error(`Failed to download PPT: ${response.statusText}`);
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Synovia_Pitch_Deck_${ideaName.slice(0, 15).replace(/\s+/g, "_")}.pptx`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
 }
+
 

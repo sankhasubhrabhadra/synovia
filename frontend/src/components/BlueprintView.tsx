@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { getProjectPdfUrl, getProjectPptUrl, Project } from "@/lib/api";
+import { downloadProjectPdfFile, downloadProjectPptFile, Project } from "@/lib/api";
 import { 
   Download, Sparkles, Search, Users, Layout, ShieldCheck, Calendar, 
   Presentation, CheckCircle2, FileText, ArrowUpRight, AlertTriangle, 
-  Zap, Code2, ChevronRight, Layers, Target, CheckSquare, Award, Flame, FileSpreadsheet
+  Zap, Code2, ChevronRight, Layers, Target, CheckSquare, Award, Flame, Loader2
 } from "lucide-react";
 
 interface BlueprintViewProps {
@@ -14,6 +14,8 @@ interface BlueprintViewProps {
 
 export function BlueprintView({ project }: BlueprintViewProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "research" | "competitor" | "product" | "validation" | "roadmap" | "pitch">("summary");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingPpt, setDownloadingPpt] = useState(false);
 
   const blueprint = project.blueprint || {};
   const research = blueprint.research || {};
@@ -23,14 +25,26 @@ export function BlueprintView({ project }: BlueprintViewProps) {
   const pitch = blueprint.pitch || {};
   const validation = blueprint.validation || {};
 
-  const handleDownloadPdf = () => {
-    const pdfUrl = getProjectPdfUrl(project.id);
-    window.open(pdfUrl, "_blank");
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloadingPdf(true);
+      await downloadProjectPdfFile(project.id, project.idea);
+    } catch (err: any) {
+      alert(err.message || "Failed to download PDF report");
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
-  const handleDownloadPpt = () => {
-    const pptUrl = getProjectPptUrl(project.id);
-    window.open(pptUrl, "_blank");
+  const handleDownloadPpt = async () => {
+    try {
+      setDownloadingPpt(true);
+      await downloadProjectPptFile(project.id, project.idea);
+    } catch (err: any) {
+      alert(err.message || "Failed to download PPT presentation");
+    } finally {
+      setDownloadingPpt(false);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -61,18 +75,20 @@ export function BlueprintView({ project }: BlueprintViewProps) {
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button
             onClick={handleDownloadPdf}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            disabled={downloadingPdf}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
           >
-            <Download className="w-4 h-4" />
-            <span>Download PDF</span>
+            {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            <span>{downloadingPdf ? "Downloading PDF..." : "Download PDF"}</span>
           </button>
           
           <button
             onClick={handleDownloadPpt}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            disabled={downloadingPpt}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
           >
-            <Presentation className="w-4 h-4 text-emerald-200" />
-            <span>Download PPT Pitch Deck</span>
+            {downloadingPpt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4 text-emerald-200" />}
+            <span>{downloadingPpt ? "Generating PPT..." : "Download PPT Pitch Deck"}</span>
           </button>
         </div>
       </div>
