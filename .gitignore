@@ -4,6 +4,8 @@ backend/venv/
 backend/.venv/
 
 # Next.js Build
+.next/
+out/
 frontend/.next/
 frontend/out/
 
