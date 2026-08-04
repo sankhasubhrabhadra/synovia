@@ -3,8 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  Sparkles, Rocket, ArrowRight, Bot, Cpu, TrendingUp, ShieldCheck, 
-  Terminal, Sliders, Play, Layers, Code, CheckCircle2 
+  Sparkles, Terminal, Play, Layers, Bot, ShieldCheck 
 } from "lucide-react";
 
 interface LandingHeroProps {
@@ -39,10 +38,10 @@ export function LandingHero({ onSubmitIdea, isSubmitting }: LandingHeroProps) {
         transition={{ duration: 0.4 }}
         className="text-center space-y-4 mb-8"
       >
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 shadow-lg shadow-emerald-500/5">
-          <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
-          <span className="text-xs font-extrabold text-emerald-300 uppercase tracking-widest">
-            Guest Access Active • No Account Required
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 shadow-lg shadow-blue-500/5">
+          <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
+          <span className="text-xs font-extrabold text-blue-300 uppercase tracking-widest">
+            Autonomous Multi-Agent Studio
           </span>
         </div>
 
@@ -56,7 +55,7 @@ export function LandingHero({ onSubmitIdea, isSubmitting }: LandingHeroProps) {
         </p>
       </motion.div>
 
-      {/* Main Studio Prompt Box (Google AI Studio Styled) */}
+      {/* Main Studio Prompt Box */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

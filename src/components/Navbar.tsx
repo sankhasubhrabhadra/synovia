@@ -1,25 +1,18 @@
 "use client";
 
 import React from "react";
-import { User, clearAuthSession } from "@/lib/api";
-import { Sparkles, Plus, Cpu, Sliders, ShieldCheck, LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { Sparkles, Plus, Cpu, Sliders, ShieldCheck } from "lucide-react";
 
 interface NavbarProps {
   onNewProject: () => void;
   activeProjectIdea?: string;
   isExecuting?: boolean;
-  user: User | null;
-  onOpenAuth: (mode?: "login" | "signup") => void;
-  onLogout: () => void;
 }
 
 export function Navbar({ 
   onNewProject, 
   activeProjectIdea, 
-  isExecuting,
-  user,
-  onOpenAuth,
-  onLogout
+  isExecuting 
 }: NavbarProps) {
   return (
     <header className="h-16 border-b border-slate-800/80 bg-[#0d121f]/90 backdrop-blur-xl sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between">
@@ -57,7 +50,7 @@ export function Navbar({
         <span className="text-slate-600">•</span>
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-800/60 text-slate-300">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Isolation: <strong className="text-emerald-400">{user ? "Private Account" : "Guest Mode"}</strong></span>
+          <span>Pipeline: <strong className="text-emerald-400">Active</strong></span>
         </div>
       </div>
 
@@ -71,7 +64,7 @@ export function Navbar({
         </div>
       )}
 
-      {/* Right: User Auth & Actions */}
+      {/* Right: Actions */}
       <div className="flex items-center gap-2">
         <button
           onClick={onNewProject}
@@ -80,40 +73,6 @@ export function Navbar({
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">New Blueprint</span>
         </button>
-
-        {user ? (
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800">
-              <div className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center text-xs font-bold uppercase">
-                {user.full_name ? user.full_name[0] : "U"}
-              </div>
-              <span className="text-xs font-bold text-slate-200 hidden sm:inline">{user.full_name}</span>
-            </div>
-            <button
-              onClick={onLogout}
-              title="Sign Out"
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-            <button
-              onClick={() => onOpenAuth("login")}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-slate-700 transition-all cursor-pointer"
-            >
-              <LogIn className="w-3.5 h-3.5 text-blue-400" />
-              <span>Sign In</span>
-            </button>
-            <button
-              onClick={() => onOpenAuth("signup")}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600 hover:text-white transition-all cursor-pointer"
-            >
-              <span>Sign Up</span>
-            </button>
-          </div>
-        )}
       </div>
     </header>
   );

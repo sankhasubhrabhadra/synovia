@@ -2,15 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { 
-  createProject, listProjects, getProject, deleteProject, Project, 
-  User, getStoredUser, getMe, clearAuthSession 
+  createProject, listProjects, getProject, deleteProject, Project 
 } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { LandingHero } from "@/components/LandingHero";
 import { ExecutionScreen } from "@/components/ExecutionScreen";
 import { BlueprintView } from "@/components/BlueprintView";
-import { AuthModal } from "@/components/AuthModal";
 
 export function SynoviaApp() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -19,23 +17,7 @@ export function SynoviaApp() {
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Auth State
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-
-  // Verify auth session on mount
-  useEffect(() => {
-    const stored = getStoredUser();
-    if (stored) {
-      setUser(stored);
-      getMe()
-        .then((u) => setUser(u))
-        .catch(() => setUser(null));
-    }
-  }, []);
-
-  // Load project history for current user (or guest)
+  // Load project history
   const fetchHistory = async () => {
     try {
       setIsLoadingHistory(true);
@@ -50,25 +32,7 @@ export function SynoviaApp() {
 
   useEffect(() => {
     fetchHistory();
-  }, [user]);
-
-  // Handle Auth actions
-  const handleOpenAuth = (mode: "login" | "signup" = "login") => {
-    setAuthMode(mode);
-    setIsAuthOpen(true);
-  };
-
-  const handleLogout = () => {
-    clearAuthSession();
-    setUser(null);
-    setActiveProject(null);
-    setViewState("landing");
-  };
-
-  const handleAuthSuccess = (u: User) => {
-    setUser(u);
-    fetchHistory();
-  };
+  }, []);
 
   // Handle new idea submission
   const handleCreateProject = async (idea: string, targetMarket?: string) => {
@@ -129,9 +93,6 @@ export function SynoviaApp() {
         onNewProject={handleNewProject}
         activeProjectIdea={activeProject?.idea}
         isExecuting={viewState === "executing"}
-        user={user}
-        onOpenAuth={handleOpenAuth}
-        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
@@ -172,14 +133,6 @@ export function SynoviaApp() {
           )}
         </main>
       </div>
-
-      {/* Login & Sign Up Modal */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
-        initialMode={authMode}
-      />
     </div>
   );
 }
