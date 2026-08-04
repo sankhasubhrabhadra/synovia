@@ -117,7 +117,7 @@ class ManagerAgent:
             # Phase 3: Pitch & Monetization Agent
             await broadcast_status(
                 project_id, AgentStepEnum.PITCH, StatusEnum.RUNNING, 85,
-                "Crafting investor pitch deck and monetization model...", pitch_data=None
+                "Crafting investor pitch deck and monetization model...", step_data=None
             )
             
             pitch_data = await pitch_agent.run(idea, research_data, product_data)
