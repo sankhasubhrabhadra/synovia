@@ -39,10 +39,10 @@ export function LandingHero({ onSubmitIdea, isSubmitting }: LandingHeroProps) {
         transition={{ duration: 0.4 }}
         className="text-center space-y-4 mb-8"
       >
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-lg shadow-blue-500/5">
-          <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
-          <span className="text-xs font-extrabold text-blue-300 uppercase tracking-widest">
-            Synovia AI Studio Workspace
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 shadow-lg shadow-emerald-500/5">
+          <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+          <span className="text-xs font-extrabold text-emerald-300 uppercase tracking-widest">
+            Guest Access Active • No Account Required
           </span>
         </div>
 
