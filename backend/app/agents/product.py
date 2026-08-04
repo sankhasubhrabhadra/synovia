@@ -12,7 +12,8 @@ class ProductAgent:
         self,
         idea: str,
         research_data: Dict[str, Any],
-        competitor_data: Optional[Dict[str, Any]] = None
+        competitor_data: Optional[Dict[str, Any]] = None,
+        classification_data: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         logger.info(f"ProductAgent executing for idea: '{idea}'")
 
@@ -23,6 +24,9 @@ class ProductAgent:
             .replace("{competitor_context}", json.dumps(competitor_data or {}, indent=2))
         )
         
+
+        classification_context = json.dumps(classification_data, indent=2) if classification_data else '{}'
+        system_prompt = system_prompt.replace("{classification_context}", classification_context)
         user_prompt = f"Generate detailed MVP product specifications for: '{idea}'."
 
         def fallback_generator() -> Dict[str, Any]:
@@ -139,30 +143,58 @@ class ProductAgent:
                     ]
                 }
 
-            # 3. Universal High-Quality Software/Product MVP
+            
+            # 3. Dynamic Product MVP Features based on Classification
             words = [w.capitalize() for w in idea.split()[:3]]
             title_name = " ".join(words) if words else "Venture"
+            business_type = classification_data.get('business_type', 'software_saas') if classification_data else 'software_saas'
+            
+            mvp_features = []
+            if business_type == "transportation":
+                mvp_features = [
+                    {"name": "Fleet Tracking Dashboard", "description": "Real-time GPS tracking and geofencing for vehicles.", "complexity": "High", "impact": "High"},
+                    {"name": "Route Optimization Engine", "description": "AI-driven route planning to minimize fuel consumption.", "complexity": "High", "impact": "High"},
+                    {"name": "Driver Dispatch & Mobile App", "description": "App for drivers to receive routes and report status.", "complexity": "Medium", "impact": "High"}
+                ]
+            elif business_type == "food":
+                mvp_features = [
+                    {"name": "Freshness & Cold Chain Tracking", "description": "IoT integration to monitor temperature during transit.", "complexity": "High", "impact": "High"},
+                    {"name": "Supplier & Quality Grading Portal", "description": "Platform for suppliers to upload inventory and quality certs.", "complexity": "Medium", "impact": "High"},
+                    {"name": "Inventory & Expiry Management", "description": "Automated alerts for stock approaching expiration.", "complexity": "Medium", "impact": "Medium"}
+                ]
+            elif business_type == "consumer_product":
+                mvp_features = [
+                    {"name": "D2C Product Configurator", "description": "Interactive web tool for customers to customize products.", "complexity": "Medium", "impact": "High"},
+                    {"name": "Order & Inventory Tracking", "description": "Real-time sync between warehouse and storefront.", "complexity": "Medium", "impact": "High"},
+                    {"name": "Automated Returns Handling", "description": "Self-service portal for processing customer returns.", "complexity": "Low", "impact": "Medium"}
+                ]
+            elif business_type == "healthcare":
+                mvp_features = [
+                    {"name": "Digital Patient Intake & Scheduling", "description": "HIPAA-compliant portal for patient onboarding and booking.", "complexity": "High", "impact": "High"},
+                    {"name": "Clinical Notes & EHR Integration", "description": "Secure system for doctors to log patient encounters.", "complexity": "High", "impact": "High"},
+                    {"name": "E-Prescription Management", "description": "Module for generating and sending digital prescriptions.", "complexity": "Medium", "impact": "High"}
+                ]
+            elif business_type == "manufacturing":
+                mvp_features = [
+                    {"name": "Production Scheduling Dashboard", "description": "Visual planner for factory floor operations and shifts.", "complexity": "High", "impact": "High"},
+                    {"name": "Quality Control Checkpoints", "description": "Digital logging of QA metrics at key production stages.", "complexity": "Medium", "impact": "High"},
+                    {"name": "Raw Material Inventory System", "description": "Tracking of component stock levels and reorder alerts.", "complexity": "Medium", "impact": "High"}
+                ]
+            elif business_type == "marketplace":
+                mvp_features = [
+                    {"name": "Seller Onboarding & Verification", "description": "KYC and profile creation tools for supply-side users.", "complexity": "Medium", "impact": "High"},
+                    {"name": "Advanced Buyer Search & Filters", "description": "Robust search engine to match demand with supply.", "complexity": "Medium", "impact": "High"},
+                    {"name": "Payment Escrow & Review System", "description": "Secure transaction processing and trust-building reviews.", "complexity": "High", "impact": "High"}
+                ]
+            else: # software_saas or fallback
+                mvp_features = [
+                    {"name": f"{title_name} Core Automation Engine", "description": f"Primary functional pipeline automating core user workflow for {idea.lower()}.", "complexity": "Medium", "impact": "High"},
+                    {"name": "Intuitive Mobile & Web Control Portal", "description": "Responsive dashboard providing real-time telemetry and management controls.", "complexity": "Low", "impact": "High"},
+                    {"name": "Automated Notification & Analytics Hub", "description": "Instant alerts and reporting with visual metrics.", "complexity": "Medium", "impact": "Medium"}
+                ]
+
             return {
-                "mvp_features": [
-                    {
-                        "name": f"{title_name} Core Automation Engine",
-                        "description": f"Primary functional pipeline automating core user workflow for {idea.lower()}.",
-                        "complexity": "Medium",
-                        "impact": "High"
-                    },
-                    {
-                        "name": "Intuitive Mobile & Web Control Portal",
-                        "description": "Responsive glassmorphism dashboard providing real-time telemetry and management controls.",
-                        "complexity": "Low",
-                        "impact": "High"
-                    },
-                    {
-                        "name": "Automated Notification & Analytics Hub",
-                        "description": "Instant alerts via WhatsApp API, Email, and Push Notifications with visual metrics.",
-                        "complexity": "Medium",
-                        "impact": "Medium"
-                    }
-                ],
+                "mvp_features": mvp_features,
                 "advanced_features": [
                     {
                         "name": "AI Predictive Analytics & Workflow Optimization",
@@ -172,20 +204,19 @@ class ProductAgent:
                     }
                 ],
                 "user_journey": [
-                    f"Step 1: User signs up via mobile or web portal for {idea.lower()}.",
-                    "Step 2: System configures core settings and initiates automated workflow.",
-                    "Step 3: Real-time telemetry dashboard displays actionable insights and results."
+                    f"Step 1: User signs up or accesses the platform for {idea.lower()}.",
+                    "Step 2: System configures core settings based on user role.",
+                    "Step 3: User interacts with the primary dashboard to execute key tasks and monitor insights."
                 ],
                 "priority_matrix": [
                     {
-                        "feature_name": f"{title_name} Core Engine",
+                        "feature_name": mvp_features[0]["name"],
                         "quadrant": "Quick Win",
                         "effort": "Low",
                         "value": "High"
                     }
                 ]
             }
-
         raw_json = await llm_service.generate_structured_json(
             system_prompt=system_prompt,
             user_prompt=user_prompt,

@@ -11,6 +11,8 @@ class AgentStepEnum(str, Enum):
     ROADMAP = "roadmap"
     PITCH = "pitch"
     VALIDATION = "validation"
+    CLASSIFICATION = "classification"
+    QUALITY_CONTROL = "quality_control"
     MERGE = "merge"
     COMPLETED = "completed"
 
@@ -34,6 +36,29 @@ class TargetUserGroup(BaseModel):
     persona: str = Field(..., description="User group persona title.")
     description: str = Field(..., description="Key characteristics and demographics.")
     pain_points: List[str] = Field(default_factory=list)
+
+class ClassificationOutput(BaseModel):
+    business_type: str
+    industry: str
+    target_customers: str
+    core_problem: str
+    digital_or_physical: str
+    b2b_or_b2c: str
+    required_technologies: List[str]
+    confidence_score: int
+    anti_patterns: List[str]
+    recommended_business_models: List[str]
+    recommended_roadmap_style: str
+
+class QualityControlOutput(BaseModel):
+    violations_found: List[str]
+    corrections_applied: List[str]
+    category_match_score: int
+    roadmap_fit_score: int
+    pricing_model_fit_score: int
+    unnecessary_recommendations: List[str]
+    corrected_sections: Dict[str, Any]
+    quality_verdict: str
 
 class ResearchOutput(BaseModel):
     industry: str
@@ -120,6 +145,8 @@ class StartupBlueprint(BaseModel):
     roadmap: Optional[RoadmapOutput] = None
     pitch: Optional[PitchOutput] = None
     validation: Optional[ValidationOutput] = None
+    classification: Optional[ClassificationOutput] = None
+    quality_control: Optional[QualityControlOutput] = None
     executive_summary: Optional[str] = None
 
 class AgentProgressUpdate(BaseModel):

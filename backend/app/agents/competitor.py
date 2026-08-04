@@ -9,7 +9,7 @@ from app.models.schemas import CompetitorOutput
 logger = logging.getLogger("synovia.agent.competitor")
 
 class CompetitorAgent:
-    async def run(self, idea: str, research_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def run(self, idea: str, research_data: Dict[str, Any], classification_data: Dict[str, Any] = None) -> Dict[str, Any]:
         logger.info(f"CompetitorAgent executing for idea: '{idea}'")
         
         search_query = f"{idea} top competitors market alternatives real companies"
@@ -21,6 +21,9 @@ class CompetitorAgent:
             .replace("{research_context}", json.dumps(research_data, indent=2))
         )
         
+
+        classification_context = json.dumps(classification_data, indent=2) if classification_data else '{}'
+        system_prompt = system_prompt.replace("{classification_context}", classification_context)
         user_prompt = (
             f"Analyze real, existing direct and indirect competitors operating strictly within the market domain of: '{idea}'.\n"
             f"Only include real companies and brand names that directly compete in '{idea}'.\n"
@@ -157,7 +160,9 @@ class CompetitorAgent:
                     "defensability_strategy": "Proprietary smart battery management system (BMS), automated charger health telemetry, and exclusive highway site leases."
                 }
 
-            # 6. Universal Clean Real Competitor Synthesizer
+            
+            # 6. Classification-aware Competitor Synthesizer
+            business_type = classification_data.get('business_type', 'other') if classification_data else 'other'
             return {
                 "competitors": [
                     {
@@ -178,11 +183,10 @@ class CompetitorAgent:
                     }
                 ],
                 "market_gaps": [
-                    f"Significant market opportunity for a modernized, AI-driven platform delivering 10x faster execution and competitive localized pricing for {idea.lower()}."
+                    f"Significant market opportunity for a modernized platform tailored to {business_type} workflows delivering 10x faster execution and competitive localized pricing for {idea.lower()}."
                 ],
-                "defensability_strategy": f"Proprietary automation algorithms, direct API & logistics integrations, and strong localized brand positioning."
+                "defensability_strategy": f"Proprietary automation algorithms specific to {business_type}, direct API & logistics integrations, and strong localized brand positioning."
             }
-
         raw_json = await llm_service.generate_structured_json(
             system_prompt=system_prompt,
             user_prompt=user_prompt,

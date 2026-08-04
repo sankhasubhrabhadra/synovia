@@ -1,102 +1,27 @@
-import json
-import logging
-from typing import Dict, Any, Optional
-from app.services.llm import llm_service
-from app.tools.web_search import web_search
-from app.prompts.templates import RESEARCH_AGENT_PROMPT
-from app.models.schemas import ResearchOutput
+import os
+import re
 
-logger = logging.getLogger("synovia.agent.research")
+BASE_DIR = r"C:\Users\Lenovo\.gemini\antigravity\scratch\synovia\backend\app\agents"
 
-class ResearchAgent:
-    async def run(self, idea: str, target_market: Optional[str] = None, classification_data: Dict[str, Any] = None) -> Dict[str, Any]:
-        logger.info(f"ResearchAgent executing for idea: '{idea}'")
-        
-        search_query = f"{idea} market size industry analysis India global customer pain points"
-        search_results = await web_search.search_market_data(search_query)
+# 1. research.py
+with open(os.path.join(BASE_DIR, "research.py"), "r", encoding="utf-8") as f:
+    content = f.read()
 
-        system_prompt = (
-            RESEARCH_AGENT_PROMPT
-            .replace("{idea}", idea)
-            .replace("{target_market}", target_market or "India & Global")
-        )
-        
+content = content.replace(
+    'async def run(self, idea: str, target_market: Optional[str] = None) -> Dict[str, Any]:',
+    'async def run(self, idea: str, target_market: Optional[str] = None, classification_data: Dict[str, Any] = None) -> Dict[str, Any]:'
+)
 
+system_prompt_addition = '''
         classification_context = json.dumps(classification_data, indent=2) if classification_data else '{}'
         system_prompt = system_prompt.replace("{classification_context}", classification_context)
-        user_prompt = f"Perform deep, comprehensive market research for: '{idea}'. Target Market: {target_market or 'India & Global'}. Web insights: {search_results}"
+'''
+content = content.replace(
+    '        user_prompt = f"Perform deep, comprehensive market research for',
+    system_prompt_addition + '        user_prompt = f"Perform deep, comprehensive market research for'
+)
 
-        def fallback_generator() -> Dict[str, Any]:
-            idea_lower = idea.lower()
-            
-            # 1. Camera / Photography / Action Imaging
-            if any(k in idea_lower for k in ["camera", "cam", "photo", "imaging", "lens", "video", "drone"]):
-                return {
-                    "industry": "Smart Action Cameras, AI Computational Imaging & Creator Hardware",
-                    "market_size": {
-                        "tam": "$14.2 Billion (₹1,17,000 Crores) Global Digital Camera & Action Cam Market growing at 11.8% CAGR.",
-                        "sam": "$3.6 Billion (₹29,800 Crores) AI Action Cam & Vlogging Camera segment in Asia-Pacific & India.",
-                        "som": "$140 Million (₹1,150 Crores / ₹115 Cr) Obtainable Market targeting content creators, vloggers, & outdoor sports enthusiasts."
-                    },
-                    "customer_pain_points": [
-                        "Bulky camera gear requiring manual color grading, complex editing software, and slow SD-card file transfers.",
-                        "Poor low-light performance and battery overheating during long 4K/60FPS video recording sessions.",
-                        "Lack of automated AI framing and multi-angle auto-tracking for solo content creators."
-                    ],
-                    "market_opportunities": [
-                        "Launch an AI-native 4K/60FPS compact action camera featuring on-device real-time AI auto-editing & cloud sync.",
-                        "Direct-to-Consumer (D2C) brand positioning targeting 50 Million+ global content creators and Indian YouTube/Instagram influencers."
-                    ],
-                    "target_users": [
-                        {
-                            "persona": "Solo Content Creators & Travel Vloggers",
-                            "description": "Creators producing daily video content for YouTube, Instagram Reels, & Shorts.",
-                            "pain_points": ["Manual editing fatigue", "Unstable handheld footage", "Slow file transfer to phone"]
-                        },
-                        {
-                            "persona": "Action Sports & Outdoor Enthusiasts",
-                            "description": "Athletes, cyclists, and travelers capturing extreme sports and adventure activities.",
-                            "pain_points": ["Water & shock damage vulnerability", "Short battery life", "Overheating in sunlight"]
-                        }
-                    ],
-                    "industry_trends": [
-                        "Surge in short-form video creation driving demand for lightweight AI computational cameras.",
-                        "Transition from manual SD-card file management to instant Wi-Fi 6E/5G direct-to-cloud auto-backup."
-                    ]
-                }
-
-            # 2. Backpack / Travel Gear
-            elif any(k in idea_lower for k in ["backpack", "bag", "travel", "luggage", "gear", "carry"]):
-                return {
-                    "industry": "Smart Travel Hardware & Ergonomic D2C Carry Gear",
-                    "market_size": {
-                        "tam": "$24.8 Billion (₹2,05,000 Crores) Global Backpack & Travel Gear Market at 6.8% CAGR.",
-                        "sam": "$5.4 Billion (₹44,500 Crores) Premium Urban Commuter & Digital Nomad segment.",
-                        "som": "$180 Million (₹1,480 Crores / ₹148 Cr) Obtainable Market targeting tech-savvy travelers & remote workers."
-                    },
-                    "customer_pain_points": [
-                        "Heavy, non-ergonomic designs causing back strain during long daily commutes in public transit.",
-                        "Lack of built-in device charging, TSA anti-theft locks, and weather-proofing against heavy monsoon rains.",
-                        "Poor modular organization for modern laptops, tablets, and electronics."
-                    ],
-                    "market_opportunities": [
-                        "Direct-to-Consumer (D2C) brand positioning focused on eco-friendly waterproof fabrics.",
-                        "Integrated smart tracking (AirTag/GPS compatibility) and solar-charging battery banks."
-                    ],
-                    "target_users": [
-                        {
-                            "persona": "Digital Nomads & Remote Workers",
-                            "description": "Tech professionals carrying laptops, cameras, and gear daily.",
-                            "pain_points": ["Airport security hassle", "Cable clutter", "Theft anxiety"]
-                        }
-                    ],
-                    "industry_trends": [
-                        "Surge in demand for anti-theft TSA-compliant travel gear.",
-                        "Consumer preference shift toward sustainable ocean-recycled fabrics."
-                    ]
-                }
-
-            
+fallback_replacement = '''
             # 3. Dynamic Industry Intelligence based on Classification
             business_type = classification_data.get('business_type', 'other') if classification_data else 'other'
             classified_industry = classification_data.get('industry', idea.capitalize()) if classification_data else idea.capitalize()
@@ -173,16 +98,17 @@ class ResearchAgent:
                     "target_users": [{"persona": "Target Customer", "description": "Needs this solution", "pain_points": ["Current manual methods"]}],
                     "industry_trends": ["Digital transformation", "Automation"]
                 }
-        raw_json = await llm_service.generate_structured_json(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            fallback_data_generator=fallback_generator
-        )
+'''
 
-        try:
-            validated = ResearchOutput(**raw_json)
-            return validated.model_dump()
-        except Exception:
-            return raw_json
+content = re.sub(
+    r'# 3\. Universal High-Quality Industry Intelligence.*(?=        raw_json = await)',
+    fallback_replacement,
+    content,
+    flags=re.DOTALL
+)
 
-research_agent = ResearchAgent()
+import json
+content = "import json\n" + content if "import json" not in content else content
+
+with open(os.path.join(BASE_DIR, "research.py"), "w", encoding="utf-8") as f:
+    f.write(content)
