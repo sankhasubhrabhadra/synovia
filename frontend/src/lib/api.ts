@@ -1,4 +1,3 @@
-// Active Cloudflare Tunnel Backend URL
 const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://cst-beatles-blanket-chelsea.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
@@ -6,7 +5,8 @@ export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") {
-      return CLOUDFLARE_TUNNEL_URL;
+      // Use Vercel Serverless Proxy Rewrite (/api) for 100% same-origin reliability on all devices
+      return "";
     }
   }
   return LOCALHOST_URL;
