@@ -1,3 +1,4 @@
+// Active Production Backend URL (or Cloudflare Tunnel URL)
 const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://owned-brighton-guidelines-qualify.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
@@ -5,8 +6,7 @@ export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") {
-      // Return relative empty string so fetches try Vercel Proxy Rewrite first
-      return "";
+      return CLOUDFLARE_TUNNEL_URL;
     }
   }
   return LOCALHOST_URL;
@@ -73,13 +73,12 @@ const defaultHeaders: Record<string, string> = {
 };
 
 /**
- * Ultra-resilient fetch wrapper with automatic fallback between Vercel Serverless Proxy and Direct Cloudflare Tunnel
+ * Ultra-resilient fetch wrapper with automatic retries
  */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
-  const primaryBaseUrl = getApiBaseUrl();
-  const directTunnelUrl = CLOUDFLARE_TUNNEL_URL;
-
+  const baseUrl = getApiBaseUrl();
   const token = getAuthToken();
+  
   const headers: Record<string, string> = { 
     ...defaultHeaders, 
     ...(options.headers as Record<string, string> || {}) 
@@ -89,29 +88,26 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  // Target 1: Try Primary Base URL (Vercel Same-Origin Proxy)
-  try {
-    const url = `${primaryBaseUrl}${path}`;
-    const response = await fetch(url, { ...options, mode: "cors", headers });
-    // If response is valid (2xx, 4xx auth errors), return it
-    if (response.ok || response.status < 500) {
+  // Attempt up to 3 retries on backend URL to handle transient connection handshakes
+  let lastError: any = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const url = `${baseUrl}${path}`;
+      const response = await fetch(url, { ...options, mode: "cors", headers });
       return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Attempt ${attempt}/3 to backend (${baseUrl}${path}) failed. Retrying...`);
+      if (attempt < 3) {
+        await new Promise((res) => setTimeout(res, attempt * 600));
+      }
     }
-  } catch (err) {
-    console.warn(`Primary proxy endpoint (${primaryBaseUrl}${path}) failed. Attempting direct tunnel fallback...`);
   }
 
-  // Target 2: Fallback to Direct Cloudflare Tunnel URL
-  try {
-    const directUrl = `${directTunnelUrl}${path}`;
-    const response = await fetch(directUrl, { ...options, mode: "cors", headers });
-    return response;
-  } catch (fallbackErr) {
-    console.error("All backend connection attempts failed:", fallbackErr);
-    throw new Error(
-      "Unable to connect to Synovia Backend. Please verify the backend server and tunnel are active."
-    );
-  }
+  console.error("All backend connection attempts failed:", lastError);
+  throw new Error(
+    "Unable to connect to Synovia Backend. Please verify the backend server and tunnel are active."
+  );
 }
 
 export async function checkBackendHealth(): Promise<boolean> {
@@ -162,7 +158,7 @@ export async function getMe(): Promise<User> {
   return data;
 }
 
-/* Project API Functions (Using clean routes without trailing slash to prevent Next.js 308 Redirects) */
+/* Project API Functions */
 export async function createProject(idea: string, targetMarket?: string): Promise<Project> {
   const response = await fetchResilient(`/api/projects`, {
     method: "POST",
@@ -210,7 +206,7 @@ export async function clearAllProjects(): Promise<void> {
 }
 
 export function getProjectStreamUrl(id: string): string {
-  const baseUrl = CLOUDFLARE_TUNNEL_URL;
+  const baseUrl = getApiBaseUrl();
   return `${baseUrl}/api/projects/${id}/stream`;
 }
 
