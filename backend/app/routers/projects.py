@@ -14,6 +14,7 @@ from app.database.models import ProjectDB
 from app.models.schemas import ProjectCreate, ProjectResponse, StatusEnum, AgentStepEnum
 from app.agents.manager import manager_agent, register_sse_listener, unregister_sse_listener
 from app.tools.report_generator import PDFReportGenerator
+from app.tools.ppt_generator import PPTReportGenerator
 
 logger = logging.getLogger("synovia.router.projects")
 router = APIRouter(prefix="/projects", tags=["Projects"])
@@ -191,11 +192,40 @@ async def download_pdf_report(project_id: str, db: AsyncSession = Depends(get_db
     if not proj or not proj.blueprint_json:
         raise HTTPException(status_code=400, detail="Blueprint data is missing or incomplete for PDF generation.")
         
-    pdf_bytes = PDFReportGenerator.generate_blueprint_pdf(proj.idea, proj.blueprint_json)
+    blueprint = proj.blueprint_json
+    if isinstance(blueprint, dict) and "idea" not in blueprint:
+        blueprint["idea"] = proj.idea
+        
+    pdf_bytes = PDFReportGenerator.generate_blueprint_pdf(blueprint)
     filename = f"Synovia_Blueprint_{proj.idea[:15].replace(' ', '_')}.pdf"
     
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@router.get("/{project_id}/ppt")
+async def download_ppt_deck(project_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Generates and downloads a 16:9 executive PowerPoint (.pptx) pitch deck.
+    """
+    result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
+    proj = result.scalar_one_or_none()
+    
+    if not proj or not proj.blueprint_json:
+        raise HTTPException(status_code=400, detail="Blueprint data is missing or incomplete for PPT generation.")
+        
+    generator = PPTReportGenerator()
+    blueprint = proj.blueprint_json
+    if isinstance(blueprint, dict) and "idea" not in blueprint:
+        blueprint["idea"] = proj.idea
+        
+    ppt_bytes = generator.create_deck(blueprint)
+    filename = f"Synovia_Pitch_Deck_{proj.idea[:15].replace(' ', '_')}.pptx"
+    
+    return Response(
+        content=ppt_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )

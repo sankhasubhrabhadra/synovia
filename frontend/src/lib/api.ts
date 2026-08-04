@@ -67,14 +67,15 @@ export function getStoredUser(): User | null {
 }
 
 /**
- * Resilient fetch wrapper with automatic retries against the active tunnel URL.
+ * Resilient fetch wrapper that passes responses directly and handles network errors.
  */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}${path}`;
 
+  const isPostOrPut = options.method && ["POST", "PUT", "PATCH"].includes(options.method.toUpperCase());
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isPostOrPut ? { "Content-Type": "application/json" } : {}),
     ...(options.headers as Record<string, string> || {}),
   };
 
@@ -82,10 +83,7 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const response = await fetch(url, { ...options, mode: "cors", headers });
-      if (response.ok) {
-        return response;
-      }
-      lastError = new Error(`HTTP ${response.status} ${response.statusText}`);
+      return response; // Return response directly regardless of HTTP status code
     } catch (err) {
       lastError = err;
     }
@@ -169,7 +167,10 @@ export function getProjectStreamUrl(id: string): string {
 
 export async function downloadProjectPdfFile(id: string, ideaName: string = "Blueprint"): Promise<void> {
   const response = await fetchResilient(`/api/projects/${id}/pdf`);
-  if (!response.ok) throw new Error(`Failed to download PDF: ${response.statusText}`);
+  if (!response.ok) {
+    const errObj = await response.json().catch(() => ({}));
+    throw new Error(errObj.detail || `PDF generation pending or failed (${response.status})`);
+  }
   const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -183,7 +184,10 @@ export async function downloadProjectPdfFile(id: string, ideaName: string = "Blu
 
 export async function downloadProjectPptFile(id: string, ideaName: string = "Pitch_Deck"): Promise<void> {
   const response = await fetchResilient(`/api/projects/${id}/ppt`);
-  if (!response.ok) throw new Error(`Failed to download PPT: ${response.statusText}`);
+  if (!response.ok) {
+    const errObj = await response.json().catch(() => ({}));
+    throw new Error(errObj.detail || `PPT generation pending or failed (${response.status})`);
+  }
   const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
