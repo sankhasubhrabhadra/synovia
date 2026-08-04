@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Rocket, ArrowRight, Bot, Target, Cpu, TrendingUp, ShieldCheck, Zap } from "lucide-react";
+import { 
+  Sparkles, Rocket, ArrowRight, Bot, Cpu, TrendingUp, ShieldCheck, 
+  Terminal, Sliders, Play, Layers, Code, CheckCircle2 
+} from "lucide-react";
 
 interface LandingHeroProps {
   onSubmitIdea: (idea: string, market?: string) => void;
@@ -10,10 +13,11 @@ interface LandingHeroProps {
 }
 
 const SAMPLE_IDEAS = [
-  "AI-powered medical billing audit software for independent clinics",
-  "Autonomous devops agent that auto-remediates Kubernetes cluster errors",
-  "B2B SaaS for automated climate compliance and carbon offset tracking",
-  "Voice-activated AI copilot for real estate agents during property tours"
+  { label: "🚚 Fruit Transport Company", idea: "Fruit Transport & Cold-Chain Logistics Company connecting regional orchards to wholesale markets" },
+  { label: "🎒 Smart Anti-Theft Backpack", idea: "Smart Ergonomic Anti-Theft Backpack with integrated TSA biometric locks and solar charging" },
+  { label: "🐟 Dockside Fresh Fish Market", idea: "Direct Dockside Seafood Marketplace delivering 100% formalin-free fresh catch in 90 minutes" },
+  { label: "🩺 Ambient AI Medical Scribe", idea: "Ambient AI Medical Scribe converting doctor-patient audio consultations into structured clinical notes" },
+  { label: "⚡ EV Battery Swapping Fleet", idea: "1-Minute EV Battery Swapping Network for commercial 2-wheeler and 3-wheeler delivery fleets" }
 ];
 
 export function LandingHero({ onSubmitIdea, isSubmitting }: LandingHeroProps) {
@@ -26,94 +30,104 @@ export function LandingHero({ onSubmitIdea, isSubmitting }: LandingHeroProps) {
     onSubmitIdea(idea.trim(), targetMarket.trim() || undefined);
   };
 
-  const handleSelectSample = (sample: string) => {
-    setIdea(sample);
-  };
-
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 md:py-16">
-      {/* Hero Header */}
+    <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+      {/* Studio Header & Tagline */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center space-y-6 mb-12"
+        transition={{ duration: 0.4 }}
+        className="text-center space-y-4 mb-8"
       >
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-cyan-500/10 border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
-          <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
-          <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider">
-            Autonomous Multi-Agent AI Swarm
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-lg shadow-blue-500/5">
+          <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
+          <span className="text-xs font-extrabold text-blue-300 uppercase tracking-widest">
+            Synovia AI Studio Workspace
           </span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-[1.15]">
-          Turn Any Startup Idea Into An <br />
-          <span className="text-gradient">Investor-Ready Blueprint</span>
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+          Describe Any Startup Idea. <br />
+          <span className="text-gradient-gemini">Synthesize An Investor-Ready Strategy.</span>
         </h1>
 
-        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
-          <strong className="text-slate-200">Your Autonomous AI Co-Founder.</strong> Synovia deploys specialized AI agents to research markets, benchmark competitors, spec product MVPs, design technical architectures, and draft pitch decks in seconds.
+        <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
+          Powered by an autonomous 8-agent AI swarm. Automatically classifies business type, enforces anti-pattern rules, and generates custom operational blueprints.
         </p>
       </motion.div>
 
-      {/* Main Idea Input Form */}
+      {/* Main Studio Prompt Box (Google AI Studio Styled) */}
       <motion.div 
-        initial={{ opacity: 0, scale: 0.96 }}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.15 }}
-        className="glass-panel p-6 sm:p-8 rounded-3xl glow-purple max-w-3xl mx-auto mb-12 border border-indigo-500/20 relative overflow-hidden"
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="studio-panel rounded-3xl p-5 sm:p-7 glow-gemini max-w-4xl mx-auto mb-10 relative overflow-hidden"
       >
-        {/* Subtle ambient lighting background */}
-        <div className="absolute -top-24 -left-24 w-60 h-60 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+        {/* Studio Workspace Bar Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-800/80 text-xs font-semibold text-slate-400">
+          <div className="flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-blue-400" />
+            <span className="text-white font-bold uppercase tracking-wider">Prompt Editor</span>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 font-mono">
+              Swarm: 8 Agents
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-[11px] text-blue-400 font-mono">
+              Mode: Auto-Classification
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-400 font-mono">
+              QC: Active
+            </span>
+          </div>
+        </div>
+
+        {/* Input Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                What is your startup idea?
-              </label>
-              <span className="text-[11px] text-slate-500 font-medium">Describe your vision or domain</span>
-            </div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+              Startup Vision & Core Idea
+            </label>
             <textarea
-              rows={3}
+              rows={4}
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              placeholder="e.g. An AI-powered medical billing audit software for independent clinics that auto-detects coding discrepancies..."
-              className="w-full px-4 py-3.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none shadow-inner"
+              placeholder="Enter any business vision... (e.g. A fruit transport company connecting regional orchards to wholesale markets with temperature monitoring...)"
+              className="w-full px-4 py-3.5 rounded-2xl studio-input text-white placeholder-slate-500 text-sm focus:outline-none transition-all resize-none shadow-inner font-sans"
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Target Market (Optional)
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                Target Market / Region Focus (Optional)
               </label>
               <input
                 type="text"
                 value={targetMarket}
                 onChange={(e) => setTargetMarket(e.target.value)}
-                placeholder="e.g. North America Healthcare SMBs"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950/90 border border-slate-800 text-slate-200 text-xs placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                placeholder="e.g. India & Global / Tier-1 Cities / B2B Commercial"
+                className="w-full px-3.5 py-2.5 rounded-xl studio-input text-slate-200 text-xs placeholder-slate-500 focus:outline-none"
               />
             </div>
+
             <div className="flex items-end">
               <button
                 type="submit"
                 disabled={isSubmitting || !idea.trim()}
-                className="w-full flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    <span>Deploying Swarm...</span>
+                    <span>Executing Swarm...</span>
                   </>
                 ) : (
                   <>
-                    <Rocket className="w-4 h-4 text-indigo-200" />
-                    <span>Generate Startup Blueprint</span>
-                    <ArrowRight className="w-4 h-4 ml-1 text-indigo-200" />
+                    <Play className="w-4 h-4 text-blue-200 fill-blue-200" />
+                    <span>Run Studio Pipeline</span>
                   </>
                 )}
               </button>
@@ -121,59 +135,59 @@ export function LandingHero({ onSubmitIdea, isSubmitting }: LandingHeroProps) {
           </div>
         </form>
 
-        {/* Sample Prompt Chips */}
-        <div className="mt-6 pt-5 border-t border-slate-800/80 relative z-10">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
-            Or try one of these sample startup ideas:
+        {/* Quick Sample Presets */}
+        <div className="mt-5 pt-4 border-t border-slate-800/80">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+            Try a domain preset:
           </span>
           <div className="flex flex-wrap gap-2">
-            {SAMPLE_IDEAS.map((sample, idx) => (
+            {SAMPLE_IDEAS.map((preset, idx) => (
               <button
                 key={idx}
-                onClick={() => handleSelectSample(sample)}
-                className="text-left text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500/40 hover:bg-slate-900 transition-all cursor-pointer"
+                onClick={() => setIdea(preset.idea)}
+                className="chip-pill text-xs px-3 py-1.5 rounded-xl text-slate-300 hover:text-white font-medium cursor-pointer"
               >
-                "{sample}"
+                {preset.label}
               </button>
             ))}
           </div>
         </div>
       </motion.div>
 
-      {/* Feature Grid */}
+      {/* Feature Highlights Grid */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto"
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto"
       >
-        <div className="glass-card p-5 rounded-2xl">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-3">
-            <Bot className="w-5 h-5 text-purple-400" />
+        <div className="studio-card p-5 rounded-2xl">
+          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
+            <Layers className="w-4 h-4 text-blue-400" />
           </div>
-          <h3 className="font-bold text-sm text-white mb-1">7 Autonomous AI Agents</h3>
+          <h3 className="font-bold text-xs text-white uppercase tracking-wider mb-1">1. Idea Classifier Agent</h3>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Manager, Research, Competitor, Product, Technical Architect, Roadmap, and Pitch agents work together seamlessly.
+            Classifies into 19 categories (Transportation, Food, Hardware, Healthcare, Marketplace) to prevent SaaS template bias.
           </p>
         </div>
 
-        <div className="glass-card p-5 rounded-2xl">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-3">
-            <Cpu className="w-5 h-5 text-indigo-400" />
+        <div className="studio-card p-5 rounded-2xl">
+          <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-3">
+            <Bot className="w-4 h-4 text-purple-400" />
           </div>
-          <h3 className="font-bold text-sm text-white mb-1">Full Technical Stack Spec</h3>
+          <h3 className="font-bold text-xs text-white uppercase tracking-wider mb-1">2. Domain-Specific Swarm</h3>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Generates production architecture, DB schemas, API layer breakdowns, and folder structures.
+            Research, Competitors, MVP specs, Roadmaps & Monetization models adapt strictly to physical or digital requirements.
           </p>
         </div>
 
-        <div className="glass-card p-5 rounded-2xl">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-3">
-            <TrendingUp className="w-5 h-5 text-cyan-400" />
+        <div className="studio-card p-5 rounded-2xl">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
-          <h3 className="font-bold text-sm text-white mb-1">Investor Blueprint PDF</h3>
+          <h3 className="font-bold text-xs text-white uppercase tracking-wider mb-1">3. Quality Control Audit</h3>
           <p className="text-xs text-slate-400 leading-relaxed">
-            One-click download of a clean executive summary, competitor matrix, TAM sizing, and elevator pitch.
+            Final QC verification gate removes unneeded SaaS subscriptions or React dashboards before generating reports.
           </p>
         </div>
       </motion.div>

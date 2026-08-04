@@ -2,63 +2,95 @@
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
+    --background: 224 71% 3%;
     --foreground: 210 40% 98%;
-    --card: 224 71% 6%;
+    --card: 222 47% 7%;
     --card-foreground: 210 40% 98%;
-    --primary: 250 84% 67%;
+    --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
-    --accent: 190 90% 50%;
-    --border: 215 27.9% 16.9%;
+    --accent: 270 95% 65%;
+    --border: 217 33% 14%;
   }
 
   body {
-    background-color: #080c14;
-    color: #f8fafc;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #0b0f19;
+    color: #f1f5f9;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
+    letter-spacing: -0.011em;
   }
 }
 
-/* Custom Glassmorphism & Glow Utilities */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Google AI Studio Inspired UI Styles */
+.studio-canvas {
+  background-color: #0b0f19;
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 85% 85%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
 }
 
-.glass-card {
-  background: rgba(30, 41, 59, 0.4);
-  backdrop-filter: blur(12px);
+.studio-panel {
+  background: rgba(15, 22, 35, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.studio-card {
+  background: rgba(22, 30, 48, 0.6);
+  backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.07);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-card:hover {
-  background: rgba(30, 41, 59, 0.65);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(79, 70, 229, 0.15);
+.studio-card:hover {
+  background: rgba(26, 36, 58, 0.85);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 10px 30px -5px rgba(59, 130, 246, 0.15);
 }
 
-.text-gradient {
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 50%, #3b82f6 100%);
+.studio-input {
+  background: rgba(11, 15, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+}
+
+.studio-input:focus {
+  border-color: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.text-gradient-studio {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.text-gradient-cyan {
-  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+.text-gradient-gemini {
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 40%, #c084fc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.glow-purple {
-  box-shadow: 0 0 40px -10px rgba(168, 85, 247, 0.35);
+.glow-blue {
+  box-shadow: 0 0 35px -5px rgba(59, 130, 246, 0.3);
 }
 
-.glow-indigo {
-  box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.35);
+.glow-gemini {
+  box-shadow: 0 0 45px -10px rgba(129, 140, 248, 0.35);
+}
+
+.chip-pill {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.chip-pill:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(99, 102, 241, 0.4);
 }
 
 /* Custom Scrollbar */
@@ -68,7 +100,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #0b0f19;
 }
 
 ::-webkit-scrollbar-thumb {

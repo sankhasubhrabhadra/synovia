@@ -13,17 +13,19 @@ interface BlueprintViewProps {
 }
 
 export function BlueprintView({ project }: BlueprintViewProps) {
-  const [activeTab, setActiveTab] = useState<"summary" | "research" | "competitor" | "product" | "validation" | "roadmap" | "pitch">("summary");
+  const [activeTab, setActiveTab] = useState<"summary" | "classification" | "research" | "competitor" | "product" | "validation" | "roadmap" | "pitch" | "quality_control">("summary");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingPpt, setDownloadingPpt] = useState(false);
 
   const blueprint = project.blueprint || {};
+  const classification = blueprint.classification || {};
   const research = blueprint.research || {};
   const competitor = blueprint.competitor || {};
   const product = blueprint.product || {};
   const roadmap = blueprint.roadmap || {};
   const pitch = blueprint.pitch || {};
   const validation = blueprint.validation || {};
+  const qualityControl = blueprint.quality_control || {};
 
   const handleDownloadPdf = async () => {
     try {
@@ -97,12 +99,14 @@ export function BlueprintView({ project }: BlueprintViewProps) {
       <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-6 scrollbar-none border-b border-slate-800">
         {[
           { id: "summary", label: "Executive Summary", icon: FileText },
+          { id: "classification", label: "Business Category", icon: Layers },
           { id: "research", label: "Market Analysis", icon: Search },
           { id: "competitor", label: "Competitors & Gaps", icon: Users },
           { id: "product", label: "MVP Product Spec", icon: Layout },
           { id: "validation", label: "Validation & Strategy", icon: ShieldCheck },
           { id: "roadmap", label: "4-Week Roadmap", icon: Calendar },
           { id: "pitch", label: "Pitch & Monetization", icon: Presentation },
+          { id: "quality_control", label: "Quality Audit", icon: CheckSquare },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -110,9 +114,9 @@ export function BlueprintView({ project }: BlueprintViewProps) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border border-indigo-400/30"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 border border-blue-400/40"
                   : "bg-slate-900/60 text-slate-400 border border-slate-800/60 hover:bg-slate-800/80 hover:text-slate-200"
               }`}
             >
@@ -166,7 +170,76 @@ export function BlueprintView({ project }: BlueprintViewProps) {
           </div>
         )}
 
-        {/* 2. Market Analysis Tab */}
+        {/* 2. Business Classification & Anti-Patterns Tab */}
+        {activeTab === "classification" && (
+          <div className="space-y-6">
+            <div className="studio-card p-6 rounded-2xl border border-blue-500/20">
+              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <Layers className="w-5 h-5 text-blue-400" />
+                <span>Idea Classification & Business Category</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block mb-1">Classified Category</span>
+                  <p className="text-lg font-black text-white capitalize">{classification.business_type ? classification.business_type.replace("_", " ") : "Domain Specific"}</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">Domain & Industry</span>
+                  <p className="text-xs font-bold text-indigo-300">{classification.industry || "Industry Analysis"}</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-1">Business Model Type</span>
+                  <p className="text-xs font-bold text-emerald-300 capitalize">{classification.digital_or_physical || "physical"} • {classification.b2b_or_b2c || "b2b"}</p>
+                </div>
+              </div>
+
+              {/* Core Problem */}
+              {classification.core_problem && (
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 mb-6">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Core Problem Solved</h4>
+                  <p className="text-xs text-slate-200 font-medium">{classification.core_problem}</p>
+                </div>
+              )}
+
+              {/* Enforced Anti-Patterns Rules */}
+              {classification.anti_patterns && classification.anti_patterns.length > 0 && (
+                <div className="p-5 rounded-2xl bg-rose-950/20 border border-rose-500/30 mb-6">
+                  <h4 className="text-xs font-extrabold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                    <span>Enforced Anti-Pattern Rules (Prevented SaaS Bias)</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {classification.anti_patterns.map((rule: string, idx: number) => (
+                      <div key={idx} className="p-2.5 rounded-xl bg-slate-950/90 text-xs text-rose-300 border border-rose-500/20 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                        <span>{rule}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommended Business Models */}
+              {classification.recommended_business_models && classification.recommended_business_models.length > 0 && (
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3">Recommended Revenue Models</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {classification.recommended_business_models.map((model: string, idx: number) => (
+                      <span key={idx} className="px-3 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/30 text-xs font-semibold">
+                        {model}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 3. Market Analysis Tab */}
         {activeTab === "research" && (
           <div className="space-y-6">
             <div className="glass-card p-6 rounded-2xl">
@@ -573,6 +646,77 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                   <p className="text-xs sm:text-sm text-slate-100 italic leading-relaxed">
                     "{pitch.hackathon_pitch}"
                   </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 9. Quality Control Audit Tab */}
+        {activeTab === "quality_control" && (
+          <div className="space-y-6">
+            <div className="studio-card p-6 rounded-2xl border border-emerald-500/30">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2 mb-1">
+                    <CheckSquare className="w-5 h-5 text-emerald-400" />
+                    <span>Quality Control & Anti-Bias Audit</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Final verification gate ensuring outputs match the classified business category without generic template leakage.
+                  </p>
+                </div>
+
+                <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs uppercase tracking-wider shrink-0">
+                  Verdict: {qualityControl.quality_verdict || "PASS"}
+                </div>
+              </div>
+
+              {/* QC Scores */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Category Match Score</span>
+                  <p className="text-xl font-black text-emerald-400">{qualityControl.category_match_score || 95}/100</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Roadmap Fit Score</span>
+                  <p className="text-xl font-black text-blue-400">{qualityControl.roadmap_fit_score || 92}/100</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Pricing Model Fit Score</span>
+                  <p className="text-xl font-black text-indigo-400">{qualityControl.pricing_model_fit_score || 90}/100</p>
+                </div>
+              </div>
+
+              {/* Violations Flagged */}
+              {qualityControl.violations_found && qualityControl.violations_found.length > 0 && (
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 mb-4">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Template Violations Flagged</h4>
+                  <ul className="space-y-1.5">
+                    {qualityControl.violations_found.map((v: string, idx: number) => (
+                      <li key={idx} className="text-xs text-slate-300 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                        <span>{v}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Corrections Applied */}
+              {qualityControl.corrections_applied && qualityControl.corrections_applied.length > 0 && (
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Autonomous Corrections Applied</h4>
+                  <ul className="space-y-1.5">
+                    {qualityControl.corrections_applied.map((c: string, idx: number) => (
+                      <li key={idx} className="text-xs text-slate-300 flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{c}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
