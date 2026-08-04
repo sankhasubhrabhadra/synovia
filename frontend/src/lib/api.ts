@@ -1,15 +1,15 @@
-// Production Cloudflare Tunnel Backend URL (hardcoded for reliability)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://franklin-spies-senior-trace.trycloudflare.com";
+// Active Cloudflare Tunnel Backend URL
+const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://franklin-spies-senior-trace.trycloudflare.com";
+const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
-  // Client-side: if running on Vercel (not localhost), always use the production backend
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") {
-      return API_BASE_URL;
+      return CLOUDFLARE_TUNNEL_URL;
     }
   }
-  return "http://localhost:8000";
+  return LOCALHOST_URL;
 }
 
 export interface Project {
@@ -28,11 +28,32 @@ const defaultHeaders: Record<string, string> = {
   "ngrok-skip-browser-warning": "true",
 };
 
+/**
+ * Resilient fetch wrapper with automatic fallback between Cloudflare Tunnel and Localhost
+ */
+async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
+  const primaryBaseUrl = getApiBaseUrl();
+  const secondaryBaseUrl = primaryBaseUrl === CLOUDFLARE_TUNNEL_URL ? LOCALHOST_URL : CLOUDFLARE_TUNNEL_URL;
+
+  const headers = { ...defaultHeaders, ...(options.headers as Record<string, string> || {}) };
+
+  try {
+    const response = await fetch(`${primaryBaseUrl}${path}`, { ...options, headers });
+    return response;
+  } catch (err) {
+    console.warn(`Primary backend (${primaryBaseUrl}) unreachable, trying secondary backend (${secondaryBaseUrl})...`);
+    try {
+      const fallbackResponse = await fetch(`${secondaryBaseUrl}${path}`, { ...options, headers });
+      return fallbackResponse;
+    } catch (fallbackErr) {
+      throw new Error(`Failed to connect to backend server. Please verify your backend server is running.`);
+    }
+  }
+}
+
 export async function createProject(idea: string, targetMarket?: string, userGoal?: string): Promise<Project> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/projects`, {
+  const response = await fetchResilient(`/api/projects`, {
     method: "POST",
-    headers: defaultHeaders,
     body: JSON.stringify({
       idea,
       target_market: targetMarket,
@@ -48,10 +69,7 @@ export async function createProject(idea: string, targetMarket?: string, userGoa
 }
 
 export async function listProjects(limit: number = 200): Promise<Project[]> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/projects?limit=${limit}`, {
-    headers: defaultHeaders,
-  });
+  const response = await fetchResilient(`/api/projects?limit=${limit}`);
   if (!response.ok) {
     throw new Error(`Failed to list projects: ${response.statusText}`);
   }
@@ -59,10 +77,7 @@ export async function listProjects(limit: number = 200): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/projects/${id}`, {
-    headers: defaultHeaders,
-  });
+  const response = await fetchResilient(`/api/projects/${id}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch project ${id}: ${response.statusText}`);
   }
@@ -70,10 +85,8 @@ export async function getProject(id: string): Promise<Project> {
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/projects/${id}`, {
+  const response = await fetchResilient(`/api/projects/${id}`, {
     method: "DELETE",
-    headers: defaultHeaders,
   });
   if (!response.ok) {
     throw new Error(`Failed to delete project ${id}`);
@@ -81,10 +94,8 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 export async function clearAllProjects(): Promise<void> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/api/projects`, {
+  const response = await fetchResilient(`/api/projects`, {
     method: "DELETE",
-    headers: defaultHeaders,
   });
   if (!response.ok) {
     throw new Error(`Failed to clear all projects`);
