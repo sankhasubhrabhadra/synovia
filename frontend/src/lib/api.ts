@@ -174,18 +174,19 @@ export async function getMe(): Promise<User> {
 
 /* Project API Functions */
 export async function createProject(idea: string, targetMarket?: string): Promise<Project> {
-  const response = await fetchResilient(`/api/projects`, {
+  const response = await fetchResilient(`/api/projects/`, {
     method: "POST",
     body: JSON.stringify({ idea, target_market: targetMarket }),
   });
   if (!response.ok) {
-    throw new Error(`Failed to create project: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to create project: ${response.statusText}`);
   }
   return response.json();
 }
 
 export async function listProjects(limit: number = 200): Promise<Project[]> {
-  const response = await fetchResilient(`/api/projects?limit=${limit}`);
+  const response = await fetchResilient(`/api/projects/?limit=${limit}`);
   if (!response.ok) {
     throw new Error(`Failed to list projects`);
   }
@@ -210,7 +211,7 @@ export async function deleteProject(id: string): Promise<void> {
 }
 
 export async function clearAllProjects(): Promise<void> {
-  const response = await fetchResilient(`/api/projects`, {
+  const response = await fetchResilient(`/api/projects/`, {
     method: "DELETE",
   });
   if (!response.ok) {
