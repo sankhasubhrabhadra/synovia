@@ -1,5 +1,5 @@
 // Active Cloudflare HTTP/2 tunnel URL — direct backend target for all non-localhost devices
-const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://zus-call-fantastic-preference.trycloudflare.com";
+const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://lancaster-bluetooth-layers-rocks.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
