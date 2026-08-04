@@ -1,12 +1,11 @@
-// Active Production Backend URL (or Cloudflare Tunnel URL)
-const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://ends-reid-faqs-oxide.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") {
-      return CLOUDFLARE_TUNNEL_URL;
+      // Return relative empty string so fetches use same-origin Vercel Serverless Backend (/api)
+      return "";
     }
   }
   return LOCALHOST_URL;
@@ -68,12 +67,10 @@ export function getStoredUser(): User | null {
 
 const defaultHeaders: Record<string, string> = {
   "Content-Type": "application/json",
-  "bypass-tunnel-reminder": "true",
-  "ngrok-skip-browser-warning": "true",
 };
 
 /**
- * Ultra-resilient fetch wrapper with automatic retries
+ * Ultra-resilient fetch wrapper for Same-Origin Vercel Serverless API
  */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
   const baseUrl = getApiBaseUrl();
@@ -88,7 +85,6 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  // Attempt up to 3 retries on backend URL to handle transient connection handshakes
   let lastError: any = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -97,16 +93,15 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
       return response;
     } catch (err) {
       lastError = err;
-      console.warn(`Attempt ${attempt}/3 to backend (${baseUrl}${path}) failed. Retrying...`);
       if (attempt < 3) {
-        await new Promise((res) => setTimeout(res, attempt * 600));
+        await new Promise((res) => setTimeout(res, attempt * 500));
       }
     }
   }
 
-  console.error("All backend connection attempts failed:", lastError);
+  console.error("All API connection attempts failed:", lastError);
   throw new Error(
-    "Unable to connect to Synovia Backend. Please verify the backend server and tunnel are active."
+    "Unable to connect to Synovia Backend. Please check your internet connection."
   );
 }
 
