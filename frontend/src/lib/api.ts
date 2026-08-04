@@ -73,7 +73,7 @@ const defaultHeaders: Record<string, string> = {
 };
 
 /**
- * Resilient fetch wrapper with automatic fallback and JWT Authorization header
+ * Ultra-resilient fetch wrapper with automatic retries and fallback
  */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
   const primaryBaseUrl = getApiBaseUrl();
@@ -89,17 +89,30 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  try {
-    const response = await fetch(`${primaryBaseUrl}${path}`, { ...options, headers });
-    return response;
-  } catch (err) {
-    console.warn(`Primary backend (${primaryBaseUrl}) unreachable, trying secondary backend (${secondaryBaseUrl})...`);
+  // Attempt up to 3 retries on primary backend URL to handle transient tunnel wake-up delays
+  let lastError: any = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const fallbackResponse = await fetch(`${secondaryBaseUrl}${path}`, { ...options, headers });
-      return fallbackResponse;
-    } catch (fallbackErr) {
-      throw new Error(`Failed to connect to backend server. Please verify your backend server is running.`);
+      const response = await fetch(`${primaryBaseUrl}${path}`, { ...options, headers });
+      return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Attempt ${attempt}/3 to primary backend (${primaryBaseUrl}${path}) failed. Retrying...`);
+      if (attempt < 3) {
+        await new Promise((res) => setTimeout(res, attempt * 600));
+      }
     }
+  }
+
+  // Fallback attempt to secondary backend
+  try {
+    const fallbackResponse = await fetch(`${secondaryBaseUrl}${path}`, { ...options, headers });
+    return fallbackResponse;
+  } catch (fallbackErr) {
+    console.error("All backend connection attempts failed:", lastError || fallbackErr);
+    throw new Error(
+      "Unable to connect to Synovia Backend. Please check your internet connection or verify the server is active."
+    );
   }
 }
 
@@ -111,7 +124,7 @@ export async function signupUser(email: string, password: string, fullName: stri
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to sign up account");
+    throw new Error(errorData.detail || "Account creation failed. An account with this email may already exist.");
   }
   const data: AuthResponse = await response.json();
   setAuthSession(data.access_token, data.user);
@@ -125,7 +138,7 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Invalid email address or password");
+    throw new Error(errorData.detail || "Invalid email address or password. Please try again.");
   }
   const data: AuthResponse = await response.json();
   setAuthSession(data.access_token, data.user);
