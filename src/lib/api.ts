@@ -1,4 +1,3 @@
-// Active Cloudflare HTTP/2 tunnel URL — direct backend target for all non-localhost devices
 const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://lancaster-bluetooth-layers-rocks.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
@@ -6,8 +5,7 @@ export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") {
-      // Always use the direct tunnel URL for external devices — skip Vercel proxy entirely
-      return CLOUDFLARE_TUNNEL_URL;
+      return ""; // Use same-origin Vercel proxy rewrite (/api) for 100% CORS reliability
     }
   }
   return LOCALHOST_URL;
@@ -72,10 +70,13 @@ const defaultHeaders: Record<string, string> = {
   "bypass-tunnel-reminder": "true",
 };
 
+/**
+ * Ultra-resilient fetch wrapper:
+ * 1. Tries same-origin Vercel Next.js proxy rewrite first.
+ * 2. If Vercel proxy returns non-ok, retries directly against live Cloudflare tunnel URL.
+ */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
-  const baseUrl = getApiBaseUrl();
   const token = getAuthToken();
-
   const headers: Record<string, string> = {
     ...defaultHeaders,
     ...(options.headers as Record<string, string> || {}),
@@ -85,20 +86,25 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  let lastError: any = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const url = `${baseUrl}${path}`;
-      const response = await fetch(url, { ...options, mode: "cors", headers });
-      return response;
-    } catch (err) {
-      lastError = err;
-      if (attempt < 3) await new Promise((res) => setTimeout(res, attempt * 400));
-    }
+  const primaryUrl = `${getApiBaseUrl()}${path}`;
+  const fallbackUrl = `${CLOUDFLARE_TUNNEL_URL}${path}`;
+
+  // Try primary same-origin Vercel proxy first
+  try {
+    const res = await fetch(primaryUrl, { ...options, mode: "cors", headers });
+    if (res.ok) return res;
+  } catch (err) {
+    console.warn("Same-origin Vercel proxy attempt failed, falling back to direct tunnel:", err);
   }
 
-  console.error("All API connection attempts failed:", lastError);
-  throw new Error("Unable to connect to Synovia Backend. Please verify the backend tunnel is active.");
+  // Fallback directly to Cloudflare Tunnel
+  try {
+    const resFallback = await fetch(fallbackUrl, { ...options, mode: "cors", headers });
+    return resFallback;
+  } catch (err) {
+    console.error("Direct tunnel fetch also failed:", err);
+    throw new Error("Unable to connect to Synovia Backend. Please check your internet connection or verify the server is active.");
+  }
 }
 
 export async function checkBackendHealth(): Promise<boolean> {
@@ -118,7 +124,7 @@ export async function signupUser(email: string, password: string, fullName: stri
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Account creation failed. Email may already be registered.");
+    throw new Error(errorData.detail || "Account creation failed. Email address may already be registered.");
   }
   const data: AuthResponse = await response.json();
   setAuthSession(data.access_token, data.user);
@@ -132,7 +138,7 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Invalid email or password.");
+    throw new Error(errorData.detail || "Invalid email address or password. Please try again.");
   }
   const data: AuthResponse = await response.json();
   setAuthSession(data.access_token, data.user);
@@ -184,8 +190,10 @@ export async function clearAllProjects(): Promise<void> {
 }
 
 export function getProjectStreamUrl(id: string): string {
-  const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/api/projects/${id}/stream`;
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    return `/api/projects/${id}/stream`;
+  }
+  return `http://localhost:8000/api/projects/${id}/stream`;
 }
 
 export async function downloadProjectPdfFile(id: string, ideaName: string = "Blueprint"): Promise<void> {

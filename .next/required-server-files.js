@@ -306,7 +306,17 @@ self.__SERVER_FILES_MANIFEST={
     "turbopack": {
       "root": "C:\\Users\\Lenovo\\.gemini\\antigravity\\scratch\\synovia"
     },
-    "distDirRoot": ".next"
+    "distDirRoot": ".next",
+    "_originalRewrites": {
+      "beforeFiles": [],
+      "afterFiles": [
+        {
+          "source": "/api/:path*",
+          "destination": "https://lancaster-bluetooth-layers-rocks.trycloudflare.com/api/:path*"
+        }
+      ],
+      "fallback": []
+    }
   },
   "appDir": "C:\\Users\\Lenovo\\.gemini\\antigravity\\scratch\\synovia",
   "relativeAppDir": "",

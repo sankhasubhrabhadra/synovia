@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://lancaster-bluetooth-layers-rocks.trycloudflare.com";
+
 const nextConfig: NextConfig = {
-  // No rewrites — frontend calls the backend directly via CLOUDFLARE_TUNNEL_URL
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${BACKEND_URL}/api/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
