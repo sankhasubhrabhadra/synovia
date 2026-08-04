@@ -47,9 +47,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Dual-mount routes to support both local /api/projects AND Vercel Serverless /projects
+app.include_router(auth_router, prefix="/api")
 app.include_router(auth_router)
+
+app.include_router(projects_router, prefix="/api")
 app.include_router(projects_router)
 
+@app.get("/health")
 @app.get("/api/health")
 async def health_check():
     return {

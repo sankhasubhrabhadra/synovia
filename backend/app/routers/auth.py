@@ -10,7 +10,7 @@ from app.database.models import UserDB
 from app.core.security import hash_password, verify_password, create_access_token, decode_access_token, extract_token_from_header
 
 logger = logging.getLogger("synovia.router.auth")
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 class UserSignupRequest(BaseModel):
     email: str = Field(..., description="User email address")

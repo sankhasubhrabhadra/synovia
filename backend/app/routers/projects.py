@@ -17,7 +17,7 @@ from app.tools.report_generator import PDFReportGenerator
 from app.core.security import extract_token_from_header, decode_access_token
 
 logger = logging.getLogger("synovia.router.projects")
-router = APIRouter(prefix="/api/projects", tags=["Projects"])
+router = APIRouter(prefix="/projects", tags=["Projects"])
 
 def get_current_user_id(authorization: Optional[str] = Header(None)) -> Optional[str]:
     """Helper to extract user_id from Authorization Bearer token header."""
