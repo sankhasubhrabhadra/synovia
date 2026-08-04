@@ -1,5 +1,5 @@
 // Active Cloudflare Tunnel Backend URL
-const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://franklin-spies-senior-trace.trycloudflare.com";
+const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://dried-fioricet-cage-boxing.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
