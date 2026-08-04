@@ -1,11 +1,11 @@
+const CLOUDFLARE_TUNNEL_URL = process.env.NEXT_PUBLIC_API_URL || "https://zus-call-fantastic-preference.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") {
-      // Return relative empty string so fetches use same-origin Vercel Serverless Backend (/api)
-      return "";
+      return ""; // Relative empty string uses same-origin Vercel Next.js rewrites
     }
   }
   return LOCALHOST_URL;
@@ -67,13 +67,15 @@ export function getStoredUser(): User | null {
 
 const defaultHeaders: Record<string, string> = {
   "Content-Type": "application/json",
+  "bypass-tunnel-reminder": "true",
 };
 
 /**
- * Ultra-resilient fetch wrapper for Same-Origin Vercel Serverless API
+ * Ultra-resilient fetch wrapper:
+ * 1. Tries same-origin Vercel rewrite route first.
+ * 2. If 404 or connection error occurs, automatically falls back to direct live Cloudflare HTTP2 tunnel.
  */
 async function fetchResilient(path: string, options: RequestInit = {}): Promise<Response> {
-  const baseUrl = getApiBaseUrl();
   const token = getAuthToken();
   
   const headers: Record<string, string> = { 
@@ -85,24 +87,38 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  // Base targets to try in priority order:
+  // Target 1: Relative path (Same-origin Vercel proxy rewrite)
+  // Target 2: Direct active Cloudflare Tunnel URL
+  const targets = [
+    `${getApiBaseUrl()}${path}`,
+    `${CLOUDFLARE_TUNNEL_URL}${path}`
+  ];
+
   let lastError: any = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const url = `${baseUrl}${path}`;
-      const response = await fetch(url, { ...options, mode: "cors", headers });
-      return response;
-    } catch (err) {
-      lastError = err;
-      if (attempt < 3) {
-        await new Promise((res) => setTimeout(res, attempt * 500));
+
+  for (const targetUrl of targets) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await fetch(targetUrl, { ...options, mode: "cors", headers });
+        if (response.status !== 404 && response.status !== 502 && response.status !== 503) {
+          return response;
+        }
+      } catch (err) {
+        lastError = err;
       }
+      await new Promise((res) => setTimeout(res, 300));
     }
   }
 
-  console.error("All API connection attempts failed:", lastError);
-  throw new Error(
-    "Unable to connect to Synovia Backend. Please check your internet connection."
-  );
+  // Final direct attempt to active tunnel URL if needed
+  try {
+    const finalResponse = await fetch(`${CLOUDFLARE_TUNNEL_URL}${path}`, { ...options, mode: "cors", headers });
+    return finalResponse;
+  } catch (err) {
+    console.error("All API connection targets failed:", err || lastError);
+    throw new Error("Unable to connect to Synovia Backend. Please verify backend service.");
+  }
 }
 
 export async function checkBackendHealth(): Promise<boolean> {
@@ -201,8 +217,10 @@ export async function clearAllProjects(): Promise<void> {
 }
 
 export function getProjectStreamUrl(id: string): string {
-  const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/api/projects/${id}/stream`;
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    return `${CLOUDFLARE_TUNNEL_URL}/api/projects/${id}/stream`;
+  }
+  return `http://localhost:8000/api/projects/${id}/stream`;
 }
 
 export async function downloadProjectPdfFile(id: string, ideaName: string = "Blueprint"): Promise<void> {
