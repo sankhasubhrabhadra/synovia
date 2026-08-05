@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://traveler-ultra-tribunal-tex.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://blackjack-redhead-expiration-hundred.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {

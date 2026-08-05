@@ -135,7 +135,7 @@ async def stream_project_execution(project_id: str, db: AsyncSession = Depends(g
 
     async def event_generator():
         q: asyncio.Queue = asyncio.Queue()
-        await register_sse_listener(project_id, q)
+        register_sse_listener(project_id, q)
         
         initial_data = {
             "project_id": proj.id,
@@ -156,7 +156,7 @@ async def stream_project_execution(project_id: str, db: AsyncSession = Depends(g
         except asyncio.CancelledError:
             pass
         finally:
-            await unregister_sse_listener(project_id, q)
+            unregister_sse_listener(project_id, q)
 
     return StreamingResponse(
         event_generator(),
