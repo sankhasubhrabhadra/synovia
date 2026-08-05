@@ -12,12 +12,28 @@ interface BlueprintViewProps {
   project: Project;
 }
 
+const safeArray = (arr: any): any[] => {
+  if (Array.isArray(arr)) return arr;
+  if (typeof arr === "string" && arr.trim()) return [arr];
+  return [];
+};
+
+const formatDateStr = (dateStr?: string) => {
+  if (!dateStr) return "Recently";
+  try {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "Recently" : d.toLocaleDateString(undefined, { dateStyle: "medium" });
+  } catch {
+    return "Recently";
+  }
+};
+
 export function BlueprintView({ project }: BlueprintViewProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "classification" | "research" | "competitor" | "product" | "validation" | "roadmap" | "pitch" | "quality_control">("summary");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingPpt, setDownloadingPpt] = useState(false);
 
-  const blueprint = project.blueprint || {};
+  const blueprint = project?.blueprint || {};
   const classification = blueprint.classification || {};
   const research = blueprint.research || {};
   const competitor = blueprint.competitor || {};
@@ -69,7 +85,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
             {project.idea}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-            Evaluated by 6 specialized AI agents on {new Date(project.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}.
+            Evaluated by 6 specialized AI agents on {formatDateStr(project?.created_at)}.
           </p>
         </div>
 
@@ -205,14 +221,14 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               )}
 
               {/* Enforced Anti-Patterns Rules */}
-              {classification.anti_patterns && classification.anti_patterns.length > 0 && (
+              {safeArray(classification.anti_patterns).length > 0 && (
                 <div className="p-5 rounded-2xl bg-rose-950/20 border border-rose-500/30 mb-6">
                   <h4 className="text-xs font-extrabold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-400" />
                     <span>Enforced Anti-Pattern Rules (Prevented SaaS Bias)</span>
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {classification.anti_patterns.map((rule: string, idx: number) => (
+                    {safeArray(classification.anti_patterns).map((rule: string, idx: number) => (
                       <div key={idx} className="p-2.5 rounded-xl bg-slate-950/90 text-xs text-rose-300 border border-rose-500/20 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
                         <span>{rule}</span>
@@ -223,11 +239,11 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               )}
 
               {/* Recommended Business Models */}
-              {classification.recommended_business_models && classification.recommended_business_models.length > 0 && (
+              {safeArray(classification.recommended_business_models).length > 0 && (
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3">Recommended Revenue Models</h4>
                   <div className="flex flex-wrap gap-2">
-                    {classification.recommended_business_models.map((model: string, idx: number) => (
+                    {safeArray(classification.recommended_business_models).map((model: string, idx: number) => (
                       <span key={idx} className="px-3 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/30 text-xs font-semibold">
                         {model}
                       </span>
@@ -266,7 +282,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               {/* Customer Pain Points */}
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Customer Pain Points</h4>
               <div className="space-y-2 mb-6">
-                {(research.customer_pain_points || []).map((pain: string, i: number) => (
+                {safeArray(research.customer_pain_points).map((pain: string, i: number) => (
                   <div key={i} className="flex items-start gap-2.5 text-xs text-slate-300 p-3 rounded-lg bg-slate-900/40 border border-slate-800/60">
                     <span className="w-5 h-5 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0 text-[10px] font-bold">
                       {i + 1}
@@ -279,12 +295,12 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               {/* Target User Personas */}
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Target User Personas</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(research.target_users || []).map((user: any, i: number) => (
+                {safeArray(research.target_users).map((user: any, i: number) => (
                   <div key={i} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
                     <h5 className="font-bold text-sm text-indigo-300 mb-1">{user.persona}</h5>
                     <p className="text-xs text-slate-400 mb-3">{user.description}</p>
                     <div className="space-y-1">
-                      {(user.pain_points || []).map((p: string, j: number) => (
+                      {safeArray(user?.pain_points).map((p: string, j: number) => (
                         <span key={j} className="inline-block text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 mr-1.5 mb-1">
                           • {p}
                         </span>
@@ -307,7 +323,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {(competitor.competitors || []).map((comp: any, i: number) => (
+                {safeArray(competitor.competitors).map((comp: any, i: number) => (
                   <div key={i} className="p-5 rounded-xl bg-slate-950/80 border border-slate-800">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-bold text-base text-white">{comp.name}</h4>
@@ -319,7 +335,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                       <div>
                         <span className="text-emerald-400 font-semibold block mb-1">Strengths:</span>
                         <ul className="list-disc list-inside text-slate-300 space-y-0.5">
-                          {(comp.strengths || []).map((s: string, idx: number) => (
+                          {safeArray(comp.strengths).map((s: string, idx: number) => (
                             <li key={idx}>{s}</li>
                           ))}
                         </ul>
@@ -327,7 +343,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                       <div>
                         <span className="text-rose-400 font-semibold block mb-1">Weaknesses & Gaps:</span>
                         <ul className="list-disc list-inside text-slate-300 space-y-0.5">
-                          {(comp.weaknesses || []).map((w: string, idx: number) => (
+                          {safeArray(comp.weaknesses).map((w: string, idx: number) => (
                             <li key={idx}>{w}</li>
                           ))}
                         </ul>
@@ -361,7 +377,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div>
                   <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">Core MVP Features</h4>
                   <div className="space-y-3">
-                    {(product.mvp_features || []).map((feat: any, i: number) => (
+                    {safeArray(product.mvp_features).map((feat: any, i: number) => (
                       <div key={i} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
                         <div className="flex items-center justify-between mb-1">
                           <h5 className="font-bold text-sm text-slate-200">{feat.name}</h5>
@@ -378,7 +394,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div>
                   <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3">User Journey Workflow</h4>
                   <div className="space-y-2">
-                    {(product.user_journey || []).map((step: string, i: number) => (
+                    {safeArray(product.user_journey).map((step: string, i: number) => (
                       <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                         <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-300 font-bold flex items-center justify-center shrink-0 text-xs">
                           {i + 1}
@@ -437,7 +453,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Major Business Risks</span>
                   </h4>
                   <ul className="space-y-2 text-xs text-slate-300">
-                    {(validation.major_business_risks || []).map((risk: string, i: number) => (
+                    {safeArray(validation.major_business_risks).map((risk: string, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-rose-400 shrink-0">•</span>
                         <span>{risk}</span>
@@ -452,7 +468,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Technical & Execution Risks</span>
                   </h4>
                   <ul className="space-y-2 text-xs text-slate-300">
-                    {(validation.technical_risks || []).map((risk: string, i: number) => (
+                    {safeArray(validation.technical_risks).map((risk: string, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-amber-400 shrink-0">•</span>
                         <span>{risk}</span>
@@ -467,7 +483,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Competitive Risks</span>
                   </h4>
                   <ul className="space-y-2 text-xs text-slate-300">
-                    {(validation.competitive_risks || []).map((risk: string, i: number) => (
+                    {safeArray(validation.competitive_risks).map((risk: string, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-purple-400 shrink-0">•</span>
                         <span>{risk}</span>
@@ -485,7 +501,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Validation Recommendations</span>
                   </h4>
                   <div className="space-y-2 text-xs text-slate-300">
-                    {(validation.validation_recommendations || []).map((rec: string, i: number) => (
+                    {safeArray(validation.validation_recommendations).map((rec: string, i: number) => (
                       <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2">
                         <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
                           {i + 1}
@@ -502,7 +518,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Next Best Actions (Immediate 7-Day Plan)</span>
                   </h4>
                   <div className="space-y-2 text-xs text-slate-300">
-                    {(validation.next_best_actions || []).map((act: string, i: number) => (
+                    {safeArray(validation.next_best_actions).map((act: string, i: number) => (
                       <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2">
                         <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
                           {i + 1}
@@ -519,7 +535,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2">Suggested First Customers</h4>
                   <ul className="space-y-1 text-xs text-slate-300">
-                    {(validation.suggested_first_customers || []).map((cust: string, i: number) => (
+                    {safeArray(validation.suggested_first_customers).map((cust: string, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-cyan-400 font-bold">•</span>
                         <span>{cust}</span>
@@ -560,7 +576,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               </h3>
 
               <div className="space-y-4">
-                {(roadmap.schedule || []).map((wk: any, i: number) => (
+                {safeArray(roadmap.schedule).map((wk: any, i: number) => (
                   <div key={i} className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="shrink-0">
                       <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-extrabold uppercase border border-indigo-500/30 inline-block mb-1">
@@ -573,7 +589,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <div className="flex-1 md:max-w-md">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Deliverables:</span>
                       <ul className="space-y-1">
-                        {(wk.deliverables || []).map((deliv: string, idx: number) => (
+                        {safeArray(wk.deliverables).map((deliv: string, idx: number) => (
                           <li key={idx} className="flex items-center gap-2 text-xs text-slate-300">
                             <ChevronRight className="w-3 h-3 text-indigo-400" />
                             <span>{deliv}</span>
@@ -614,7 +630,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Business Model & Revenue Streams</h4>
                 <p className="text-xs text-slate-300 mb-4">{pitch.business_model}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {(pitch.revenue_streams || []).map((rev: any, i: number) => {
+                  {safeArray(pitch.revenue_streams).map((rev: any, i: number) => {
                     let formattedText = "";
                     if (typeof rev === "string") {
                       formattedText = rev;
@@ -691,11 +707,11 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               </div>
 
               {/* Violations Flagged */}
-              {qualityControl.violations_found && qualityControl.violations_found.length > 0 && (
+              {safeArray(qualityControl.violations_found).length > 0 && (
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 mb-4">
                   <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Template Violations Flagged</h4>
                   <ul className="space-y-1.5">
-                    {qualityControl.violations_found.map((v: string, idx: number) => (
+                    {safeArray(qualityControl.violations_found).map((v: string, idx: number) => (
                       <li key={idx} className="text-xs text-slate-300 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                         <span>{v}</span>
@@ -706,11 +722,11 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               )}
 
               {/* Corrections Applied */}
-              {qualityControl.corrections_applied && qualityControl.corrections_applied.length > 0 && (
+              {safeArray(qualityControl.corrections_applied).length > 0 && (
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Autonomous Corrections Applied</h4>
                   <ul className="space-y-1.5">
-                    {qualityControl.corrections_applied.map((c: string, idx: number) => (
+                    {safeArray(qualityControl.corrections_applied).map((c: string, idx: number) => (
                       <li key={idx} className="text-xs text-slate-300 flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         <span>{c}</span>

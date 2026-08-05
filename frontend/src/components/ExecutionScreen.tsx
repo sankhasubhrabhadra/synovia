@@ -225,7 +225,14 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
             logs.map((log, idx) => (
               <div key={idx} className="flex items-start gap-3">
                 <span className="text-[10px] text-slate-600 shrink-0 mt-0.5">
-                  {new Date(log.timestamp).toLocaleTimeString()}
+                  {(() => {
+                    try {
+                      const d = new Date(log.timestamp);
+                      return isNaN(d.getTime()) ? "00:00" : d.toLocaleTimeString();
+                    } catch {
+                      return "00:00";
+                    }
+                  })()}
                 </span>
                 <span className={`text-xs ${
                   log.status === "completed" ? "text-emerald-400" : log.status === "failed" ? "text-rose-400" : "text-blue-300"

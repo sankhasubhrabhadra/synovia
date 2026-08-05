@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { LandingHero } from "@/components/LandingHero";
 import { ExecutionScreen } from "@/components/ExecutionScreen";
 import { BlueprintView } from "@/components/BlueprintView";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export function SynoviaApp() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -117,19 +118,27 @@ export function SynoviaApp() {
           )}
 
           {viewState === "executing" && activeProject && (
-            <ExecutionScreen
-              project={activeProject}
-              onExecutionComplete={async () => {
-                const updated = await getProject(activeProject.id);
-                setActiveProject(updated);
-                setViewState("blueprint");
-                fetchHistory();
-              }}
-            />
+            <ErrorBoundary fallbackMessage="An error occurred while tracking live agent progress. Your project will still complete in the background.">
+              <ExecutionScreen
+                project={activeProject}
+                onExecutionComplete={async () => {
+                  try {
+                    const updated = await getProject(activeProject.id);
+                    setActiveProject(updated);
+                    setViewState("blueprint");
+                    fetchHistory();
+                  } catch (err) {
+                    console.error("Error fetching completed project details:", err);
+                  }
+                }}
+              />
+            </ErrorBoundary>
           )}
 
           {viewState === "blueprint" && activeProject && (
-            <BlueprintView project={activeProject} />
+            <ErrorBoundary fallbackMessage="An issue occurred while rendering this blueprint report. Please select another project or reload.">
+              <BlueprintView project={activeProject} />
+            </ErrorBoundary>
           )}
         </main>
       </div>
