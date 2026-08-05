@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const ACTIVE_TUNNEL_URL = "https://cuts-description-difficulty-kings.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://permits-scope-greatly-agrees.trycloudflare.com";
 
 const nextConfig: NextConfig = {
   async rewrites() {
