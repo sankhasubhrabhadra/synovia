@@ -18,6 +18,26 @@ const safeArray = (arr: any): any[] => {
   return [];
 };
 
+const formatMarketVal = (val: any): string => {
+  if (!val) return "N/A";
+  if (typeof val === "string") return val;
+  if (typeof val === "number" || typeof val === "boolean") return String(val);
+  if (typeof val === "object") {
+    if (Array.isArray(val)) return val.map(formatMarketVal).join(", ");
+    const parts = Object.entries(val)
+      .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+      .filter(Boolean);
+    return parts.join(" • ");
+  }
+  return String(val);
+};
+
+const safeRender = (val: any, fallback: string = ""): string => {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") return String(val);
+  return formatMarketVal(val);
+};
+
 const formatDateStr = (dateStr?: string) => {
   if (!dateStr) return "Recently";
   try {
@@ -162,7 +182,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="glass-card p-5 rounded-2xl">
                 <span className="text-xs text-slate-400 font-semibold block mb-1">Total Addressable Market (TAM)</span>
-                <p className="text-lg font-bold text-indigo-300">{research.market_size?.tam || "N/A"}</p>
+                <p className="text-lg font-bold text-indigo-300">{formatMarketVal(research.market_size?.tam)}</p>
               </div>
 
               <div className="glass-card p-5 rounded-2xl">
@@ -180,7 +200,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
             {pitch.usp && (
               <div className="glass-card p-6 rounded-2xl border-l-4 border-l-indigo-500">
                 <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Unfair Advantage / USP</h4>
-                <p className="text-sm text-slate-200 font-medium">{pitch.usp}</p>
+                <p className="text-sm text-slate-200 font-medium">{safeRender(pitch.usp)}</p>
               </div>
             )}
           </div>
@@ -203,12 +223,12 @@ export function BlueprintView({ project }: BlueprintViewProps) {
 
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">Domain & Industry</span>
-                  <p className="text-xs font-bold text-indigo-300">{classification.industry || "Industry Analysis"}</p>
+                  <p className="text-xs font-bold text-indigo-300">{safeRender(classification.industry, "Industry Analysis")}</p>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block mb-1">Business Model Type</span>
-                  <p className="text-xs font-bold text-emerald-300 capitalize">{classification.digital_or_physical || "physical"} • {classification.b2b_or_b2c || "b2b"}</p>
+                  <p className="text-xs font-bold text-emerald-300 capitalize">{safeRender(classification.digital_or_physical, "physical")} • {safeRender(classification.b2b_or_b2c, "b2b")}</p>
                 </div>
               </div>
 
@@ -216,7 +236,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               {classification.core_problem && (
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 mb-6">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Core Problem Solved</h4>
-                  <p className="text-xs text-slate-200 font-medium">{classification.core_problem}</p>
+                  <p className="text-xs text-slate-200 font-medium">{safeRender(classification.core_problem)}</p>
                 </div>
               )}
 
@@ -267,27 +287,27 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
                   <span className="text-xs font-bold text-indigo-400 block mb-1">TAM (Total Market)</span>
-                  <p className="text-xs text-slate-300">{research.market_size?.tam}</p>
+                  <p className="text-xs text-slate-300">{formatMarketVal(research.market_size?.tam)}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
                   <span className="text-xs font-bold text-purple-400 block mb-1">SAM (Serviceable Market)</span>
-                  <p className="text-xs text-slate-300">{research.market_size?.sam}</p>
+                  <p className="text-xs text-slate-300">{formatMarketVal(research.market_size?.sam)}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
                   <span className="text-xs font-bold text-cyan-400 block mb-1">SOM (Year 1-2 Reachable)</span>
-                  <p className="text-xs text-slate-300">{research.market_size?.som}</p>
+                  <p className="text-xs text-slate-300">{formatMarketVal(research.market_size?.som)}</p>
                 </div>
               </div>
 
               {/* Customer Pain Points */}
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Customer Pain Points</h4>
               <div className="space-y-2 mb-6">
-                {safeArray(research.customer_pain_points).map((pain: string, i: number) => (
+                {safeArray(research.customer_pain_points).map((pain: any, i: number) => (
                   <div key={i} className="flex items-start gap-2.5 text-xs text-slate-300 p-3 rounded-lg bg-slate-900/40 border border-slate-800/60">
                     <span className="w-5 h-5 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0 text-[10px] font-bold">
                       {i + 1}
                     </span>
-                    <span>{pain}</span>
+                    <span>{safeRender(pain)}</span>
                   </div>
                 ))}
               </div>
@@ -297,12 +317,12 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {safeArray(research.target_users).map((user: any, i: number) => (
                   <div key={i} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <h5 className="font-bold text-sm text-indigo-300 mb-1">{user.persona}</h5>
-                    <p className="text-xs text-slate-400 mb-3">{user.description}</p>
+                    <h5 className="font-bold text-sm text-indigo-300 mb-1">{safeRender(user?.persona)}</h5>
+                    <p className="text-xs text-slate-400 mb-3">{safeRender(user?.description)}</p>
                     <div className="space-y-1">
-                      {safeArray(user?.pain_points).map((p: string, j: number) => (
+                      {safeArray(user?.pain_points).map((p: any, j: number) => (
                         <span key={j} className="inline-block text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 mr-1.5 mb-1">
-                          • {p}
+                          • {safeRender(p)}
                         </span>
                       ))}
                     </div>
@@ -357,7 +377,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               {competitor.defensability_strategy && (
                 <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30">
                   <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1">Defensability & Moat Strategy</h4>
-                  <p className="text-xs text-slate-300">{competitor.defensability_strategy}</p>
+                  <p className="text-xs text-slate-300">{safeRender(competitor.defensability_strategy)}</p>
                 </div>
               )}
             </div>
@@ -535,10 +555,10 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2">Suggested First Customers</h4>
                   <ul className="space-y-1 text-xs text-slate-300">
-                    {safeArray(validation.suggested_first_customers).map((cust: string, i: number) => (
+                    {safeArray(validation.suggested_first_customers).map((cust: any, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-cyan-400 font-bold">•</span>
-                        <span>{cust}</span>
+                        <span>{safeRender(cust)}</span>
                       </li>
                     ))}
                   </ul>
@@ -546,7 +566,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
 
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2">Long-Term Growth Strategy</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">{validation.long_term_growth_strategy}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">{safeRender(validation.long_term_growth_strategy)}</p>
                 </div>
               </div>
 
@@ -558,7 +578,7 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Final VC Mentor Verdict</span>
                   </h4>
                   <p className="text-sm font-bold text-white leading-relaxed">
-                    {validation.final_verdict}
+                    {safeRender(validation.final_verdict)}
                   </p>
                 </div>
               )}
@@ -616,19 +636,19 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">The Market Problem</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">{pitch.problem}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">{safeRender(pitch.problem)}</p>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">The 10x Solution</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">{pitch.solution}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">{safeRender(pitch.solution)}</p>
                 </div>
               </div>
 
               {/* Monetization */}
               <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 mb-6">
                 <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Business Model & Revenue Streams</h4>
-                <p className="text-xs text-slate-300 mb-4">{pitch.business_model}</p>
+                <p className="text-xs text-slate-300 mb-4">{safeRender(pitch.business_model)}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {safeArray(pitch.revenue_streams).map((rev: any, i: number) => {
                     let formattedText = "";
