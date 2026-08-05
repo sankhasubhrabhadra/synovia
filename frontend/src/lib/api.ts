@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://byte-eve-provincial-landscapes.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://traveler-ultra-tribunal-tex.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
