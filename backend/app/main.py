@@ -38,6 +38,7 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Dual-mount routes to support both local /api/projects AND Vercel Serverless /projects

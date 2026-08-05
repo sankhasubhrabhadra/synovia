@@ -7,6 +7,8 @@ export function getApiBaseUrl(): string {
     if (host === "localhost" || host === "127.0.0.1") {
       return LOCALHOST_URL;
     }
+    // On production (e.g. Vercel), use relative path "" so Next.js rewrites proxy server-to-server to Cloudflare Tunnel
+    return "";
   }
   return ACTIVE_TUNNEL_URL;
 }
