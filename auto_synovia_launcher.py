@@ -23,13 +23,17 @@ def is_backend_running():
     except Exception:
         return False
 
+DETACHED_PROCESS = 0x00000008
+CREATE_NEW_PROCESS_GROUP = 0x00000200
+
 def start_backend():
     if not is_backend_running():
         logging.info("Starting FastAPI backend server...")
         subprocess.Popen(
             [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"],
             cwd=BACKEND_DIR,
-            creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
+            creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
+            close_fds=True
         )
         for _ in range(10):
             if is_backend_running():
@@ -47,9 +51,15 @@ def start_cloudflared():
         except Exception:
             pass
 
-    cmd = "cloudflared tunnel --protocol http2 --url http://localhost:8000"
+    cmd = ["cloudflared", "tunnel", "--protocol", "http2", "--url", "http://localhost:8000"]
     log_fp = open(LOG_FILE, "w", encoding="utf-8")
-    subprocess.Popen(cmd, shell=True, stdout=log_fp, stderr=subprocess.STDOUT)
+    subprocess.Popen(
+        cmd,
+        stdout=log_fp,
+        stderr=subprocess.STDOUT,
+        creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
+        close_fds=True
+    )
     
     tunnel_url = None
     regex = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")
@@ -67,6 +77,7 @@ def start_cloudflared():
                     break
 
     return tunnel_url
+
 
 def update_frontend_files(tunnel_url: str):
     if not tunnel_url:
