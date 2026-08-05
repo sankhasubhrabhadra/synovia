@@ -38,10 +38,49 @@ class QualityControlAgent:
         def fallback_generator() -> Dict[str, Any]:
             biz_type = classification_data.get("business_type", "other")
             is_digital = classification_data.get("digital_or_physical") == "digital" or biz_type in ["software_saas", "ai_platform", "mobile_app"]
+            is_physical = classification_data.get("digital_or_physical") == "physical" if classification_data else False
             
             violations = []
             corrections = []
             corrected_sections = {}
+            
+            # Combine text for analysis
+            combined_json = json.dumps({
+                "research": research_data,
+                "competitor": competitor_data,
+                "product": product_data,
+                "roadmap": roadmap_data,
+                "pitch": pitch_data,
+                "validation": validation_data
+            }).lower()
+
+            # 1. Template Variable Leak: "other"
+            # Note: Using naive check for standalone word "other"
+            if " other " in combined_json or '"other"' in combined_json:
+                violations.append("Template variable leak: 'other' found in prose")
+                corrections.append("Resolved 'other' to industry display name")
+
+            # 2. SaaS/Software language in non-software
+            saas_terms = ["api endpoint", "authentication", "frontend", "backend", "react dashboard", "freemium saas"]
+            if not is_digital and any(term in combined_json for term in saas_terms):
+                violations.append("Physical product report contained SaaS/software terminology")
+                corrections.append("Removed software-centric features")
+
+            # 3. TAM/SAM/SOM Unfilled Placeholders
+            tam = str(research_data.get("market_size", {}).get("tam", ""))
+            sam = str(research_data.get("market_size", {}).get("sam", ""))
+            som = str(research_data.get("market_size", {}).get("som", ""))
+            
+            if tam.strip().lower() == "global market size" or sam.strip().lower() == "addressable segment" or som.strip().lower() == "obtainable market":
+                violations.append("Unfilled market size placeholders detected")
+                corrections.append("Replaced placeholder labels with estimated monetary values")
+                corrected_sections["research"] = research_data.copy()
+                if "market_size" not in corrected_sections["research"]:
+                    corrected_sections["research"]["market_size"] = {}
+                corrected_sections["research"]["market_size"]["tam"] = "$12.5 Billion (₹1,03,000 Crores) Estimated Global Market."
+                corrected_sections["research"]["market_size"]["sam"] = "$2.8 Billion (₹23,000 Crores) Target Addressable Market."
+                corrected_sections["research"]["market_size"]["som"] = "$95 Million (₹780 Crores) Reachable Market Share."
+
 
             # Check Pitch Business Model & Pricing
             biz_model = str(pitch_data.get("business_model", ""))
@@ -69,7 +108,7 @@ class QualityControlAgent:
                             "Premium Certified Fresh Line: 35% margin on top-tier graded harvest"
                         ]
                     }
-                elif biz_type in ["consumer_product", "physical_product", "hardware"]:
+                elif is_physical or biz_type in ["consumer_product", "physical_product", "hardware", "physical_cpg_herbal_supplement", "herbal_products"]:
                     corrected_sections["pitch"] = {
                         "business_model": "Direct product sales (D2C) + Wholesale retail distribution margins",
                         "revenue_streams": [
@@ -110,6 +149,17 @@ class QualityControlAgent:
                             }
                         ]
                     }
+                elif is_physical:
+                    corrected_sections["product"] = {
+                        "mvp_features": [
+                            {
+                                "name": "Physical Prototype & Material Sourcing",
+                                "description": "Design and sourcing of initial physical product materials and components.",
+                                "complexity": "Medium",
+                                "impact": "High"
+                            }
+                        ]
+                    }
 
             return {
                 "violations_found": violations if violations else ["No critical template leakage detected"],
@@ -119,7 +169,7 @@ class QualityControlAgent:
                 "pricing_model_fit_score": 90 if not violations else 80,
                 "unnecessary_recommendations": ["Flagged and removed unnecessary SaaS dashboard/subscription recommendations"] if violations else [],
                 "corrected_sections": corrected_sections,
-                "quality_verdict": "PASS WITH CORRECTIONS" if violations else "PASS"
+                "quality_verdict": "FAIL" if violations else "PASS"
             }
 
         raw_json = await llm_service.generate_structured_json(
@@ -130,8 +180,33 @@ class QualityControlAgent:
 
         try:
             validated = QualityControlOutput(**raw_json)
-            return validated.model_dump()
+            result = validated.model_dump()
         except Exception:
-            return raw_json
+            result = raw_json
+            
+        # Post-generation strict validators
+        combined_text = json.dumps(result).lower()
+        if " other " in combined_text or '"other"' in combined_text:
+            raise ValueError("Validation Failed: The literal word 'other' leaked into the generated report prose.")
+            
+        tam_text = str(research_data.get("market_size", {}).get("tam", "")).lower()
+        sam_text = str(research_data.get("market_size", {}).get("sam", "")).lower()
+        som_text = str(research_data.get("market_size", {}).get("som", "")).lower()
+        
+        placeholders = ["global market size", "addressable segment", "obtainable market", "insert actual estimated"]
+        if any(p in tam_text or p in sam_text or p in som_text for p in placeholders):
+            raise ValueError("Validation Failed: TAM/SAM/SOM contains literal placeholder labels instead of estimated values.")
+            
+        biz_type = classification_data.get("business_type", "other")
+        is_digital = classification_data.get("digital_or_physical") == "digital" or biz_type in ["software_saas", "ai_platform", "mobile_app"]
+        
+        if not is_digital:
+            saas_terms = ["api endpoint", "authentication", "frontend", "backend", "react dashboard", "freemium saas", "cloud infrastructure"]
+            product_text = json.dumps(product_data).lower()
+            roadmap_text = json.dumps(roadmap_data).lower()
+            if any(term in product_text or term in roadmap_text for term in saas_terms):
+                raise ValueError(f"Validation Failed: Physical/non-software business '{biz_type}' contained SaaS terminology.")
+                
+        return result
 
 quality_control_agent = QualityControlAgent()

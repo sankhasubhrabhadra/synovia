@@ -6,8 +6,16 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 logger = logging.getLogger("synovia.report_generator")
+
+# Register Unicode fonts
+font_dir = os.path.dirname(os.path.abspath(__file__))
+pdfmetrics.registerFont(TTFont('NotoSans', os.path.join(font_dir, 'NotoSans-Regular.ttf')))
+pdfmetrics.registerFont(TTFont('NotoSans-Bold', os.path.join(font_dir, 'NotoSans-Bold.ttf')))
+pdfmetrics.registerFontFamily('NotoSans', normal='NotoSans', bold='NotoSans-Bold')
 
 class PDFReportGenerator:
     @staticmethod
@@ -35,7 +43,7 @@ class PDFReportGenerator:
         title_style = ParagraphStyle(
             "DocTitle",
             parent=styles["Normal"],
-            fontName="Helvetica-Bold",
+            fontName="NotoSans-Bold",
             fontSize=22,
             leading=26,
             textColor=PRIMARY,
@@ -45,7 +53,7 @@ class PDFReportGenerator:
         tagline_style = ParagraphStyle(
             "DocTagline",
             parent=styles["Normal"],
-            fontName="Helvetica-Bold",
+            fontName="NotoSans-Bold",
             fontSize=10,
             leading=13,
             textColor=ACCENT,
@@ -55,7 +63,7 @@ class PDFReportGenerator:
         h1_style = ParagraphStyle(
             "Heading1_Custom",
             parent=styles["Normal"],
-            fontName="Helvetica-Bold",
+            fontName="NotoSans-Bold",
             fontSize=14,
             leading=17,
             textColor=ACCENT,
@@ -66,7 +74,7 @@ class PDFReportGenerator:
         h2_style = ParagraphStyle(
             "Heading2_Custom",
             parent=styles["Normal"],
-            fontName="Helvetica-Bold",
+            fontName="NotoSans-Bold",
             fontSize=11,
             leading=14,
             textColor=PRIMARY,
@@ -77,7 +85,7 @@ class PDFReportGenerator:
         body_style = ParagraphStyle(
             "Body_Custom",
             parent=styles["Normal"],
-            fontName="Helvetica",
+            fontName="NotoSans",
             fontSize=9.5,
             leading=13.5,
             textColor=SECONDARY,
@@ -87,7 +95,7 @@ class PDFReportGenerator:
         bullet_style = ParagraphStyle(
             "Bullet_Custom",
             parent=styles["Normal"],
-            fontName="Helvetica",
+            fontName="NotoSans",
             fontSize=9,
             leading=12.5,
             textColor=SECONDARY,
@@ -258,7 +266,7 @@ class PDFReportGenerator:
 
             verdict = clean(validation.get("final_verdict", ""))
             if verdict:
-                elements.append(Paragraph(f"<b>Final VC Mentor Verdict:</b> {verdict}", ParagraphStyle("VerdictStyle", parent=body_style, fontName="Helvetica-Bold", textColor=ACCENT)))
+                elements.append(Paragraph(f"<b>Final VC Mentor Verdict:</b> {verdict}", ParagraphStyle("VerdictStyle", parent=body_style, fontName="NotoSans-Bold", textColor=ACCENT)))
             elements.append(Spacer(1, 8))
 
         # 6. Execution Roadmap

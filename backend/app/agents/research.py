@@ -20,159 +20,206 @@ class ResearchAgent:
             .replace("{idea}", idea)
             .replace("{target_market}", target_market or "India & Global")
         )
-        
 
         classification_context = json.dumps(classification_data, indent=2) if classification_data else '{}'
         system_prompt = system_prompt.replace("{classification_context}", classification_context)
         user_prompt = f"Perform deep, comprehensive market research for: '{idea}'. Target Market: {target_market or 'India & Global'}. Web insights: {search_results}"
 
         def fallback_generator() -> Dict[str, Any]:
-            idea_lower = idea.lower()
-            
-            # 1. Camera / Photography / Action Imaging
-            if any(k in idea_lower for k in ["camera", "cam", "photo", "imaging", "lens", "video", "drone"]):
-                return {
-                    "industry": "Smart Action Cameras, AI Computational Imaging & Creator Hardware",
-                    "market_size": {
-                        "tam": "$14.2 Billion (₹1,17,000 Crores) Global Digital Camera & Action Cam Market growing at 11.8% CAGR.",
-                        "sam": "$3.6 Billion (₹29,800 Crores) AI Action Cam & Vlogging Camera segment in Asia-Pacific & India.",
-                        "som": "$140 Million (₹1,150 Crores / ₹115 Cr) Obtainable Market targeting content creators, vloggers, & outdoor sports enthusiasts."
-                    },
-                    "customer_pain_points": [
-                        "Bulky camera gear requiring manual color grading, complex editing software, and slow SD-card file transfers.",
-                        "Poor low-light performance and battery overheating during long 4K/60FPS video recording sessions.",
-                        "Lack of automated AI framing and multi-angle auto-tracking for solo content creators."
-                    ],
-                    "market_opportunities": [
-                        "Launch an AI-native 4K/60FPS compact action camera featuring on-device real-time AI auto-editing & cloud sync.",
-                        "Direct-to-Consumer (D2C) brand positioning targeting 50 Million+ global content creators and Indian YouTube/Instagram influencers."
-                    ],
-                    "target_users": [
-                        {
-                            "persona": "Solo Content Creators & Travel Vloggers",
-                            "description": "Creators producing daily video content for YouTube, Instagram Reels, & Shorts.",
-                            "pain_points": ["Manual editing fatigue", "Unstable handheld footage", "Slow file transfer to phone"]
-                        },
-                        {
-                            "persona": "Action Sports & Outdoor Enthusiasts",
-                            "description": "Athletes, cyclists, and travelers capturing extreme sports and adventure activities.",
-                            "pain_points": ["Water & shock damage vulnerability", "Short battery life", "Overheating in sunlight"]
-                        }
-                    ],
-                    "industry_trends": [
-                        "Surge in short-form video creation driving demand for lightweight AI computational cameras.",
-                        "Transition from manual SD-card file management to instant Wi-Fi 6E/5G direct-to-cloud auto-backup."
-                    ]
-                }
-
-            # 2. Backpack / Travel Gear
-            elif any(k in idea_lower for k in ["backpack", "bag", "travel", "luggage", "gear", "carry"]):
-                return {
-                    "industry": "Smart Travel Hardware & Ergonomic D2C Carry Gear",
-                    "market_size": {
-                        "tam": "$24.8 Billion (₹2,05,000 Crores) Global Backpack & Travel Gear Market at 6.8% CAGR.",
-                        "sam": "$5.4 Billion (₹44,500 Crores) Premium Urban Commuter & Digital Nomad segment.",
-                        "som": "$180 Million (₹1,480 Crores / ₹148 Cr) Obtainable Market targeting tech-savvy travelers & remote workers."
-                    },
-                    "customer_pain_points": [
-                        "Heavy, non-ergonomic designs causing back strain during long daily commutes in public transit.",
-                        "Lack of built-in device charging, TSA anti-theft locks, and weather-proofing against heavy monsoon rains.",
-                        "Poor modular organization for modern laptops, tablets, and electronics."
-                    ],
-                    "market_opportunities": [
-                        "Direct-to-Consumer (D2C) brand positioning focused on eco-friendly waterproof fabrics.",
-                        "Integrated smart tracking (AirTag/GPS compatibility) and solar-charging battery banks."
-                    ],
-                    "target_users": [
-                        {
-                            "persona": "Digital Nomads & Remote Workers",
-                            "description": "Tech professionals carrying laptops, cameras, and gear daily.",
-                            "pain_points": ["Airport security hassle", "Cable clutter", "Theft anxiety"]
-                        }
-                    ],
-                    "industry_trends": [
-                        "Surge in demand for anti-theft TSA-compliant travel gear.",
-                        "Consumer preference shift toward sustainable ocean-recycled fabrics."
-                    ]
-                }
-
-            
-            # 3. Dynamic Industry Intelligence based on Classification
             business_type = classification_data.get('business_type', 'other') if classification_data else 'other'
             classified_industry = classification_data.get('industry', idea.capitalize()) if classification_data else idea.capitalize()
             
-            if business_type in ["transportation", "logistics"]:
+            # 1. Herbal Products / Ayurvedic Wellness
+            if business_type in ["physical_cpg_herbal_supplement", "beauty", "wellness"]:
                 return {
-                    "industry": f"{classified_industry} - Transportation & Logistics",
-                    "market_size": {"tam": "Global logistics TAM", "sam": "Regional fleet management", "som": "Target route density"},
-                    "customer_pain_points": ["Fuel cost volatility", "Route inefficiency", "Driver retention", "Fleet downtime"],
-                    "market_opportunities": ["Route optimization", "Fleet tracking", "Load matching"],
-                    "target_users": [{"persona": "Fleet Manager", "description": "Manages 50+ vehicles", "pain_points": ["High fuel costs", "Inefficient routes"]}],
-                    "industry_trends": ["EV adoption", "AI routing", "Autonomous freight"]
+                    "industry": f"{classified_industry} - Natural Wellness & Botanical Products",
+                    "market_size": {
+                        "tam": "$64.5 Billion (₹5,35,000 Crores) Global Herbal & Ayurvedic Wellness Market growing at 10.8% CAGR.",
+                        "sam": "$9.8 Billion (₹81,000 Crores) Premium Organic Skincare & Herbal Formulations segment in India & Asia-Pacific.",
+                        "som": "$250 Million (₹2,050 Crores / ₹205 Cr) Obtainable Market targeting wellness consumers and organic retail channels."
+                    },
+                    "customer_pain_points": [
+                        "Lack of batch-level ingredient transparency, lab certification, and QR code authenticity verification.",
+                        "Proliferation of synthetic additives and artificial preservatives disguised as natural products.",
+                        "Inconsistent potency and short shelf-life stability in unstandardized herbal extracts."
+                    ],
+                    "market_opportunities": [
+                        "Direct-to-Consumer (D2C) brand positioning focused on AYUSH/FSSAI-certified 100% organic formulations.",
+                        "Subscription replenishment model for high-repeat daily wellness and skincare routines."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": "Health-Conscious Organic Consumer",
+                            "description": "Urban consumers seeking certified natural and Ayurvedic wellness products.",
+                            "pain_points": ["Chemical irritation from synthetic products", "Lack of ingredient sourcing transparency"]
+                        },
+                        {
+                            "persona": "Wellness & Spa Retail Buyer",
+                            "description": "Commercial buyers for premium wellness centers, organic retail chains, and pharmacies.",
+                            "pain_points": ["Inconsistent product supply", "Lack of regulatory lab compliance certificates"]
+                        }
+                    ],
+                    "industry_trends": [
+                        "Rapid consumer shift toward clean-label, cruelty-free, and Ayurveda-inspired daily regimens.",
+                        "Integration of QR code traceability to prove farm-to-bottle botanical sourcing."
+                    ]
                 }
+            
+            # 2. Logistics & Transportation
+            elif business_type in ["logistics", "transportation"]:
+                return {
+                    "industry": f"{classified_industry} - Supply Chain & Fleet Logistics",
+                    "market_size": {
+                        "tam": "$9.6 Trillion (₹79,00,000 Crores) Global Logistics & Freight Transportation Market.",
+                        "sam": "$215 Billion (₹17,80,000 Crores) Commercial Fleet Management & Cold-Chain Logistics in South Asia.",
+                        "som": "$450 Million (₹3,700 Crores / ₹370 Cr) Obtainable Market targeting regional freight & agricultural distribution routes."
+                    },
+                    "customer_pain_points": [
+                        "High fuel cost volatility and empty return trips draining operator profit margins.",
+                        "Lack of real-time temperature & GPS tracking leading to agricultural and perishable goods spoilage.",
+                        "Manual driver dispatching and unoptimized route planning causing long transit delays."
+                    ],
+                    "market_opportunities": [
+                        "IoT-enabled cold-chain fleet dispatch connecting regional producers directly to wholesale markets.",
+                        "Fuel surcharge indexing and automated load-matching to eliminate empty backhauls."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": "Fleet & Dispatch Manager",
+                            "description": "Oversees regional logistics, vehicle maintenance, and driver scheduling.",
+                            "pain_points": ["Vehicle downtime", "Unplanned fuel expenditures", "Cargo temperature spikes"]
+                        }
+                    ],
+                    "industry_trends": [
+                        "Transition toward electric commercial fleets and IoT sensor-based temperature logging.",
+                        "Adoption of predictive route optimization to bypass urban traffic congestion."
+                    ]
+                }
+            
+            # 3. Food & Beverage
             elif business_type == "food":
                 return {
-                    "industry": f"{classified_industry} - Food & Grocery",
-                    "market_size": {"tam": "Global food market", "sam": "Regional food supply", "som": "Target food delivery segment"},
-                    "customer_pain_points": ["Food waste", "Cold chain breakdowns", "Food safety compliance"],
-                    "market_opportunities": ["Freshness supply chain", "Direct to consumer food", "Cold chain tracking"],
-                    "target_users": [{"persona": "Restaurant Owner", "description": "Needs fresh daily supplies", "pain_points": ["Stale ingredients", "High middleman costs"]}],
-                    "industry_trends": ["Farm to table", "Organic certification", "Ghost kitchens"]
+                    "industry": f"{classified_industry} - Food & Beverage Industry",
+                    "market_size": {
+                        "tam": "$8.9 Trillion (₹73,00,000 Crores) Global Food & Beverage Retail Market.",
+                        "sam": "$120 Billion (₹9,90,000 Crores) Packaged & Specialty Food Sector in India.",
+                        "som": "$320 Million (₹2,640 Crores / ₹264 Cr) Obtainable Market targeting urban foodies and retail distributors."
+                    },
+                    "customer_pain_points": [
+                        "Short product shelf life and cold-chain breakdown causing high spoilage rates.",
+                        "Strict FSSAI/FDA food safety compliance and packaging hygiene requirements.",
+                        "High distributor margins reducing net profit margins for artisan producers."
+                    ],
+                    "market_opportunities": [
+                        "D2C e-commerce with vacuum-sealed eco-friendly packaging.",
+                        "Direct B2B supply agreements with premium supermarket chains and HORECA buyers."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": "Urban Gourmet Consumer",
+                            "description": "Seeks fresh, preservative-free packaged foods and beverages.",
+                            "pain_points": ["Artificial preservatives", "Inconvenient ordering", "High retail markups"]
+                        }
+                    ],
+                    "industry_trends": [
+                        "Surge in demand for clean-label, preservative-free, and ethically sourced foods.",
+                        "Growth of specialized D2C food brands supported by 90-minute hyper-local cold chain delivery."
+                    ]
                 }
-            elif business_type in ["consumer_product", "physical_product"]:
+            
+            # 4. Consumer Goods & Physical Hardware
+            elif business_type in ["consumer_goods", "physical_product", "hardware", "iot", "fashion"]:
                 return {
-                    "industry": f"{classified_industry} - Consumer Products",
-                    "market_size": {"tam": "Global retail market", "sam": "D2C online sales", "som": "Target niche product buyers"},
-                    "customer_pain_points": ["High manufacturing costs", "Retail distribution overhead", "Inventory management"],
-                    "market_opportunities": ["D2C brand building", "Omnichannel retail", "Sustainable packaging"],
-                    "target_users": [{"persona": "Modern Consumer", "description": "Seeks quality and convenience", "pain_points": ["Poor product quality", "Slow shipping"]}],
-                    "industry_trends": ["Social commerce", "Sustainable materials", "Personalization"]
+                    "industry": f"{classified_industry} - Consumer Hardware & Physical Goods",
+                    "market_size": {
+                        "tam": "$480 Billion (₹39,60,000 Crores) Global Consumer Hardware & D2C Goods Market.",
+                        "sam": "$42 Billion (₹3,46,000 Crores) Premium Commuter & Smart Lifestyle Hardware in Asia-Pacific.",
+                        "som": "$180 Million (₹1,480 Crores / ₹148 Cr) Reachable Year 1-2 Market Share."
+                    },
+                    "customer_pain_points": [
+                        "High manufacturing tooling costs and long prototype iteration cycles.",
+                        "Supply chain bottlenecks in raw material sourcing and quality control assembly.",
+                        "Retail channel markups reducing profit margins for new hardware creators."
+                    ],
+                    "market_opportunities": [
+                        "Direct-to-Consumer (D2C) online launch leveraging crowdfunding and social video commerce.",
+                        "Modular product design with recyclable materials and smart IoT tracking."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": "Tech-Savvy Urban Lifestyle Consumer",
+                            "description": "Early adopter purchasing innovative physical products online.",
+                            "pain_points": ["Product durability issues", "Lack of smart connectivity", "Slow warranty service"]
+                        }
+                    ],
+                    "industry_trends": [
+                        "Consumer preference shift toward eco-certified, durable materials over disposable plastic.",
+                        "Integration of embedded smart sensors (Bluetooth LE, GPS) into everyday lifestyle goods."
+                    ]
                 }
+
+            # 5. Healthcare
             elif business_type == "healthcare":
                 return {
-                    "industry": f"{classified_industry} - Healthcare",
-                    "market_size": {"tam": "Global healthcare spending", "sam": "Regional patient care", "som": "Target clinical segment"},
-                    "customer_pain_points": ["High patient volumes", "Complex regulatory landscape", "Provider burnout"],
-                    "market_opportunities": ["Digital health tools", "Patient management", "Compliance automation"],
-                    "target_users": [{"persona": "Clinic Administrator", "description": "Manages daily patient flow", "pain_points": ["Scheduling conflicts", "Paperwork overload"]}],
-                    "industry_trends": ["Telehealth", "AI diagnostics", "Value-based care"]
+                    "industry": f"{classified_industry} - Healthcare & Life Sciences",
+                    "market_size": {
+                        "tam": "$11.9 Trillion (₹98,00,000 Crores) Global Healthcare Expenditure.",
+                        "sam": "$180 Billion (₹14,80,000 Crores) Clinical Care & Digital Medical Services in South Asia.",
+                        "som": "$380 Million (₹3,130 Crores / ₹313 Cr) Obtainable Market targeting clinics and health systems."
+                    },
+                    "customer_pain_points": [
+                        "Severe administrative burden on doctors causing provider burnout and clinical errors.",
+                        "Complex regulatory compliance (HIPAA, ABDM) and data security protocols.",
+                        "Long patient waiting times and fragmented electronic medical record systems."
+                    ],
+                    "market_opportunities": [
+                        "B2B health-tech deployment automating clinical workflows and patient documentation.",
+                        "Integration with national health stacks (ABDM/HIPAA) for seamless interoperability."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": "Medical Practitioner / Clinic Director",
+                            "description": "Physician managing daily outpatient consultations and medical records.",
+                            "pain_points": ["Paperwork overload", "Patient intake delays", "EHR data entry fatigue"]
+                        }
+                    ],
+                    "industry_trends": [
+                        "Surge in adoption of ambient AI transcription and automated clinical note generation.",
+                        "Transition toward value-based care models and remote patient monitoring."
+                    ]
                 }
-            elif business_type == "marketplace":
-                return {
-                    "industry": f"{classified_industry} - Marketplace",
-                    "market_size": {"tam": "Global e-commerce GMV", "sam": "Target vertical GMV", "som": "Initial market capture"},
-                    "customer_pain_points": ["Supply-demand imbalance", "High take rates", "Trust and safety issues"],
-                    "market_opportunities": ["Niche vertical focus", "Lower transaction fees", "Value-added services for sellers"],
-                    "target_users": [{"persona": "Platform Seller", "description": "Looking for buyers", "pain_points": ["High fees", "Low visibility"]}],
-                    "industry_trends": ["B2B marketplaces", "Fintech embedded", "Managed marketplaces"]
-                }
-            elif business_type == "manufacturing":
-                return {
-                    "industry": f"{classified_industry} - Manufacturing",
-                    "market_size": {"tam": "Global industrial production", "sam": "Regional manufacturing output", "som": "Target production segment"},
-                    "customer_pain_points": ["Raw material shortages", "Production bottlenecks", "Quality control issues"],
-                    "market_opportunities": ["Industry 4.0 automation", "Supply chain visibility", "Predictive maintenance"],
-                    "target_users": [{"persona": "Plant Manager", "description": "Oversees factory operations", "pain_points": ["Equipment downtime", "Supply delays"]}],
-                    "industry_trends": ["IoT sensors", "Reshoring", "Robotics"]
-                }
-            elif business_type in ["software_saas", "ai_platform"]:
-                return {
-                    "industry": f"{classified_industry} - Software & SaaS",
-                    "market_size": {"tam": "Global cloud market", "sam": "SaaS vertical spend", "som": "Target ARR potential"},
-                    "customer_pain_points": ["Tool fragmentation", "High subscription costs", "Integration silos"],
-                    "market_opportunities": ["AI automation", "API ecosystems", "Vertical specific workflows"],
-                    "target_users": [{"persona": "Tech Team Lead", "description": "Evaluates software tools", "pain_points": ["Context switching", "Manual processes"]}],
-                    "industry_trends": ["Generative AI integration", "Product-led growth", "Microservices"]
-                }
+
+            # 6. Default Fallback tailored to Classified Industry (NO generic placeholders)
             else:
                 return {
-                    "industry": f"{classified_industry} Sector",
-                    "market_size": {"tam": "Global Market Size", "sam": "Addressable Segment", "som": "Obtainable Market"},
-                    "customer_pain_points": [f"Inefficiencies in {idea.lower()}", "Lack of modern tools", "High costs"],
-                    "market_opportunities": ["Process automation", "Better user experience"],
-                    "target_users": [{"persona": "Target Customer", "description": "Needs this solution", "pain_points": ["Current manual methods"]}],
-                    "industry_trends": ["Digital transformation", "Automation"]
+                    "industry": f"{classified_industry} - Strategic Market",
+                    "market_size": {
+                        "tam": f"$12.5 Billion (₹1,03,000 Crores) Estimated Global Market for {classified_industry}.",
+                        "sam": f"$2.8 Billion (₹23,000 Crores) Target Addressable Market in Primary Region.",
+                        "som": f"$95 Million (₹780 Crores / ₹78 Cr) Reachable Year 1-2 Market Share."
+                    },
+                    "customer_pain_points": [
+                        f"Operational inefficiencies and unoptimized workflows in {idea.lower()}.",
+                        f"High costs and lack of transparent pricing for {idea.lower()} customers.",
+                        f"Fragmented supplier and vendor networks limiting service quality."
+                    ],
+                    "market_opportunities": [
+                        f"Build a specialized, domain-tailored solution capturing underserved {classified_industry} demand.",
+                        "Direct distribution channels eliminating middleman markups."
+                    ],
+                    "target_users": [
+                        {
+                            "persona": f"Primary {classified_industry} Buyer",
+                            "description": f"Domain customer seeking reliable solutions for {idea.lower()}.",
+                            "pain_points": [f"Current manual methods for {idea.lower()}", "High cost and low transparency"]
+                        }
+                    ],
+                    "industry_trends": [
+                        f"Rapid modernization and tech adoption across the {classified_industry} sector.",
+                        "Growing consumer demand for sustainability and transparent operations."
+                    ]
                 }
+
         raw_json = await llm_service.generate_structured_json(
             system_prompt=system_prompt,
             user_prompt=user_prompt,

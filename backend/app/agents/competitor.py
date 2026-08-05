@@ -20,7 +20,6 @@ class CompetitorAgent:
             .replace("{idea}", idea)
             .replace("{research_context}", json.dumps(research_data, indent=2))
         )
-        
 
         classification_context = json.dumps(classification_data, indent=2) if classification_data else '{}'
         system_prompt = system_prompt.replace("{classification_context}", classification_context)
@@ -32,161 +31,166 @@ class CompetitorAgent:
 
         def fallback_generator():
             idea_lower = idea.lower()
-            words = [w.capitalize() for w in idea.split()[:3]]
-            title_str = " ".join(words) if words else "Market Incumbent"
+            business_type = classification_data.get('business_type', 'other') if classification_data else 'other'
             
-            # 1. Drones & UAV Aerial Vehicles
-            if any(k in idea_lower for k in ["drone", "uav", "aerial", "quadcopter", "flight"]):
+            # 1. Herbal Products / Ayurvedic Wellness / Skincare
+            if business_type in ["herbal_products", "beauty", "wellness"] or any(k in idea_lower for k in ["herbal", "ayurved", "organic", "botanical", "skincare", "tea"]):
                 return {
                     "competitors": [
                         {
-                            "name": "DJI Enterprise (Mavic 3E / Matrice 350) & Skydio (Skydio X2)",
-                            "category": "Global Commercial Drone Incumbents",
-                            "strengths": ["Dominant global market share & advanced optical gimbal hardware", "Autonomous 360-degree obstacle avoidance algorithms"],
-                            "weaknesses": ["Extremely high price points ($8,000 - $25,000 / ₹6.5 Lakhs - ₹20 Lakhs)", "Closed proprietary software ecosystem"],
-                            "missing_opportunities": ["Affordable localized commercial drones with open AI developer SDKs", "Zero-configuration DGCA Type-Certified Make-in-India hardware"],
-                            "pricing_model": "High-end enterprise hardware sales ($10,000+ unit price)"
+                            "name": "Dabur & Himalaya Wellness",
+                            "category": "Direct Mass-Market Ayurvedic Leaders",
+                            "strengths": ["Massive global distribution network & retail footprint", "Extensive OTC product portfolio & consumer trust"],
+                            "weaknesses": ["Legacy packaging & lack of direct-to-consumer digital engagement", "Lower focus on single-origin organic certification"],
+                            "missing_opportunities": ["QR code farm-to-bottle traceability", "D2C custom formulation subscriptions"],
+                            "pricing_model": "Mass retail pricing (₹150 - ₹600 / $5 - $20 unit price)"
                         },
                         {
-                            "name": "IdeaForge (Netra / Switch UAV) & Garuda Aerospace",
-                            "category": "Indian Enterprise Drone Manufacturers",
-                            "strengths": ["Strong local DGCA compliance and government contract priority", "High altitude endurance flight capabilities"],
-                            "weaknesses": ["Slower software update cycles & limited consumer/SMB product lines"],
-                            "missing_opportunities": ["Autonomous edge-AI computer vision for real-time industrial inspection", "Pay-as-you-fly Drone-as-a-Service (DaaS) cloud model"],
-                            "pricing_model": "Government tenders & B2B enterprise contracts (₹15 Lakhs+)"
+                            "name": "Forest Essentials & Kama Ayurveda",
+                            "category": "Direct Luxury Ayurvedic Brands",
+                            "strengths": ["High-end luxury packaging & strong brand prestige", "Established presence in premium malls & 5-star hotels"],
+                            "weaknesses": ["Extremely high price points inaccessible to mass consumers", "Limited retail access outside Tier-1 cities"],
+                            "missing_opportunities": ["Affordable organic certified daily wellness line", "Direct transparent sourcing guarantees"],
+                            "pricing_model": "Premium D2C & Boutique pricing (₹1,500 - ₹5,000 / $40 - $120 unit price)"
+                        },
+                        {
+                            "name": "Organic India & Vahdam Teas",
+                            "category": "Organic Herbal & D2C Competitors",
+                            "strengths": ["Strong organic export footprint & D2C online store growth", "Focus on fair-trade farmer partnerships"],
+                            "weaknesses": ["High shipping dependency & premium price markup"],
+                            "missing_opportunities": ["Hyper-personalized herbal wellness subscriptions", "Interactive lab-purity verification"],
+                            "pricing_model": "D2C E-commerce & Export retail pricing"
                         }
                     ],
-                    "market_gaps": ["Lack of an affordable commercial drone combining DGCA compliance, open edge-AI vision payloads, and a subscription-based Drone-as-a-Service (DaaS) model."],
-                    "defensability_strategy": "Patented on-board edge AI computer vision module, Make-in-India DGCA Type Certification, and proprietary BVLOS mesh telemetry protocol."
+                    "market_gaps": ["Lack of an affordable, certified 100% organic herbal brand combining lab-certified purity, QR code batch transparency, and direct farm-to-doorstep delivery."],
+                    "defensability_strategy": "Direct exclusive organic farmer contracts, AYUSH & FSSAI certified lab testing, and proprietary cold-extraction formulation process."
                 }
 
-            # 2. Fish / Seafood / Fresh Food Market
-            elif any(k in idea_lower for k in ["fish", "food", "meat", "seafood", "grocery", "dock"]):
+            # 2. Logistics & Transportation / Fleet Freight
+            elif business_type in ["logistics", "transportation"] or any(k in idea_lower for k in ["transport", "fleet", "shipping", "delivery", "freight", "trucking"]):
+                return {
+                    "competitors": [
+                        {
+                            "name": "Delhivery & Blue Dart (DHL Group)",
+                            "category": "Direct Express Freight & Parcel Incumbents",
+                            "strengths": ["Pan-country logistics network & established hub infrastructure", "Automated sorting facilities & enterprise API integrations"],
+                            "weaknesses": ["High per-shipment rates for small SMB shippers", "Lack of specialized agricultural cold-chain tracking"],
+                            "missing_opportunities": ["Dedicated temperature-controlled fleet dispatch for fresh produce", "Empty return trip load matching"],
+                            "pricing_model": "Per-kilogram & zone-based freight pricing"
+                        },
+                        {
+                            "name": "Porter & BlackBuck (Zinka Logistics)",
+                            "category": "Intra-City & Inter-City Fleet Aggregators",
+                            "strengths": ["Large driver fleet network & mobile app dispatch", "Transparent per-trip pricing for intra-city transport"],
+                            "weaknesses": ["High driver churn rates & unmonitored cargo transit conditions"],
+                            "missing_opportunities": ["Guaranteed cold-chain temperature preservation", "Predictive fuel surcharge indexing"],
+                            "pricing_model": "Pay-per-trip & vehicle distance pricing"
+                        }
+                    ],
+                    "market_gaps": ["Gap for an IoT-enabled logistics platform offering real-time temperature tracking, zero empty return trips, and 20% lower freight rates for regional distributors."],
+                    "defensability_strategy": "Proprietary IoT sensor telemetry, exclusive regional producer agreements, and automated load optimization algorithms."
+                }
+
+            # 3. Food & Beverage / Seafood / Fresh Groceries
+            elif business_type == "food" or any(k in idea_lower for k in ["food", "meat", "fish", "restaurant", "snack", "juice", "bakery"]):
                 return {
                     "competitors": [
                         {
                             "name": "Licious & FreshToHome",
-                            "category": "Direct D2C Meat & Seafood Leaders",
-                            "strengths": ["Strong consumer brand equity & high urban market penetration", "Established processing hubs & cold-chain distribution"],
-                            "weaknesses": ["High retail price markups (30-40% premium over local fish docks)", "Frequent stockouts of specific fresh coastal catch varieties"],
-                            "missing_opportunities": ["Direct dockside live-tracking showing exact port of origin & harvest time", "Hyper-local 90-minute fresh delivery with IoT temperature guarantee"],
-                            "pricing_model": "D2C Retail markup pricing (₹350 - ₹950 per kg)"
+                            "category": "Direct D2C Meat & Fresh Produce Leaders",
+                            "strengths": ["Strong urban brand equity & established cold-chain hubs", "100% formalin-free & chemical-free quality positioning"],
+                            "weaknesses": ["High 35%+ retail price markup over local wet markets", "Frequent out-of-stock items in specialty cuts"],
+                            "missing_opportunities": ["Direct dockside harvest origin tracking", "Hyper-local 90-minute fresh delivery SLA"],
+                            "pricing_model": "D2C Retail per-kg markup pricing"
                         },
                         {
-                            "name": "Captain Fresh & Local Coastal Wet Markets",
-                            "category": "B2B Wholesale & Traditional Docks",
-                            "strengths": ["Deep relationships with coastal fishing boat operators", "Lowest wholesale cost per kilogram at dockside"],
-                            "weaknesses": ["Poor hygiene, unhygienic ice preservation, and formalin risk in wet markets", "Complete lack of consumer-facing digital ordering & cold-chain tracking"],
-                            "missing_opportunities": ["100% chemical-free certified fresh fish delivery to households", "Pre-cleaned, customized fish cutting & portioning options"],
-                            "pricing_model": "Wholesale dockside spot pricing + Cash sales"
+                            "name": "Organic Tattva & Epigamia",
+                            "category": "Packaged Food & Dairy Competitors",
+                            "strengths": ["Widespread supermarket retail distribution & clean packaging", "Strong consumer trust in health category"],
+                            "weaknesses": ["Slower distribution cycles & dependence on third-party retailers"],
+                            "missing_opportunities": ["Direct D2C subscription delivery", "Zero-preservative ultra-fresh short shelf-life items"],
+                            "pricing_model": "FMCG retail wholesale markup"
                         }
                     ],
-                    "market_gaps": ["Lack of a direct dock-to-doorstep delivery platform guaranteeing 100% formalin-free freshness at 25% lower prices than legacy D2C brands."],
-                    "defensability_strategy": "Direct exclusive dockside procurement contracts, proprietary IoT temperature-monitored cold-chain transit boxes, and 90-minute fresh delivery SLA."
+                    "market_gaps": ["Market gap for a direct producer-to-consumer food delivery system providing 100% chemical-free fresh foods at 25% lower prices than legacy D2C brands."],
+                    "defensability_strategy": "Direct exclusive coastal/farm procurement, proprietary eco-friendly insulated packaging, and 90-minute hyper-local delivery."
                 }
 
-            # 3. Medical / Healthcare / Medical Scribe
-            elif any(k in idea_lower for k in ["health", "medical", "doctor", "clinic", "patient", "diag", "scribe"]):
+            # 4. Consumer Goods & Physical Hardware
+            elif business_type in ["consumer_goods", "physical_product", "hardware", "iot", "fashion"]:
                 return {
                     "competitors": [
+                        {
+                            "name": "Anker Innovations & GoPro",
+                            "category": "Global Consumer Hardware & Gear Leaders",
+                            "strengths": ["High product build quality & global retail presence", "Strong consumer brand equity"],
+                            "weaknesses": ["Premium price points ($150 - $400)", "Generic one-size-fits-all product features"],
+                            "missing_opportunities": ["Localized affordable pricing", "Open developer SDKs for smart hardware"],
+                            "pricing_model": "D2C & Retail hardware unit sales"
+                        },
+                        {
+                            "name": "boAt Lifestyle & Mokobara",
+                            "category": "Indian Consumer Goods & D2C Brand Leaders",
+                            "strengths": ["Agile D2C marketing & competitive pricing", "Strong youth brand appeal"],
+                            "weaknesses": ["Heavy reliance on overseas contract manufacturing"],
+                            "missing_opportunities": ["Make-in-India local production sourcing", "Integrated smart IoT capabilities"],
+                            "pricing_model": "D2C E-commerce unit sales"
+                        }
+                    ],
+                    "market_gaps": ["Lack of an innovative physical product combining premium durable materials, smart IoT connectivity, and direct factory-to-consumer pricing."],
+                    "defensability_strategy": "Proprietary industrial design patents, Make-in-India manufacturing contracts, and direct D2C brand equity."
+                }
+
+            # 5. Healthcare / Health Tech
+            elif business_type == "healthcare":
+                return {
+                    "competitors": [
+                        {
+                            "name": "Practo & Tata 1mg",
+                            "category": "Direct Digital Healthcare Platforms",
+                            "strengths": ["Massive consumer user base & widespread pharmacy network", "Integrated doctor consultation booking"],
+                            "weaknesses": ["Generic platform interface & high provider listing commissions"],
+                            "missing_opportunities": ["Specialized clinical workflow automation", "Ambient AI doctor voice transcription"],
+                            "pricing_model": "Consultation commissions & B2B listings"
+                        },
                         {
                             "name": "Epic Systems & Cerner (Oracle Health)",
-                            "category": "Legacy Enterprise EHR Incumbents",
-                            "strengths": ["Deep hospital system integrations", "Comprehensive medical record compliance"],
-                            "weaknesses": ["Outdated clunky user interfaces", "Forces doctors to spend 3+ hours daily on manual typing", "Extremely high implementation costs"],
-                            "missing_opportunities": ["Ambient ambient voice AI scribing", "Instant mobile-first doctor workflow"],
-                            "pricing_model": "Multi-million dollar hospital enterprise licenses"
-                        },
-                        {
-                            "name": "Practo & Nuance DAX (Microsoft)",
-                            "category": "Direct Medical Tech & Dictation Platforms",
-                            "strengths": ["High brand trust among independent clinics", "Strong voice transcription engine"],
-                            "weaknesses": ["High per-physician monthly fees ($300-$500/month)", "Requires manual dictation review"],
-                            "missing_opportunities": ["Localized ABDM & Ayushman Bharat ID integration for Indian clinics", "Automated prescription drafting"],
-                            "pricing_model": "Per-doctor monthly SaaS subscription ($299/mo / ₹9,999/mo)"
+                            "category": "Legacy Enterprise EHR Vendors",
+                            "strengths": ["Deep hospital system integrations", "Comprehensive regulatory compliance"],
+                            "weaknesses": ["Outdated clunky UI requiring 3+ hours daily manual entry", "Multi-million dollar license cost"],
+                            "missing_opportunities": ["1-click mobile doctor workflow", "Real-time AI clinical documentation"],
+                            "pricing_model": "Enterprise hospital software licensing"
                         }
                     ],
-                    "market_gaps": ["Lack of an affordable ambient AI medical scribe that automatically converts doctor-patient spoken conversations into structured EHR notes without manual typing."],
-                    "defensability_strategy": "HIPAA & ABDM compliant medical Llama 3 fine-tuned model, ambient noise cancelling audio pipeline, and 1-click EHR sync."
+                    "market_gaps": ["Lack of a seamless, ABDM-compliant clinical solution that eliminates manual data entry for doctors while keeping cost accessible for independent clinics."],
+                    "defensability_strategy": "HIPAA & ABDM certified data security layer, proprietary clinical AI model, and 1-click EHR sync."
                 }
 
-            # 4. E-Commerce & Online Shopping Apps
-            elif any(k in idea_lower for k in ["shop", "shopping", "ecommerce", "store", "retail", "buy"]):
+            # 6. Default Real-World Competitor Fallback (NO generic "Legacy Brands" placeholders)
+            else:
                 return {
                     "competitors": [
                         {
-                            "name": "Amazon & Flipkart (Walmart)",
-                            "category": "Direct E-Commerce Market Dominators",
-                            "strengths": ["Massive product catalog", "Established 1-day delivery logistics infrastructure"],
-                            "weaknesses": ["High seller commission fees (15-25%)", "Impersonal discovery & generic search interface"],
-                            "missing_opportunities": ["AI-driven 3D virtual try-ons", "Hyper-personalized social shopping feeds"],
-                            "pricing_model": "Seller marketplace commissions & Ad sponsorship"
+                            "name": f"Established Incumbents in {idea.title()}",
+                            "category": "Direct Market Leaders",
+                            "strengths": ["High brand recognition", "Established distributor relationships"],
+                            "weaknesses": ["Slow product innovation", "High retail/service markups"],
+                            "missing_opportunities": ["Direct-to-consumer transparent pricing", "Modern digital ordering"],
+                            "pricing_model": "Traditional wholesale & retail markup"
                         },
                         {
-                            "name": "Meesho & AJIO (Reliance)",
-                            "category": "Social Commerce & Value Fashion Competitors",
-                            "strengths": ["Zero-commission seller onboarding", "High Tier-2/3 Indian city user adoption"],
-                            "weaknesses": ["Higher product return rates", "Inconsistent quality control"],
-                            "missing_opportunities": ["Instant 10-minute quick-commerce delivery", "Real-time AI style advisors"],
-                            "pricing_model": "Logistics fulfillment fees & Banner advertising"
+                            "name": f"Regional Competitors in {idea.title()}",
+                            "category": "Regional Market Players",
+                            "strengths": ["Local market presence", "Customer relationships"],
+                            "weaknesses": ["Limited geographic reach", "Manual un-automated operations"],
+                            "missing_opportunities": ["Online ordering & batch tracking", "Standardized quality guarantees"],
+                            "pricing_model": "Local spot market pricing"
                         }
                     ],
-                    "market_gaps": ["Gap for an AI-native shopping app combining 3D virtual try-ons, hyper-personalized curation, and zero-fee seller direct checkout."],
-                    "defensability_strategy": "Proprietary AI recommendation engine, direct brand integration, and automated 1-click social checkout."
+                    "market_gaps": [f"Significant market gap for a modernized, transparent solution in {idea.title()} delivering 10x higher quality and competitive direct pricing."],
+                    "defensability_strategy": f"Exclusive producer contracts, proprietary quality assurance standards, and strong D2C brand positioning."
                 }
 
-            # 5. EV / Mobility / Transportation
-            elif any(k in idea_lower for k in ["ev", "electric", "battery", "charging", "vehicle", "scooter"]):
-                return {
-                    "competitors": [
-                        {
-                            "name": "ChargePoint & Tesla Supercharger Network",
-                            "category": "Global EV Charging Infrastructure Leaders",
-                            "strengths": ["Massive network of installed fast chargers", "High brand recognition"],
-                            "weaknesses": ["Unreliable charger uptime (15%+ offline chargers)", "High hardware installation capex"],
-                            "missing_opportunities": ["Predictive charging station reservation", "Solar-powered battery swap hubs"],
-                            "pricing_model": "Pay-per-kWh & Charging session fees ($0.35/kWh / ₹18/unit)"
-                        },
-                        {
-                            "name": "Ather Grid & Tata Power EZ Charge",
-                            "category": "Indian EV Charging Network Leaders",
-                            "strengths": ["Rapid expansion across major Indian highways & Tier-1 cities", "Seamless mobile app payment"],
-                            "weaknesses": ["Limited charger availability in Tier-2/3 regions", "Slow charging speeds on legacy AC units"],
-                            "missing_opportunities": ["Interoperable battery swapping for 2-wheeler fleets", "UPI auto-debit plug-and-charge"],
-                            "pricing_model": "App subscription & Per-minute charging rates"
-                        }
-                    ],
-                    "market_gaps": ["Lack of a unified, highly reliable charging network featuring 1-click battery swapping and guaranteed 99.9% uptime for commercial EV fleets."],
-                    "defensability_strategy": "Proprietary smart battery management system (BMS), automated charger health telemetry, and exclusive highway site leases."
-                }
-
-            
-            # 6. Classification-aware Competitor Synthesizer
-            business_type = classification_data.get('business_type', 'other') if classification_data else 'other'
-            return {
-                "competitors": [
-                    {
-                        "name": f"Traditional Legacy Brands in {title_str}",
-                        "category": "Established Market Leaders",
-                        "strengths": ["High global brand equity", "Established sales channels"],
-                        "weaknesses": ["Slow feature updates", "High enterprise pricing & complex onboarding"],
-                        "missing_opportunities": ["Localized pricing (₹ INR)", "AI-driven zero-friction workflows"],
-                        "pricing_model": "Enterprise tiered contracts & Usage-based pricing"
-                    },
-                    {
-                        "name": f"Regional Competitors in {title_str}",
-                        "category": "Direct Regional Alternatives",
-                        "strengths": ["Established local presence", "Regulatory compliance"],
-                        "weaknesses": ["Outdated user interface", "Manual operations"],
-                        "missing_opportunities": ["Instant mobile accessibility", "Zero-friction customer onboarding"],
-                        "pricing_model": "Subscription & Commission per transaction"
-                    }
-                ],
-                "market_gaps": [
-                    f"Significant market opportunity for a modernized platform tailored to {business_type} workflows delivering 10x faster execution and competitive localized pricing for {idea.lower()}."
-                ],
-                "defensability_strategy": f"Proprietary automation algorithms specific to {business_type}, direct API & logistics integrations, and strong localized brand positioning."
-            }
         raw_json = await llm_service.generate_structured_json(
             system_prompt=system_prompt,
             user_prompt=user_prompt,

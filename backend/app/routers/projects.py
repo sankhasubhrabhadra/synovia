@@ -52,14 +52,20 @@ async def create_project(
         target_market=payload.target_market
     )
 
-    return ProjectResponse(
-        id=new_project.id,
-        idea=new_project.idea,
-        status=StatusEnum(new_project.status),
-        current_step=AgentStepEnum(new_project.current_step),
-        created_at=new_project.created_at.isoformat(),
-        updated_at=new_project.updated_at.isoformat(),
-        blueprint=new_project.blueprint_json
+    headers = {"Cache-Control": "no-store, no-cache, must-revalidate"}
+    return Response(
+        content=ProjectResponse(
+            id=new_project.id,
+            idea=new_project.idea,
+            status=StatusEnum(new_project.status),
+            current_step=AgentStepEnum(new_project.current_step),
+            created_at=new_project.created_at.isoformat(),
+            updated_at=new_project.updated_at.isoformat(),
+            blueprint=new_project.blueprint_json
+        ).model_dump_json(),
+        media_type="application/json",
+        headers=headers,
+        status_code=201
     )
 
 @router.get("", response_model=List[ProjectResponse])
@@ -102,14 +108,19 @@ async def get_project(
     if not proj:
         raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found.")
         
-    return ProjectResponse(
-        id=proj.id,
-        idea=proj.idea,
-        status=StatusEnum(proj.status),
-        current_step=AgentStepEnum(proj.current_step),
-        created_at=proj.created_at.isoformat(),
-        updated_at=proj.updated_at.isoformat(),
-        blueprint=proj.blueprint_json
+    headers = {"Cache-Control": "no-store, no-cache, must-revalidate"}
+    return Response(
+        content=ProjectResponse(
+            id=proj.id,
+            idea=proj.idea,
+            status=StatusEnum(proj.status),
+            current_step=AgentStepEnum(proj.current_step),
+            created_at=proj.created_at.isoformat(),
+            updated_at=proj.updated_at.isoformat(),
+            blueprint=proj.blueprint_json
+        ).model_dump_json(),
+        media_type="application/json",
+        headers=headers
     )
 
 @router.get("/{project_id}/stream")

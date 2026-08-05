@@ -166,35 +166,13 @@ export function getProjectStreamUrl(id: string): string {
 }
 
 export async function downloadProjectPdfFile(id: string, ideaName: string = "Blueprint"): Promise<void> {
-  const response = await fetchResilient(`/api/projects/${id}/pdf`);
-  if (!response.ok) {
-    const errObj = await response.json().catch(() => ({}));
-    throw new Error(errObj.detail || `PDF generation pending or failed (${response.status})`);
-  }
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Synovia_Blueprint_${ideaName.slice(0, 15).replace(/\s+/g, "_")}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/api/projects/${id}/pdf`;
+  window.open(url, "_blank");
 }
 
 export async function downloadProjectPptFile(id: string, ideaName: string = "Pitch_Deck"): Promise<void> {
-  const response = await fetchResilient(`/api/projects/${id}/ppt`);
-  if (!response.ok) {
-    const errObj = await response.json().catch(() => ({}));
-    throw new Error(errObj.detail || `PPT generation pending or failed (${response.status})`);
-  }
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Synovia_Pitch_Deck_${ideaName.slice(0, 15).replace(/\s+/g, "_")}.pptx`;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/api/projects/${id}/ppt`;
+  window.open(url, "_blank");
 }

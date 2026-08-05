@@ -90,6 +90,11 @@ class ManagerAgent:
             )
             
             classification_data = await classifier_agent.run(idea, target_market)
+            industry_display_name = idea.title()
+            
+            if classification_data.get("business_type") == "other":
+                classification_data["business_type"] = industry_display_name
+                
             biz_type = classification_data.get("business_type", "other").replace("_", " ").title()
 
             await broadcast_status(
@@ -168,8 +173,9 @@ class ManagerAgent:
                 roadmap_data.update(corrected["roadmap"])
 
             # Step 6: Finalize Merged Blueprint
+            industry_display_name = idea.title()
             executive_summary = (
-                f"Synovia Blueprint & Strategy Report for '{idea}' ({biz_type}): Targeting a "
+                f"Synovia Blueprint & Strategy Report for '{industry_display_name}': Targeting a "
                 f"{research_data.get('market_size', {}).get('tam', 'multi-billion dollar')} market opportunity. "
                 f"Achieved a Viability Score of {validation_data.get('viability_score', 82)}/100. "
                 f"Verdict: '{validation_data.get('final_verdict', 'STRONG PURSUE')}'."
