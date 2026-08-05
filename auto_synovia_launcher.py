@@ -51,7 +51,7 @@ def start_cloudflared():
         except Exception:
             pass
 
-    cmd = f'"{CLOUDFLARED_BIN}" tunnel --protocol http2 --url http://localhost:8000 > "{LOG_FILE}" 2>&1'
+    cmd = f'"{CLOUDFLARED_BIN}" tunnel --protocol http2 --url http://127.0.0.1:8000 > "{LOG_FILE}" 2>&1'
     subprocess.Popen(
         cmd,
         shell=True,
