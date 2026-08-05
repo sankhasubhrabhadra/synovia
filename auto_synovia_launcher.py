@@ -51,10 +51,9 @@ def start_cloudflared():
         except Exception:
             pass
 
-    cmd = f'"{CLOUDFLARED_BIN}" tunnel --protocol http2 --url http://127.0.0.1:8000 > "{LOG_FILE}" 2>&1'
+    cmd = [CLOUDFLARED_BIN, "tunnel", "--protocol", "http2", "--url", "http://127.0.0.1:8000", "--logfile", LOG_FILE]
     subprocess.Popen(
         cmd,
-        shell=True,
         creationflags=CREATE_NEW_CONSOLE if os.name == 'nt' else 0
     )
     
@@ -65,16 +64,19 @@ def start_cloudflared():
     for _ in range(25):
         time.sleep(1)
         if os.path.exists(LOG_FILE):
-            with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-                matches = [m for m in regex.findall(content) if "api.trycloudflare.com" not in m]
-                if matches:
-                    tunnel_url = matches[0]
-                    logging.info(f"Detected active Cloudflare Tunnel URL: {tunnel_url}")
-                    break
-
+            try:
+                with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                    matches = [m for m in regex.findall(content) if "api.trycloudflare.com" not in m]
+                    if matches:
+                        tunnel_url = matches[0]
+                        logging.info(f"Detected active Cloudflare Tunnel URL: {tunnel_url}")
+                        break
+            except Exception:
+                pass
 
     return tunnel_url
+
 
 
 
