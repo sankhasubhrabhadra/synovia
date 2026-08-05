@@ -237,7 +237,7 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
                 <span className={`text-xs ${
                   log.status === "completed" ? "text-emerald-400" : log.status === "failed" ? "text-rose-400" : "text-blue-300"
                 }`}>
-                  [{log.step.toUpperCase()}] {log.message}
+                  [{String(log.step || "step").toUpperCase()}] {log.message}
                 </span>
               </div>
             ))
