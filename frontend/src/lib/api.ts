@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://appraisal-oecd-kodak-involving.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://democrat-chief-ata-grammar.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
