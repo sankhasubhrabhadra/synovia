@@ -76,6 +76,8 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
   const isPostOrPut = options.method && ["POST", "PUT", "PATCH"].includes(options.method.toUpperCase());
   const headers: Record<string, string> = {
     ...(isPostOrPut ? { "Content-Type": "application/json" } : {}),
+    "bypass-tunnel-reminder": "true",
+    "ngrok-skip-browser-warning": "true",
     ...(options.headers as Record<string, string> || {}),
   };
 
