@@ -43,6 +43,8 @@ def start_backend():
     else:
         logging.info("FastAPI backend is already running on http://127.0.0.1:8000")
 
+CLOUDFLARED_BIN = r"C:\Program Files (x86)\cloudflared\cloudflared.exe" if os.path.exists(r"C:\Program Files (x86)\cloudflared\cloudflared.exe") else "cloudflared"
+
 def start_cloudflared():
     logging.info("Starting Cloudflare Tunnel...")
     if os.path.exists(LOG_FILE):
@@ -51,7 +53,7 @@ def start_cloudflared():
         except Exception:
             pass
 
-    cmd = ["cloudflared", "tunnel", "--protocol", "http2", "--url", "http://localhost:8000"]
+    cmd = [CLOUDFLARED_BIN, "tunnel", "--protocol", "http2", "--url", "http://localhost:8000"]
     log_fp = open(LOG_FILE, "w", encoding="utf-8")
     subprocess.Popen(
         cmd,
@@ -60,6 +62,7 @@ def start_cloudflared():
         creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
         close_fds=True
     )
+
     
     tunnel_url = None
     regex = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")

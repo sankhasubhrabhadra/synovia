@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const ACTIVE_TUNNEL_URL = "https://tommy-driver-nirvana-install.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://repository-properly-stopped-dealing.trycloudflare.com";
 
 const nextConfig: NextConfig = {
   async rewrites() {
