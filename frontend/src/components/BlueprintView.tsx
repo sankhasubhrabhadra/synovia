@@ -15,6 +15,9 @@ interface BlueprintViewProps {
 const safeArray = (arr: any): any[] => {
   if (Array.isArray(arr)) return arr;
   if (typeof arr === "string" && arr.trim()) return [arr];
+  if (typeof arr === "object" && arr !== null) {
+    return Object.values(arr).filter(Boolean);
+  }
   return [];
 };
 
@@ -430,12 +433,12 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div>
                   <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3">User Journey Workflow</h4>
                   <div className="space-y-2">
-                    {safeArray(product.user_journey).map((step: string, i: number) => (
+                    {safeArray(product.user_journey).map((step: any, i: number) => (
                       <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                         <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-300 font-bold flex items-center justify-center shrink-0 text-xs">
                           {i + 1}
                         </span>
-                        <p className="text-xs text-slate-300 pt-0.5">{step}</p>
+                        <p className="text-xs text-slate-300 pt-0.5">{safeRender(step)}</p>
                       </div>
                     ))}
                   </div>
@@ -489,10 +492,10 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Major Business Risks</span>
                   </h4>
                   <ul className="space-y-2 text-xs text-slate-300">
-                    {safeArray(validation.major_business_risks).map((risk: string, i: number) => (
+                    {safeArray(validation.major_business_risks).map((risk: any, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-rose-400 shrink-0">•</span>
-                        <span>{risk}</span>
+                        <span>{safeRender(risk)}</span>
                       </li>
                     ))}
                   </ul>
@@ -504,10 +507,10 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Technical & Execution Risks</span>
                   </h4>
                   <ul className="space-y-2 text-xs text-slate-300">
-                    {safeArray(validation.technical_risks).map((risk: string, i: number) => (
+                    {safeArray(validation.technical_risks).map((risk: any, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-amber-400 shrink-0">•</span>
-                        <span>{risk}</span>
+                        <span>{safeRender(risk)}</span>
                       </li>
                     ))}
                   </ul>
@@ -519,10 +522,10 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Competitive Risks</span>
                   </h4>
                   <ul className="space-y-2 text-xs text-slate-300">
-                    {safeArray(validation.competitive_risks).map((risk: string, i: number) => (
+                    {safeArray(validation.competitive_risks).map((risk: any, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-purple-400 shrink-0">•</span>
-                        <span>{risk}</span>
+                        <span>{safeRender(risk)}</span>
                       </li>
                     ))}
                   </ul>
@@ -537,12 +540,12 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Validation Recommendations</span>
                   </h4>
                   <div className="space-y-2 text-xs text-slate-300">
-                    {safeArray(validation.validation_recommendations).map((rec: string, i: number) => (
+                    {safeArray(validation.validation_recommendations).map((rec: any, i: number) => (
                       <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2">
                         <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
                           {i + 1}
                         </span>
-                        <span>{rec}</span>
+                        <span>{safeRender(rec)}</span>
                       </div>
                     ))}
                   </div>
@@ -554,12 +557,12 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                     <span>Next Best Actions (Immediate 7-Day Plan)</span>
                   </h4>
                   <div className="space-y-2 text-xs text-slate-300">
-                    {safeArray(validation.next_best_actions).map((act: string, i: number) => (
+                    {safeArray(validation.next_best_actions).map((act: any, i: number) => (
                       <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2">
                         <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold flex items-center justify-center shrink-0 text-[10px]">
                           {i + 1}
                         </span>
-                        <span>{act}</span>
+                        <span>{safeRender(act)}</span>
                       </div>
                     ))}
                   </div>
@@ -618,17 +621,17 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                       <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-extrabold uppercase border border-indigo-500/30 inline-block mb-1">
                         Week {wk.week || i + 1}
                       </span>
-                      <h4 className="font-bold text-base text-white">{wk.title}</h4>
-                      <p className="text-xs text-slate-400 italic mt-0.5">Focus: {wk.goals}</p>
+                      <h4 className="font-bold text-base text-white">{safeRender(wk.title)}</h4>
+                      <p className="text-xs text-slate-400 italic mt-0.5">Focus: {safeRender(wk.goals)}</p>
                     </div>
 
                     <div className="flex-1 md:max-w-md">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Deliverables:</span>
                       <ul className="space-y-1">
-                        {safeArray(wk.deliverables).map((deliv: string, idx: number) => (
+                        {safeArray(wk.deliverables).map((deliv: any, idx: number) => (
                           <li key={idx} className="flex items-center gap-2 text-xs text-slate-300">
                             <ChevronRight className="w-3 h-3 text-indigo-400" />
-                            <span>{deliv}</span>
+                            <span>{safeRender(deliv)}</span>
                           </li>
                         ))}
                       </ul>
@@ -747,10 +750,10 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 mb-4">
                   <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Template Violations Flagged</h4>
                   <ul className="space-y-1.5">
-                    {safeArray(qualityControl.violations_found).map((v: string, idx: number) => (
+                    {safeArray(qualityControl.violations_found).map((v: any, idx: number) => (
                       <li key={idx} className="text-xs text-slate-300 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                        <span>{v}</span>
+                        <span>{safeRender(v)}</span>
                       </li>
                     ))}
                   </ul>
@@ -762,10 +765,10 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
                   <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Autonomous Corrections Applied</h4>
                   <ul className="space-y-1.5">
-                    {safeArray(qualityControl.corrections_applied).map((c: string, idx: number) => (
+                    {safeArray(qualityControl.corrections_applied).map((c: any, idx: number) => (
                       <li key={idx} className="text-xs text-slate-300 flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{c}</span>
+                        <span>{safeRender(c)}</span>
                       </li>
                     ))}
                   </ul>
