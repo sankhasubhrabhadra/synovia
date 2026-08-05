@@ -9,6 +9,28 @@ from pptx.enum.shapes import MSO_SHAPE
 
 logger = logging.getLogger("synovia.tools.ppt_generator")
 
+def clean_str(val: Any) -> str:
+    if val is None:
+        return ""
+    if isinstance(val, (int, float, bool)):
+        return str(val)
+    if isinstance(val, dict):
+        parts = [f"{k}: {clean_str(v)}" for k, v in val.items() if v]
+        return " • ".join(parts)
+    if isinstance(val, list):
+        return ", ".join(clean_str(v) for v in val if v)
+    return str(val).replace("■", "").strip()
+
+def parse_score(val: Any, default: int = 80) -> int:
+    if isinstance(val, (int, float)):
+        return int(val)
+    if isinstance(val, dict):
+        return parse_score(val.get("score") or val.get("value"), default)
+    if isinstance(val, str):
+        digits = "".join(filter(str.isdigit, val))
+        return int(digits) if digits else default
+    return default
+
 class PPTReportGenerator:
     """
     Generates an executive 16:9 PowerPoint (.pptx) Pitch Deck from blueprint data.
@@ -28,7 +50,7 @@ class PPTReportGenerator:
         prs.slide_width = Inches(13.333)
         prs.slide_height = Inches(7.5)
 
-        idea = blueprint.get("idea", "Startup Blueprint").title()
+        idea = clean_str(blueprint.get("idea", "Startup Blueprint")).title()
         research = blueprint.get("research", {})
         competitor = blueprint.get("competitor", {})
         product = blueprint.get("product", {})
@@ -123,9 +145,9 @@ class PPTReportGenerator:
         self._set_slide_background(slide)
         self._add_header(slide, "Market Size & Opportunity (TAM/SAM/SOM)", f"Project: {idea}")
 
-        tam = research.get("market_size", {}).get("tam", "N/A")
-        sam = research.get("market_size", {}).get("sam", "N/A")
-        som = research.get("market_size", {}).get("som", "N/A")
+        tam = clean_str(research.get("market_size", {}).get("tam", "N/A"))
+        sam = clean_str(research.get("market_size", {}).get("sam", "N/A"))
+        som = clean_str(research.get("market_size", {}).get("som", "N/A"))
 
         # 3 Market Box Shapes
         boxes = [("TAM (Total Market)", tam, Inches(0.8)), ("SAM (Serviceable Market)", sam, Inches(4.8)), ("SOM (Target Reachable)", som, Inches(8.8))]
@@ -165,7 +187,7 @@ class PPTReportGenerator:
 
         for pain in research.get("customer_pain_points", [])[:4]:
             p = tf2.add_paragraph()
-            p.text = f"•  {pain}"
+            p.text = f"•  {clean_str(pain)}"
             p.font.size = Pt(12)
             p.font.color.rgb = self.text_white
             p.space_before = Pt(4)
@@ -185,7 +207,7 @@ class PPTReportGenerator:
             tf = shape.text_frame
             tf.word_wrap = True
             p = tf.paragraphs[0]
-            p.text = f"Competitor: {comp.get('name', 'N/A')}"
+            p.text = f"Competitor: {clean_str(comp.get('name', 'N/A'))}"
             p.font.size = Pt(16)
             p.font.bold = True
             p.font.color.rgb = self.text_emerald
@@ -199,7 +221,7 @@ class PPTReportGenerator:
 
             for s in comp.get("strengths", [])[:2]:
                 p_item = tf.add_paragraph()
-                p_item.text = f"• {s}"
+                p_item.text = f"• {clean_str(s)}"
                 p_item.font.size = Pt(11)
                 p_item.font.color.rgb = self.text_white
 
@@ -212,7 +234,7 @@ class PPTReportGenerator:
 
             for w in comp.get("weaknesses", [])[:2]:
                 p_item = tf.add_paragraph()
-                p_item.text = f"• {w}"
+                p_item.text = f"• {clean_str(w)}"
                 p_item.font.size = Pt(11)
                 p_item.font.color.rgb = self.text_white
 
@@ -239,9 +261,9 @@ class PPTReportGenerator:
 
         for feat in product.get("mvp_features", [])[:4]:
             p = tf.add_paragraph()
-            feat_name = feat.get("name", "") if isinstance(feat, dict) else str(feat)
-            feat_desc = feat.get("description", "") if isinstance(feat, dict) else ""
-            p.text = f"•  {feat_name}: {feat_desc}"
+            feat_name = clean_str(feat.get("name") or feat.get("title") or feat) if isinstance(feat, dict) else clean_str(feat)
+            feat_desc = clean_str(feat.get("description") or feat.get("desc") or "") if isinstance(feat, dict) else ""
+            p.text = f"•  {feat_name}: {feat_desc}" if feat_desc else f"•  {feat_name}"
             p.font.size = Pt(12)
             p.font.color.rgb = self.text_white
             p.space_before = Pt(8)
@@ -253,11 +275,11 @@ class PPTReportGenerator:
 
         # 5 Scores Box
         scores = [
-            ("Viability", validation.get("viability_score", 82)),
-            ("Innovation", validation.get("innovation_score", 78)),
-            ("Market Opp.", validation.get("market_opportunity_score", 88)),
-            ("Feasibility", validation.get("feasibility_score", 75)),
-            ("Scalability", validation.get("scalability_score", 84)),
+            ("Viability", parse_score(validation.get("viability_score"), 82)),
+            ("Innovation", parse_score(validation.get("innovation_score"), 78)),
+            ("Market Opp.", parse_score(validation.get("market_opportunity_score"), 88)),
+            ("Feasibility", parse_score(validation.get("feasibility_score"), 75)),
+            ("Scalability", parse_score(validation.get("scalability_score"), 84)),
         ]
 
         left = Inches(0.8)
@@ -298,7 +320,7 @@ class PPTReportGenerator:
         p_vtitle.font.color.rgb = self.text_white
 
         p_v = tf2.add_paragraph()
-        p_v.text = f"Final Verdict: {validation.get('final_verdict', 'STRONG PURSUE')}"
+        p_v.text = f"Final Verdict: {clean_str(validation.get('final_verdict', 'STRONG PURSUE'))}"
         p_v.font.size = Pt(13)
         p_v.font.bold = True
         p_v.font.color.rgb = self.text_emerald
@@ -306,7 +328,7 @@ class PPTReportGenerator:
 
         for rec in validation.get("validation_recommendations", [])[:2]:
             p = tf2.add_paragraph()
-            p.text = f"• Recommendation: {rec}"
+            p.text = f"• Recommendation: {clean_str(rec)}"
             p.font.size = Pt(11)
             p.font.color.rgb = self.text_slate
             p.space_before = Pt(4)
@@ -326,13 +348,13 @@ class PPTReportGenerator:
             tf = shape.text_frame
             tf.word_wrap = True
             p = tf.paragraphs[0]
-            p.text = f"Week {wk.get('week', 1)}: {wk.get('title', '')}"
+            p.text = f"Week {clean_str(wk.get('week', 1))}: {clean_str(wk.get('title', ''))}"
             p.font.size = Pt(13)
             p.font.bold = True
             p.font.color.rgb = self.text_emerald
 
             p_g = tf.add_paragraph()
-            p_g.text = f"Focus: {wk.get('goals', '')}"
+            p_g.text = f"Focus: {clean_str(wk.get('goals', ''))}"
             p_g.font.size = Pt(10)
             p_g.font.italic = True
             p_g.font.color.rgb = self.text_slate
@@ -347,7 +369,7 @@ class PPTReportGenerator:
 
             for d in wk.get("deliverables", [])[:3]:
                 p_item = tf.add_paragraph()
-                p_item.text = f"• {d}"
+                p_item.text = f"• {clean_str(d)}"
                 p_item.font.size = Pt(10)
                 p_item.font.color.rgb = self.text_white
 
@@ -373,7 +395,7 @@ class PPTReportGenerator:
         p0.font.color.rgb = self.text_emerald
 
         p_script = tf.add_paragraph()
-        p_script.text = f"\"{pitch.get('hackathon_pitch', 'Innovative solution addressing key market pain points with scalable business economics.')}\""
+        p_script.text = f"\"{clean_str(pitch.get('hackathon_pitch', 'Innovative solution addressing key market pain points with scalable business economics.'))}\""
         p_script.font.size = Pt(14)
         p_script.font.italic = True
         p_script.font.color.rgb = self.text_white
@@ -387,7 +409,7 @@ class PPTReportGenerator:
         p_usphead.space_before = Pt(15)
 
         p_usp = tf.add_paragraph()
-        p_usp.text = pitch.get("usp", "Proprietary design innovation and rapid market execution.")
+        p_usp.text = clean_str(pitch.get("usp", "Proprietary design innovation and rapid market execution."))
         p_usp.font.size = Pt(12)
         p_usp.font.color.rgb = self.text_slate
 

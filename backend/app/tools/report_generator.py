@@ -105,10 +105,29 @@ class PDFReportGenerator:
 
         elements = []
 
-        def clean(val: str) -> str:
-            if not val:
+        elements = []
+
+        def clean(val: Any) -> str:
+            if val is None:
                 return ""
+            if isinstance(val, (int, float, bool)):
+                return str(val)
+            if isinstance(val, dict):
+                parts = [f"{k}: {clean(v)}" for k, v in val.items() if v]
+                return " • ".join(parts)
+            if isinstance(val, list):
+                return ", ".join(clean(v) for v in val if v)
             return str(val).replace("■", "").strip()
+
+        def parse_score(val: Any, default: int = 80) -> int:
+            if isinstance(val, (int, float)):
+                return int(val)
+            if isinstance(val, dict):
+                return parse_score(val.get("score") or val.get("value"), default)
+            if isinstance(val, str):
+                digits = "".join(filter(str.isdigit, val))
+                return int(digits) if digits else default
+            return default
 
         # Title & Banner
         idea_title = clean(blueprint.get("idea", "Startup Blueprint")).title()
@@ -196,8 +215,8 @@ class PDFReportGenerator:
             if mvp_feats:
                 for f in mvp_feats:
                     if isinstance(f, dict):
-                        fname = clean(f.get("name", "Feature"))
-                        fdesc = clean(f.get("description", ""))
+                        fname = clean(f.get("name") or f.get("title") or f.get("feature") or "Feature")
+                        fdesc = clean(f.get("description") or f.get("desc") or "")
                     else:
                         fname = clean(str(f))
                         fdesc = ""
@@ -210,13 +229,20 @@ class PDFReportGenerator:
             elements.append(Paragraph("5. Validation & Strategy Report (VC & Mentor Evaluation)", h1_style))
             
             # Scores Table
+            viab = parse_score(validation.get('viability_score'), 80)
+            innov = parse_score(validation.get('innovation_score'), 75)
+            mopp = parse_score(validation.get('market_opportunity_score'), 85)
+            feas = parse_score(validation.get('feasibility_score'), 70)
+            scal = parse_score(validation.get('scalability_score'), 82)
+            verdict_str = clean(validation.get('final_verdict', 'PROCEED')).split(':')[0]
+
             score_data = [
-                [Paragraph("<b>Viability Score</b>", h2_style), Paragraph(f"<b>{validation.get('viability_score', 80)} / 100</b>", h2_style),
-                 Paragraph("<b>Innovation Score</b>", h2_style), Paragraph(f"<b>{validation.get('innovation_score', 75)} / 100</b>", h2_style)],
-                [Paragraph("<b>Market Opportunity</b>", h2_style), Paragraph(f"<b>{validation.get('market_opportunity_score', 85)} / 100</b>", h2_style),
-                 Paragraph("<b>Feasibility Score</b>", h2_style), Paragraph(f"<b>{validation.get('feasibility_score', 70)} / 100</b>", h2_style)],
-                [Paragraph("<b>Scalability Score</b>", h2_style), Paragraph(f"<b>{validation.get('scalability_score', 82)} / 100</b>", h2_style),
-                 Paragraph("<b>Overall Evaluation</b>", h2_style), Paragraph(f"<b>{clean(validation.get('final_verdict', 'PROCEED')).split(':')[0]}</b>", h2_style)],
+                [Paragraph("<b>Viability Score</b>", h2_style), Paragraph(f"<b>{viab} / 100</b>", h2_style),
+                 Paragraph("<b>Innovation Score</b>", h2_style), Paragraph(f"<b>{innov} / 100</b>", h2_style)],
+                [Paragraph("<b>Market Opportunity</b>", h2_style), Paragraph(f"<b>{mopp} / 100</b>", h2_style),
+                 Paragraph("<b>Feasibility Score</b>", h2_style), Paragraph(f"<b>{feas} / 100</b>", h2_style)],
+                [Paragraph("<b>Scalability Score</b>", h2_style), Paragraph(f"<b>{scal} / 100</b>", h2_style),
+                 Paragraph("<b>Overall Evaluation</b>", h2_style), Paragraph(f"<b>{verdict_str}</b>", h2_style)],
             ]
             t_scores = Table(score_data, colWidths=[130, 135, 130, 135])
             t_scores.setStyle(TableStyle([

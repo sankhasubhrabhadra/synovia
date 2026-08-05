@@ -1,5 +1,5 @@
 // Hardcoded active live Cloudflare HTTP/2 tunnel target
-const ACTIVE_TUNNEL_URL = "https://miscellaneous-clicks-assumption-rabbit.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://taxation-textbooks-diff-server.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {

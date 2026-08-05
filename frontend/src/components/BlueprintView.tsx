@@ -397,17 +397,33 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 <div>
                   <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">Core MVP Features</h4>
                   <div className="space-y-3">
-                    {safeArray(product.mvp_features).map((feat: any, i: number) => (
-                      <div key={i} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-                        <div className="flex items-center justify-between mb-1">
-                          <h5 className="font-bold text-sm text-slate-200">{feat.name}</h5>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                            Impact: {feat.impact || "High"}
-                          </span>
+                    {safeArray(product.mvp_features).map((feat: any, i: number) => {
+                      let fname = "";
+                      let fdesc = "";
+                      let fimpact = "High";
+
+                      if (typeof feat === "string") {
+                        fname = feat;
+                      } else if (typeof feat === "object" && feat !== null) {
+                        fname = safeRender(feat.name || feat.title || feat.feature || `Feature ${i + 1}`);
+                        fdesc = safeRender(feat.description || feat.desc || feat.details);
+                        fimpact = safeRender(feat.impact || feat.priority, "High");
+                      } else {
+                        fname = String(feat);
+                      }
+
+                      return (
+                        <div key={i} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                          <div className="flex items-center justify-between mb-1">
+                            <h5 className="font-bold text-sm text-slate-200">{fname}</h5>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                              Impact: {fimpact}
+                            </span>
+                          </div>
+                          {fdesc && <p className="text-xs text-slate-400">{fdesc}</p>}
                         </div>
-                        <p className="text-xs text-slate-400">{feat.description}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
