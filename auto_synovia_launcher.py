@@ -23,8 +23,7 @@ def is_backend_running():
     except Exception:
         return False
 
-DETACHED_PROCESS = 0x00000008
-CREATE_NEW_PROCESS_GROUP = 0x00000200
+CREATE_NEW_CONSOLE = 0x00000010
 
 def start_backend():
     if not is_backend_running():
@@ -32,8 +31,7 @@ def start_backend():
         subprocess.Popen(
             [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"],
             cwd=BACKEND_DIR,
-            creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
-            close_fds=True
+            creationflags=CREATE_NEW_CONSOLE if os.name == 'nt' else 0
         )
         for _ in range(10):
             if is_backend_running():
@@ -53,16 +51,12 @@ def start_cloudflared():
         except Exception:
             pass
 
-    cmd = [CLOUDFLARED_BIN, "tunnel", "--protocol", "http2", "--url", "http://localhost:8000"]
-    log_fp = open(LOG_FILE, "w", encoding="utf-8")
+    cmd = f'"{CLOUDFLARED_BIN}" tunnel --protocol http2 --url http://localhost:8000 > "{LOG_FILE}" 2>&1'
     subprocess.Popen(
         cmd,
-        stdout=log_fp,
-        stderr=subprocess.STDOUT,
-        creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
-        close_fds=True
+        shell=True,
+        creationflags=CREATE_NEW_CONSOLE if os.name == 'nt' else 0
     )
-
     
     tunnel_url = None
     regex = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")
@@ -80,6 +74,7 @@ def start_cloudflared():
                     break
 
     return tunnel_url
+
 
 
 def update_frontend_files(tunnel_url: str):

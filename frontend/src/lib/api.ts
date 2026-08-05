@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://repository-properly-stopped-dealing.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://route-tournaments-receptors-living.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
