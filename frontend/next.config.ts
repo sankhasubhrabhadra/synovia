@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const ACTIVE_TUNNEL_URL = "https://api.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://jewel-chronicle-conduct-kim.trycloudflare.com";
 
 const nextConfig: NextConfig = {
   async rewrites() {

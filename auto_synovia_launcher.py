@@ -67,11 +67,12 @@ def start_cloudflared():
         if os.path.exists(LOG_FILE):
             with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-                matches = regex.findall(content)
+                matches = [m for m in regex.findall(content) if "api.trycloudflare.com" not in m]
                 if matches:
                     tunnel_url = matches[0]
                     logging.info(f"Detected active Cloudflare Tunnel URL: {tunnel_url}")
                     break
+
 
     return tunnel_url
 
