@@ -15,10 +15,17 @@ backend/app/database/*.db
 .env
 backend/.env
 
+# Temporary Test Files & Artifacts
+*.pdf
+*.pptx
+*.log
+tunnel.log
+backend/test_*.py
+backend/test_*.json
+
 # Python Cache & Logs
 __pycache__/
 *.pyc
-*.log
 
 # Operating System
 .DS_Store
