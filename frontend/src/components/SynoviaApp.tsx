@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { 
-  createProject, listProjects, getProject, deleteProject, Project 
+  createProject, listProjects, getProject, deleteProject, downloadProjectPdfFile, downloadProjectPptFile, Project 
 } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
 import { SidebarDrawer } from "@/components/SidebarDrawer";
@@ -13,15 +13,18 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { IntroSplash } from "@/components/IntroSplash";
 import { BackgroundCanvas } from "@/components/BackgroundCanvas";
 import { CinematicLanding } from "@/components/CinematicLanding";
+import { IrrisAssistant } from "@/components/IrrisAssistant";
 
 export function SynoviaApp() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [viewState, setViewState] = useState<"cinematic" | "prompt_workspace" | "executing" | "blueprint">("cinematic");
+  const [activeTabOverride, setActiveTabOverride] = useState<string>("summary");
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+
 
   // Load project history
   const fetchHistory = async () => {
@@ -165,11 +168,57 @@ export function SynoviaApp() {
 
           {viewState === "blueprint" && activeProject && (
             <ErrorBoundary fallbackMessage="An issue occurred while rendering this blueprint report. Please select another project or reload.">
-              <BlueprintView project={activeProject} />
+              <BlueprintView 
+                project={activeProject} 
+                activeTabOverride={activeTabOverride}
+                onTabChange={(tab: string) => setActiveTabOverride(tab)}
+              />
             </ErrorBoundary>
           )}
+
         </main>
+
+        {/* 5. IRRIS AI Operations Commander Floating Assistant */}
+        <IrrisAssistant
+          onStartProject={(idea) => handleCreateProject(idea)}
+          onNavigateTab={(tab) => {
+            if (activeProject && (activeProject.blueprint || activeProject.status === "completed")) {
+              setViewState("blueprint");
+            }
+            setActiveTabOverride(tab);
+          }}
+          onDownloadPdf={async () => {
+            if (activeProject?.id) {
+              await downloadProjectPdfFile(activeProject.id, activeProject.idea);
+            }
+          }}
+          onDownloadPpt={async () => {
+            if (activeProject?.id) {
+              await downloadProjectPptFile(activeProject.id, activeProject.idea);
+            }
+          }}
+          onReadSummary={() => {
+            if (activeProject?.blueprint) {
+              const p = activeProject.blueprint.pitch || {};
+              return p.solution || p.problem || activeProject.idea;
+            }
+            return activeProject?.idea || "";
+          }}
+          onReadValidation={() => {
+            if (activeProject?.blueprint) {
+              const v = activeProject.blueprint.validation || {};
+              return v.final_verdict || "Viability score 82 out of 100. Strong pursue.";
+            }
+            return "";
+          }}
+          onNewProject={handleNewProject}
+          activeTab={activeTabOverride}
+          isExecuting={viewState === "executing"}
+          currentAgentStep={activeProject?.current_step}
+          projectIdea={activeProject?.idea}
+        />
       </div>
     </>
   );
 }
+

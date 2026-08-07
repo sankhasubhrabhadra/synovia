@@ -10,7 +10,10 @@ import {
 
 interface BlueprintViewProps {
   project: Project;
+  activeTabOverride?: string;
+  onTabChange?: (tab: string) => void;
 }
+
 
 const safeArray = (arr: any): any[] => {
   if (Array.isArray(arr)) return arr;
@@ -51,8 +54,30 @@ const formatDateStr = (dateStr?: string) => {
   }
 };
 
-export function BlueprintView({ project }: BlueprintViewProps) {
+export function BlueprintView({ project, activeTabOverride, onTabChange }: BlueprintViewProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "classification" | "research" | "competitor" | "product" | "validation" | "roadmap" | "pitch" | "quality_control">("summary");
+
+  React.useEffect(() => {
+    if (activeTabOverride) {
+      const tabMap: Record<string, any> = {
+        summary: "summary",
+        classification: "classification",
+        market: "research",
+        research: "research",
+        competitors: "competitor",
+        competitor: "competitor",
+        product: "product",
+        roadmap: "roadmap",
+        pitch: "pitch",
+        validation: "validation",
+        quality_control: "quality_control"
+      };
+      if (tabMap[activeTabOverride]) {
+        setActiveTab(tabMap[activeTabOverride]);
+      }
+    }
+  }, [activeTabOverride]);
+
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingPpt, setDownloadingPpt] = useState(false);
 
