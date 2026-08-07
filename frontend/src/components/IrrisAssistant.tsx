@@ -163,16 +163,28 @@ export function IrrisAssistant({
     utterance.onstart = () => {
       setIsSpeaking(true);
       setIsThinking(false);
+      // Stop recognition while IRRIS is speaking to avoid feedback loop
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
     };
 
     utterance.onend = () => {
       setIsSpeaking(false);
       if (onEndCallback) onEndCallback();
+
+      // CONTINUING CONVERSATION: Automatically restart mic after IRRIS finishes speaking!
+      setTimeout(() => {
+        startRecognition();
+      }, 350);
     };
 
     utterance.onerror = () => {
       setIsSpeaking(false);
       if (onEndCallback) onEndCallback();
+      setTimeout(() => {
+        startRecognition();
+      }, 350);
     };
 
     synthRef.current.speak(utterance);
@@ -192,7 +204,6 @@ export function IrrisAssistant({
     setIsThinking(true);
 
     const cleanCmd = cleanSpeech.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
-
 
     // -------------------------------------------------------------
     // 0. ACTIVE CONSULTATION STEPS
@@ -415,9 +426,7 @@ export function IrrisAssistant({
     } finally {
       setIsThinking(false);
     }
-  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea, projectIdea, activeTab]);
-
-
+  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea, projectIdea, activeTab, addMessage]);
 
   // Speech Recognition & Auto-Listen Setup
   const toggleListening = () => {
@@ -479,20 +488,25 @@ export function IrrisAssistant({
 
       recognition.onend = () => {
         setIsListening(false);
-        // Auto-restart recognition if autoListen mode is active
+        // Auto-restart recognition if autoListen mode is active and not currently speaking or thinking
         if (autoListen && !isSpeaking && !isThinking) {
           setTimeout(() => {
-            try { recognition.start(); } catch {}
-          }, 300);
+            try {
+              if (!isSpeaking) recognition.start();
+            } catch {}
+          }, 350);
         }
       };
 
       recognitionRef.current = recognition;
-      recognition.start();
+      try {
+        recognition.start();
+      } catch {}
     } catch (err) {
       setIsListening(false);
     }
   };
+
 
   // Announce live agent step completions
   useEffect(() => {
