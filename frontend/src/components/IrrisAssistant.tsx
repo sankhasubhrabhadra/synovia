@@ -173,10 +173,14 @@ export function IrrisAssistant({
         return;
       }
 
+      // Strip punctuation for ultra-clean matching
+      const cleanCmd = cmd.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+      const hasCreationKeyword = /(?:search|create|generate|build|make|start\s+(?:a|an)?\s*(?:startup|company|business|project|app))/i.test(cleanCmd);
+
       // -------------------------------------------------------------
       // 1. GREETINGS & FOUNDER MOTIVATION (Humanized Empathy)
       // -------------------------------------------------------------
-      if (/^(?:hello|hi|hey|greetings|good\s+morning|good\s+afternoon|good\s+evening)\s*(?:irris|friday|boss)?$/i.test(cmd)) {
+      if (!hasCreationKeyword && /(?:^|\b)(?:hello|hi|hey|greetings|good\s+morning|good\s+afternoon|good\s+evening)(?:\b|$)/i.test(cleanCmd)) {
         const greetings = [
           "Hello, Boss! How can I assist your startup operations today?",
           "Greetings, Boss. All systems nominal. What venture shall we conquer today?",
@@ -187,7 +191,7 @@ export function IrrisAssistant({
         return;
       }
 
-      if (/(?:demotivated|depressed|sad|give\s+up|giving\s+up|quit|too\s+hard|hopeless|burnt?\s*out|exhausted|failing|failed|discouraged)/i.test(cmd)) {
+      if (/(?:demotivated|depressed|sad|give\s+up|giving\s+up|quit|too\s+hard|hopeless|burnt?\s*out|exhausted|failing|failed|discouraged|stress|stressed)/i.test(cleanCmd)) {
         const motivations = [
           "Listen to me, Boss. Building something great is supposed to be hard — that is what makes it rare and valuable. Every iconic founder faced moments of exhaustion and self-doubt. Take a deep breath. You don't have to conquer everything today. Just take one single step forward. I'm right here with you, Boss. Let's build your legacy together.",
           "Hey Boss, I hear you. The startup journey is a marathon filled with tough days, but you have the vision and resilience to push through. Take a short rest if you need to, but do not give up. I believe in your vision, and we will get there step by step."
@@ -196,6 +200,7 @@ export function IrrisAssistant({
         speak(msg, undefined, true);
         return;
       }
+
 
       // -------------------------------------------------------------
       // 2. FULL APPLICATION SYSTEM CONTROLS
@@ -327,9 +332,8 @@ export function IrrisAssistant({
       // -------------------------------------------------------------
       // 4. EXPLICIT STARTUP SEARCH & CONSULTATION TRIGGER
       // -------------------------------------------------------------
-      const hasCreationKeyword = /(?:search|create|generate|build|make|start\s+(?:a|an)?\s*(?:startup|company|business|project|app))/i.test(cmd);
-
       if (hasCreationKeyword) {
+
         let extractedIdea = cmd
           .replace(/^(please|can\s+you|could\s+you|help\s+me|irris|friday|hey|hi)\s+/i, "")
           .replace(/(?:search|create|generate|build|make|start)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|blueprint)?\s*(?:for|about|called|on)?\s*/i, "")

@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://adaptive-inspector-arbitrary-insertion.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://handle-uncle-viii-create.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
