@@ -107,40 +107,40 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 relative z-10">
       {/* Studio Header Info Banner */}
-      <div className="studio-panel p-6 rounded-3xl mb-8 border border-[#e8ded2]/20 shadow-2xl">
+      <div className="studio-panel p-6 bg-white border-4 border-black shadow-[8px_8px_0px_#000000] mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <Sparkles className="w-4 h-4 text-[#f59e0b] animate-spin" />
-              <span className="text-xs font-black uppercase tracking-wider text-[#fefae0]">
+              <Sparkles className="w-4 h-4 text-black animate-spin" />
+              <span className="text-xs font-black uppercase tracking-wider text-black">
                 Studio Swarm Pipeline Active (8 Agents)
               </span>
             </div>
-            <h2 className="text-xl md:text-2xl font-black text-[#fffdfa] leading-tight">
+            <h2 className="text-xl md:text-2xl font-black text-black uppercase leading-tight">
               "{project.idea}"
             </h2>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <span className="text-xs text-[#d4c4b5] block font-medium">Pipeline Progress</span>
-              <span className="text-2xl font-black text-[#f59e0b]">{progress}%</span>
+              <span className="text-xs text-gray-700 block font-black uppercase">Pipeline Progress</span>
+              <span className="text-3xl font-black text-[#ea580c]">{progress}%</span>
             </div>
           </div>
         </div>
 
-        {/* Glowing Progress Bar */}
-        <div className="w-full h-3.5 bg-[#17110e] rounded-full overflow-hidden p-0.5 border border-[#e8ded2]/20">
+        {/* Progress Bar */}
+        <div className="w-full h-4 bg-white border-3 border-black shadow-[3px_3px_0px_#000000]">
           <div 
-            className="h-full bg-gradient-to-r from-amber-600 via-rose-600 to-amber-400 rounded-full transition-all duration-500 shadow-lg shadow-amber-600/50"
+            className="h-full bg-[#f59e0b] border-r-2 border-black transition-all duration-500"
             style={{ width: `${Math.max(progress, 5)}%` }}
           />
         </div>
 
         {/* Live Status Banner */}
-        <div className="mt-4 p-3.5 rounded-xl bg-[#261c17]/90 border border-[#f59e0b]/30 flex items-center gap-3">
-          <Loader2 className="w-4 h-4 text-[#f59e0b] animate-spin shrink-0" />
-          <span className="text-xs text-[#fefae0] font-medium">{latestMessage}</span>
+        <div className="mt-4 p-3.5 bg-[#fefae0] border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center gap-3">
+          <Loader2 className="w-4 h-4 text-black animate-spin shrink-0 stroke-[3]" />
+          <span className="text-xs text-black font-black uppercase">{latestMessage}</span>
         </div>
       </div>
 
@@ -153,49 +153,49 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
           return (
             <div
               key={agent.id}
-              className={`p-4 rounded-2xl border transition-all duration-300 ${
+              className={`p-4 border-3 border-black transition-all duration-150 ${
                 status === "completed"
-                  ? "bg-[#251c17]/90 border-emerald-500/40 shadow-lg shadow-emerald-950/20"
+                  ? "bg-[#dcfce7] shadow-[5px_5px_0px_#000000]"
                   : status === "running"
-                  ? "bg-[#33241d]/90 border-[#f59e0b] scale-[1.02] shadow-xl shadow-amber-950/40"
-                  : "bg-[#1f1613]/50 border-[#e8ded2]/10 opacity-60"
+                  ? "bg-[#fef08a] shadow-[7px_7px_0px_#000000] translate-x-[-2px] translate-y-[-2px]"
+                  : "bg-white opacity-70 shadow-[3px_3px_0px_#000000]"
               }`}
             >
               <div className="flex items-center justify-between mb-2.5">
-                <div className={`p-2 rounded-xl ${
+                <div className={`p-2 border-2 border-black shadow-[2px_2px_0px_#000000] ${
                   status === "completed" 
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" 
+                    ? "bg-[#10b981] text-black" 
                     : status === "running"
-                    ? "bg-[#d97706]/25 text-[#fefae0] border border-[#f59e0b]/40"
-                    : "bg-[#2a1d17] text-[#a39284]"
+                    ? "bg-[#f59e0b] text-black"
+                    : "bg-gray-100 text-gray-700"
                 }`}>
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-4 h-4 stroke-[2.5]" />
                 </div>
 
                 <div>
                   {status === "completed" && (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase">
-                      <CheckCircle2 className="w-3 h-3" /> Ready
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 bg-[#10b981] text-black border-2 border-black uppercase shadow-[1.5px_1.5px_0px_#000000]">
+                      <CheckCircle2 className="w-3 h-3 stroke-[3]" /> Ready
                     </span>
                   )}
                   {status === "running" && (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-[#d97706]/25 text-[#fef3c7] border border-[#f59e0b]/40 uppercase animate-pulse">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Thinking
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 bg-[#ea580c] text-white border-2 border-black uppercase shadow-[1.5px_1.5px_0px_#000000] animate-pulse">
+                      <Loader2 className="w-3 h-3 animate-spin stroke-[3]" /> Thinking
                     </span>
                   )}
                   {status === "pending" && (
-                    <span className="text-[9px] font-bold text-[#a39284] uppercase">
+                    <span className="text-[9px] font-black text-gray-600 uppercase">
                       Queued
                     </span>
                   )}
                 </div>
               </div>
 
-              <h3 className="font-bold text-xs text-[#fffdfa] mb-0.5 leading-snug">{agent.name}</h3>
-              <p className="text-[10px] text-[#d4c4b5] font-medium mb-2">{agent.role}</p>
+              <h3 className="font-black text-xs text-black mb-0.5 uppercase leading-snug">{agent.name}</h3>
+              <p className="text-[10px] text-gray-700 font-bold mb-2">{agent.role}</p>
 
               {status === "running" && (
-                <p className="text-[10px] text-[#fefae0] italic animate-pulse font-medium">
+                <p className="text-[10px] text-black font-black italic uppercase">
                   {agent.userMessage}
                 </p>
               )}
@@ -205,24 +205,24 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
       </div>
 
       {/* Live Swarm Telemetry Terminal */}
-      <div className="studio-panel p-5 rounded-2xl border border-[#e8ded2]/15">
-        <div className="flex items-center justify-between mb-3 border-b border-[#e8ded2]/15 pb-3">
+      <div className="studio-panel p-5 bg-white border-4 border-black shadow-[8px_8px_0px_#000000]">
+        <div className="flex items-center justify-between mb-3 border-b-3 border-black pb-3">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[#f59e0b]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#fefae0]">
+            <Activity className="w-4 h-4 text-black" />
+            <span className="text-xs font-black uppercase tracking-wider text-black">
               Live Swarm Console & Telemetry Output
             </span>
           </div>
-          <span className="text-[10px] text-[#d4c4b5] font-mono">Stream Active</span>
+          <span className="text-[10px] text-black font-mono font-bold bg-[#fefae0] px-2 py-0.5 border-2 border-black shadow-[1.5px_1.5px_0px_#000000]">Stream Active</span>
         </div>
 
-        <div className="bg-[#120c0a] p-4 rounded-xl font-mono text-xs max-h-48 overflow-y-auto space-y-2 border border-[#e8ded2]/15 scrollbar-thin">
+        <div className="bg-white p-4 font-mono text-xs max-h-48 overflow-y-auto space-y-2 border-3 border-black shadow-[4px_4px_0px_#000000] scrollbar-thin">
           {logs.length === 0 ? (
-            <p className="text-[#a39284] italic">Listening for live agent telemetry stream...</p>
+            <p className="text-gray-500 italic font-bold">Listening for live agent telemetry stream...</p>
           ) : (
             logs.map((log, idx) => (
               <div key={idx} className="flex items-start gap-3">
-                <span className="text-[10px] text-[#a39284] shrink-0 mt-0.5">
+                <span className="text-[10px] text-gray-500 font-bold shrink-0 mt-0.5">
                   {(() => {
                     try {
                       const d = new Date(log.timestamp);
@@ -232,8 +232,8 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
                     }
                   })()}
                 </span>
-                <span className={`text-xs ${
-                  log.status === "completed" ? "text-emerald-400" : log.status === "failed" ? "text-rose-400" : "text-[#fefae0]"
+                <span className={`text-xs font-bold ${
+                  log.status === "completed" ? "text-emerald-700" : log.status === "failed" ? "text-rose-700" : "text-black"
                 }`}>
                   [{String(log.step || "step").toUpperCase()}] {log.message}
                 </span>
