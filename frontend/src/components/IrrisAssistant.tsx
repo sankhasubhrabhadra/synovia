@@ -64,7 +64,7 @@ export function IrrisAssistant({
   }, []);
 
   // Speak response function
-  const speak = useCallback((text: string, onEndCallback?: () => void) => {
+  const speak = useCallback((text: string, onEndCallback?: () => void, isWarm?: boolean) => {
     setLastResponse(text);
     setShowCaption(true);
 
@@ -77,13 +77,18 @@ export function IrrisAssistant({
     synthRef.current.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.05;
-    utterance.pitch = 0.95;
+    if (isWarm) {
+      utterance.rate = 0.92;
+      utterance.pitch = 1.02;
+    } else {
+      utterance.rate = 1.05;
+      utterance.pitch = 0.95;
+    }
 
-    // Pick crisp female/command voice if available
+    // Pick crisp female/natural voice if available
     const voices = synthRef.current.getVoices();
     const preferredVoice = voices.find(
-      (v) => v.lang.startsWith("en") && (v.name.includes("Female") || v.name.includes("Samantha") || v.name.includes("Zira") || v.name.includes("Google"))
+      (v) => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Female") || v.name.includes("Samantha") || v.name.includes("Zira") || v.name.includes("Google"))
     ) || voices.find((v) => v.lang.startsWith("en")) || voices[0];
 
     if (preferredVoice) utterance.voice = preferredVoice;
@@ -169,8 +174,33 @@ export function IrrisAssistant({
       }
 
       // -------------------------------------------------------------
-      // 1. FULL APPLICATION SYSTEM CONTROLS
+      // 1. GREETINGS & FOUNDER MOTIVATION (Humanized Empathy)
       // -------------------------------------------------------------
+      if (/^(?:hello|hi|hey|greetings|good\s+morning|good\s+afternoon|good\s+evening)\s*(?:irris|friday|boss)?$/i.test(cmd)) {
+        const greetings = [
+          "Hello, Boss! How can I assist your startup operations today?",
+          "Greetings, Boss. All systems nominal. What venture shall we conquer today?",
+          "Hi Boss! Ready to analyze markets and build your next big idea."
+        ];
+        const pick = greetings[Math.floor(Math.random() * greetings.length)];
+        speak(pick, undefined, true);
+        return;
+      }
+
+      if (/(?:demotivated|depressed|sad|give\s+up|giving\s+up|quit|too\s+hard|hopeless|burnt?\s*out|exhausted|failing|failed|discouraged)/i.test(cmd)) {
+        const motivations = [
+          "Listen to me, Boss. Building something great is supposed to be hard — that is what makes it rare and valuable. Every iconic founder faced moments of exhaustion and self-doubt. Take a deep breath. You don't have to conquer everything today. Just take one single step forward. I'm right here with you, Boss. Let's build your legacy together.",
+          "Hey Boss, I hear you. The startup journey is a marathon filled with tough days, but you have the vision and resilience to push through. Take a short rest if you need to, but do not give up. I believe in your vision, and we will get there step by step."
+        ];
+        const msg = motivations[Math.floor(Math.random() * motivations.length)];
+        speak(msg, undefined, true);
+        return;
+      }
+
+      // -------------------------------------------------------------
+      // 2. FULL APPLICATION SYSTEM CONTROLS
+      // -------------------------------------------------------------
+
       if (/(?:close|hide|exit).*(?:history|drawer)/i.test(cmd)) {
         if (onCloseHistory) onCloseHistory();
         speak("Closing history drawer, Boss.");
