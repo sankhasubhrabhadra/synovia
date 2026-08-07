@@ -317,8 +317,10 @@ class PDFReportGenerator:
                 clean_title = re.sub(r'^(?:Week\s*\d+\s*[:\-–—]?\s*)+', '', raw_title, flags=re.IGNORECASE).strip()
                 elements.append(Paragraph(f"<b>Week {wk.get('week')}: {clean_title}</b>", h2_style))
 
+                goals = clean(wk.get("goals", ""))
                 if goals:
                     elements.append(Paragraph(f"<i>Focus:</i> {goals}", body_style))
+
                 for deliv in wk.get("deliverables", []):
                     elements.append(Paragraph(f"• {clean(deliv)}", bullet_style))
             elements.append(Spacer(1, 8))
