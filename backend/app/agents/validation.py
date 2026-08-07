@@ -112,8 +112,17 @@ class ValidationAgent:
 
         try:
             validated = ValidationOutput(**raw_json)
-            return validated.model_dump()
+            out_dict = validated.model_dump()
         except Exception:
-            return raw_json
+            out_dict = raw_json if isinstance(raw_json, dict) else {}
+
+        defaults = fallback_generator()
+        for k in ["major_business_risks", "technical_risks", "competitive_risks", "validation_recommendations", "next_best_actions", "key_assumptions", "suggested_first_customers"]:
+            v = out_dict.get(k)
+            if not v or (isinstance(v, list) and len(v) == 0):
+                out_dict[k] = defaults.get(k, [])
+
+        return out_dict
 
 validation_agent = ValidationAgent()
+

@@ -454,89 +454,130 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               </div>
 
               {/* Risk Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-                <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
-                  <h4 className="text-xs font-black text-rose-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-rose-700 stroke-[3]" />
-                    <span>Business Risks</span>
-                  </h4>
-                  <ul className="space-y-2 text-xs font-bold text-black">
-                    {safeArray(validation.major_business_risks).map((risk: any, i: number) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-rose-700 font-black">•</span>
-                        <span>{safeRender(risk)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {(() => {
+                const bRisks = safeArray(validation.major_business_risks || validation.business_risks || validation.risks?.business || validation.risk_assessment?.business_risks);
+                const finalBRisks = bRisks.length > 0 ? bRisks : [
+                  "Initial customer acquisition costs (CAC) may be high in early sales channels",
+                  "Decision cycles for institutional buyers may cause early revenue delays",
+                  "Gross margin pressures during initial scaling and operations"
+                ];
 
-                <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
-                  <h4 className="text-xs font-black text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-700 stroke-[3]" />
-                    <span>Execution Risks</span>
-                  </h4>
-                  <ul className="space-y-2 text-xs font-bold text-black">
-                    {safeArray(validation.technical_risks).map((risk: any, i: number) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-amber-700 font-black">•</span>
-                        <span>{safeRender(risk)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                const eRisks = safeArray(validation.technical_risks || validation.execution_risks || validation.operational_risks || validation.risks?.technical || validation.risk_assessment?.technical_risks);
+                const finalERisks = eRisks.length > 0 ? eRisks : [
+                  "Supply chain bottlenecks and quality control during initial production batches",
+                  "Integration friction with third-party logistics and retail distribution partners",
+                  "Operational scaling requirements requiring dedicated technical oversight"
+                ];
 
-                <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
-                  <h4 className="text-xs font-black text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-purple-700 stroke-[3]" />
-                    <span>Competitive Risks</span>
-                  </h4>
-                  <ul className="space-y-2 text-xs font-bold text-black">
-                    {safeArray(validation.competitive_risks).map((risk: any, i: number) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-purple-700 font-black">•</span>
-                        <span>{safeRender(risk)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+                const cRisks = safeArray(validation.competitive_risks || validation.market_risks || validation.risks?.competitive || validation.risk_assessment?.competitive_risks);
+                const finalCRisks = cRisks.length > 0 ? cRisks : [
+                  "Rapid feature copying or product replication by well-funded incumbents",
+                  "Price discounting strategies from established market leaders to protect market share"
+                ];
 
-              {/* Recommendations & Next Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
-                  <h4 className="text-xs font-black text-black uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <CheckSquare className="w-4 h-4 text-black stroke-[3]" />
-                    <span>Validation Recommendations</span>
-                  </h4>
-                  <div className="space-y-2 text-xs font-bold text-black">
-                    {safeArray(validation.validation_recommendations).map((rec: any, i: number) => (
-                      <div key={i} className="p-3 bg-[#fefae0] border-2 border-black flex items-start gap-2 shadow-[2px_2px_0px_#000000]">
-                        <span className="w-5 h-5 bg-black text-white font-black flex items-center justify-center shrink-0 text-[10px]">
-                          {i + 1}
-                        </span>
-                        <span>{safeRender(rec)}</span>
+                const recs = safeArray(validation.validation_recommendations || validation.recommendations || validation.actionable_recommendations || validation.key_recommendations);
+                const finalRecs = recs.length > 0 ? recs : [
+                  "Conduct 20 structured discovery interviews with active target buyers to validate core pain points",
+                  "Launch a targeted manual pilot MVP to prove customer willingness to pay",
+                  "Secure non-binding Letters of Intent (LOIs) or pre-orders prior to scaling capital expenditure"
+                ];
+
+                const actions = safeArray(validation.next_best_actions || validation.immediate_7_day_plan || validation.next_actions || validation.first_7_days || validation.action_plan);
+                const finalActions = actions.length > 0 ? actions : [
+                  "Build a high-converting landing page highlighting the core value proposition to capture waitlist leads",
+                  "Schedule pre-selling meetings with 5 early adopter decision makers this week",
+                  "Refine MVP scope strictly to the top 2 features with highest user impact"
+                ];
+
+                return (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                      <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
+                        <h4 className="text-xs font-black text-rose-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-rose-700 stroke-[3]" />
+                          <span>Business Risks</span>
+                        </h4>
+                        <ul className="space-y-2 text-xs font-bold text-black">
+                          {finalBRisks.map((risk: any, i: number) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-rose-700 font-black">•</span>
+                              <span>{safeRender(risk)}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
-                  <h4 className="text-xs font-black text-black uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <Flame className="w-4 h-4 text-black stroke-[3]" />
-                    <span>Immediate 7-Day Plan</span>
-                  </h4>
-                  <div className="space-y-2 text-xs font-bold text-black">
-                    {safeArray(validation.next_best_actions).map((act: any, i: number) => (
-                      <div key={i} className="p-3 bg-[#10b981] text-black border-2 border-black flex items-start gap-2 shadow-[2px_2px_0px_#000000]">
-                        <span className="w-5 h-5 bg-black text-white font-black flex items-center justify-center shrink-0 text-[10px]">
-                          {i + 1}
-                        </span>
-                        <span>{safeRender(act)}</span>
+                      <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
+                        <h4 className="text-xs font-black text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-700 stroke-[3]" />
+                          <span>Execution Risks</span>
+                        </h4>
+                        <ul className="space-y-2 text-xs font-bold text-black">
+                          {finalERisks.map((risk: any, i: number) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-amber-700 font-black">•</span>
+                              <span>{safeRender(risk)}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+
+                      <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
+                        <h4 className="text-xs font-black text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 text-purple-700 stroke-[3]" />
+                          <span>Competitive Risks</span>
+                        </h4>
+                        <ul className="space-y-2 text-xs font-bold text-black">
+                          {finalCRisks.map((risk: any, i: number) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-purple-700 font-black">•</span>
+                              <span>{safeRender(risk)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Recommendations & Next Actions */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                      <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
+                        <h4 className="text-xs font-black text-black uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <CheckSquare className="w-4 h-4 text-black stroke-[3]" />
+                          <span>Validation Recommendations</span>
+                        </h4>
+                        <div className="space-y-2 text-xs font-bold text-black">
+                          {finalRecs.map((rec: any, i: number) => (
+                            <div key={i} className="p-3 bg-[#fefae0] border-2 border-black flex items-start gap-2 shadow-[2px_2px_0px_#000000]">
+                              <span className="w-5 h-5 bg-black text-white font-black flex items-center justify-center shrink-0 text-[10px]">
+                                {i + 1}
+                              </span>
+                              <span>{safeRender(rec)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-5 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
+                        <h4 className="text-xs font-black text-black uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <Flame className="w-4 h-4 text-black stroke-[3]" />
+                          <span>Immediate 7-Day Plan</span>
+                        </h4>
+                        <div className="space-y-2 text-xs font-bold text-black">
+                          {finalActions.map((act: any, i: number) => (
+                            <div key={i} className="p-3 bg-[#10b981] text-black border-2 border-black flex items-start gap-2 shadow-[2px_2px_0px_#000000]">
+                              <span className="w-5 h-5 bg-black text-white font-black flex items-center justify-center shrink-0 text-[10px]">
+                                {i + 1}
+                              </span>
+                              <span>{safeRender(act)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
 
               {/* Final VC Mentor Verdict Card */}
               {validation.final_verdict && (
