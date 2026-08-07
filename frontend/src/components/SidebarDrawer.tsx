@@ -42,18 +42,18 @@ export function SidebarDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Blurred Backdrop Overlay */}
+      {/* Backdrop Overlay */}
       <div 
         onClick={onClose}
-        className="fixed inset-0 bg-black/65 backdrop-blur-md transition-opacity animate-fade-in"
+        className="fixed inset-0 bg-black/75 backdrop-blur-xs transition-opacity animate-fade-in"
       />
 
       {/* Slide-over Right Drawer Container */}
-      <aside className="relative w-full max-w-md h-full bg-[#1c1411]/95 text-[#fffdfa] border-l border-[#e8ded2]/20 backdrop-blur-2xl shadow-2xl flex flex-col z-10 animate-slide-in-right">
+      <aside className="relative w-full max-w-md h-full bg-[#231813] text-[#fffdfa] border-l-4 border-black shadow-[-10px_0px_0px_rgba(0,0,0,0.5)] flex flex-col z-10 animate-slide-in-right">
         {/* Drawer Header */}
-        <div className="p-5 border-b border-[#e8ded2]/15 space-y-4 bg-[#261c17]/80">
+        <div className="p-5 border-b-4 border-black space-y-4 bg-[#1a110d]">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[#fefae0] font-black text-sm uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-[#fffdfa] font-black text-sm uppercase tracking-wider">
               <History className="w-5 h-5 text-[#f59e0b]" />
               <span>Project History ({projects.length})</span>
             </div>
@@ -64,17 +64,17 @@ export function SidebarDrawer({
                   onNewProject();
                   onClose();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#d97706]/20 border border-[#f59e0b]/40 text-[#fef3c7] hover:bg-[#d97706] hover:text-white transition-all text-xs font-bold cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f59e0b] text-black border-2 border-black font-black text-xs uppercase shadow-[2px_2px_0px_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 stroke-[3]" />
                 <span>New</span>
               </button>
 
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-xl bg-[#33251e] text-[#d4c4b5] hover:text-white hover:bg-[#443228] transition-all cursor-pointer"
+                className="p-1.5 bg-[#2b1f19] text-[#fffdfa] border-2 border-black font-black shadow-[2px_2px_0px_#000000] hover:bg-[#ea580c] hover:text-white transition-all cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 stroke-[3]" />
               </button>
             </div>
           </div>
@@ -87,7 +87,7 @@ export function SidebarDrawer({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search past blueprints & ideas..."
-              className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#120c0a] border border-[#e8ded2]/20 text-[#fffdfa] placeholder-[#a39284] text-xs focus:outline-none focus:border-[#f59e0b] transition-all"
+              className="w-full pl-9 pr-8 py-2 bg-[#100a08] border-3 border-black text-[#fffdfa] placeholder-[#a39284] text-xs font-bold focus:outline-none focus:border-[#f59e0b] shadow-[3px_3px_0px_#000000] transition-all"
             />
             {searchQuery && (
               <button
@@ -109,10 +109,10 @@ export function SidebarDrawer({
               <button
                 key={tab.id}
                 onClick={() => setFilterType(tab.id as any)}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1 text-xs font-black uppercase transition-all cursor-pointer border-2 border-black ${
                   filterType === tab.id
-                    ? "bg-[#d97706]/30 text-[#fefae0] border border-[#f59e0b]/50 shadow-md shadow-amber-900/30"
-                    : "bg-[#1f1613] text-[#d4c4b5] border border-[#e8ded2]/10 hover:text-[#fffdfa]"
+                    ? "bg-[#f59e0b] text-black shadow-[3px_3px_0px_#000000]"
+                    : "bg-[#2b1f19] text-[#d4c4b5] shadow-[2px_2px_0px_#000000] hover:text-[#fffdfa]"
                 }`}
               >
                 {tab.label}
@@ -122,17 +122,17 @@ export function SidebarDrawer({
         </div>
 
         {/* Projects List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 scrollbar-thin">
           {isLoading && projects.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-[#d4c4b5] gap-3">
               <Loader2 className="w-6 h-6 animate-spin text-[#f59e0b]" />
-              <span className="text-xs font-medium">Loading history from SQLite DB...</span>
+              <span className="text-xs font-bold uppercase">Loading history from SQLite DB...</span>
             </div>
           ) : filteredProjects.length === 0 ? (
-            <div className="p-8 text-center text-[#d4c4b5] rounded-2xl border border-dashed border-[#e8ded2]/20 bg-[#241a15]/50">
+            <div className="p-8 text-center text-[#d4c4b5] border-3 border-black bg-[#1f1612] shadow-[4px_4px_0px_#000000]">
               <FileText className="w-10 h-10 mx-auto mb-3 text-[#a39284]" />
-              <p className="text-xs font-semibold">
-                {searchQuery ? `No matching history found for "${searchQuery}"` : "No project history recorded yet."}
+              <p className="text-xs font-black uppercase">
+                {searchQuery ? `No matching history for "${searchQuery}"` : "No project history recorded yet."}
               </p>
             </div>
           ) : (
@@ -147,10 +147,10 @@ export function SidebarDrawer({
               return (
                 <div
                   key={proj.id}
-                  className={`group relative rounded-2xl transition-all duration-200 border cursor-pointer ${
+                  className={`group relative transition-all duration-150 border-3 border-black cursor-pointer ${
                     isActive
-                      ? "bg-gradient-to-r from-[#3a2820] to-[#2d1e18] border-[#f59e0b] shadow-xl shadow-amber-950/50"
-                      : "bg-[#251b17]/80 border-[#e8ded2]/15 hover:bg-[#33241e] hover:border-[#f59e0b]/40"
+                      ? "bg-[#3a2820] shadow-[6px_6px_0px_#f59e0b] translate-x-[-2px] translate-y-[-2px]"
+                      : "bg-[#2b1f19] shadow-[4px_4px_0px_#000000] hover:bg-[#362720] hover:shadow-[6px_6px_0px_#000000] hover:translate-x-[-1px] hover:translate-y-[-1px]"
                   }`}
                   onClick={() => {
                     onSelectProject(proj.id);
@@ -159,7 +159,7 @@ export function SidebarDrawer({
                 >
                   <div className="p-4 pr-10">
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className="text-xs font-bold text-[#fffdfa] line-clamp-2 leading-snug group-hover:text-[#fefae0]">
+                      <span className="text-xs font-black text-[#fffdfa] line-clamp-2 leading-snug">
                         {proj.idea}
                       </span>
                       {isCompleted ? (
@@ -171,9 +171,9 @@ export function SidebarDrawer({
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-[#d4c4b5] font-medium">
+                    <div className="flex items-center justify-between text-[11px] text-[#d4c4b5] font-bold">
                       {bizType ? (
-                        <span className="px-2 py-0.5 rounded-md bg-[#d97706]/20 text-[#fef3c7] border border-[#f59e0b]/30 font-extrabold uppercase text-[9px]">
+                        <span className="px-2 py-0.5 bg-[#f59e0b] text-black border-2 border-black font-black uppercase text-[9px] shadow-[2px_2px_0px_#000000]">
                           {bizType}
                         </span>
                       ) : (
@@ -193,7 +193,7 @@ export function SidebarDrawer({
                         }
                       }}
                       title="Delete item"
-                      className="absolute right-3 top-3 p-1.5 rounded-lg text-[#a39284] opacity-0 group-hover:opacity-100 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
+                      className="absolute right-3 top-3 p-1.5 bg-[#17100c] text-[#a39284] border-2 border-black opacity-0 group-hover:opacity-100 hover:text-rose-400 hover:bg-rose-950 transition-all cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
