@@ -96,136 +96,147 @@ export function IrrisAssistant({
     synthRef.current.speak(utterance);
   }, [isMuted]);
 
-  // Voice Command Matcher
+  // Upgrade: Ultra-Flexible Natural Language Speech Processor
   const processVoiceCommand = useCallback((cmdRaw: string) => {
     const cmd = cmdRaw.toLowerCase().trim();
     setTranscript(cmdRaw);
     setIsThinking(true);
 
     setTimeout(() => {
-      // 1. Create startup / Generate blueprint for ...
-      if (cmd.includes("create a startup for") || cmd.includes("generate blueprint for") || cmd.includes("start a project for")) {
-        const idea = cmdRaw.replace(/.*(create a startup for|generate blueprint for|start a project for)\s*/i, "").trim();
-        if (idea.length > 2) {
-          speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${idea}`, () => {
-            onStartProject(idea);
-          });
-          return;
-        }
-      }
-
-      // 2. Generate blueprint (standalone)
-      if (cmd.includes("generate blueprint") || cmd.includes("start blueprint") || cmd.includes("execute blueprint")) {
-        speak("Operational command accepted. Launching autonomous startup generation swarm.", () => {
-          if (projectIdea) onStartProject(projectIdea);
-          else speak("Please specify your startup idea, Boss. For example, say: Create a startup for EV charging networks.");
-        });
-        return;
-      }
-
-      // 3. Tab Navigation
-      if (cmd.includes("executive summary") || cmd.includes("show summary") || cmd.includes("open summary")) {
+      // 1. Navigation Commands (Fuzzy Match across synonyms)
+      if (/(?:executive\s*summary|overview|summary\s*tab)/i.test(cmd)) {
         speak("Loading Executive Summary.");
         onNavigateTab("summary");
         return;
       }
 
-      if (cmd.includes("business category") || cmd.includes("show category") || cmd.includes("open category")) {
+      if (/(?:business\s*category|category|classification|type|anti-pattern)/i.test(cmd)) {
         speak("Opening Business Category & Anti-Patterns breakdown.");
         onNavigateTab("classification");
         return;
       }
 
-      if (cmd.includes("market analysis") || cmd.includes("show market") || cmd.includes("open market")) {
+      if (/(?:market\s*analysis|market\s*research|tam|sam|som|personas?|customer\s*pain)/i.test(cmd)) {
         speak("Displaying Market Research, TAM, SAM, and SOM metrics.");
         onNavigateTab("market");
         return;
       }
 
-      if (cmd.includes("competitor") || cmd.includes("show competitors") || cmd.includes("open competitors")) {
+      if (/(?:competitor|competition|rival|market\s*gap|moat)/i.test(cmd)) {
         speak("Loading Competitor Intelligence matrix and defensibility gaps.");
         onNavigateTab("competitors");
         return;
       }
 
-      if (cmd.includes("product spec") || cmd.includes("show product") || cmd.includes("open product") || cmd.includes("mvp spec")) {
+      if (/(?:product\s*spec|mvp|feature|priority\s*matrix)/i.test(cmd)) {
         speak("Displaying MVP Feature Specification & Priority Matrix.");
         onNavigateTab("product");
         return;
       }
 
-      if (cmd.includes("roadmap") || cmd.includes("show roadmap") || cmd.includes("open roadmap")) {
+      if (/(?:roadmap|schedule|timeline|weeks?|execution\s*plan)/i.test(cmd)) {
         speak("Opening 4-Week Agile Execution Roadmap.");
         onNavigateTab("roadmap");
         return;
       }
 
-      if (cmd.includes("pitch deck") || cmd.includes("show pitch") || cmd.includes("open pitch") || cmd.includes("revenue model")) {
+      if (/(?:pitch\s*deck|revenue|monetization|business\ model|pitch\s*tab)/i.test(cmd)) {
         speak("Opening VC Pitch Deck & Revenue Streams.");
         onNavigateTab("pitch");
         return;
       }
 
-      if (cmd.includes("validation") || cmd.includes("show validation") || cmd.includes("open validation") || cmd.includes("mentor report")) {
+      if (/(?:validation|scores?|risks?|verdict|mentor|yc)/i.test(cmd)) {
         speak("Loading Validation Assessment & VC Mentor Verdict.");
         onNavigateTab("validation");
         return;
       }
 
-      // 4. Download PDF & PPT
-      if (cmd.includes("download pdf") || cmd.includes("export pdf") || cmd.includes("get pdf")) {
+      // 2. Download / Export Reports
+      if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cmd) || cmd.includes("pdf")) {
         speak("Compiling PDF Executive Report for instant download, Boss.");
         onDownloadPdf();
         return;
       }
 
-      if (cmd.includes("download ppt") || cmd.includes("export ppt") || cmd.includes("get ppt") || cmd.includes("download pitch")) {
+      if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cmd) || cmd.includes("ppt") || cmd.includes("pitch deck")) {
         speak("Generating 10-slide PowerPoint Pitch Deck for download.");
         onDownloadPpt();
         return;
       }
 
-      // 5. Read aloud
-      if (cmd.includes("read executive summary") || cmd.includes("read summary")) {
+      // 3. Read Aloud Commands
+      if (/(?:read|speak|narrate|tell\s*me).*(?:summary|executive|overview)/i.test(cmd)) {
         onNavigateTab("summary");
-        const summaryText = onReadSummary();
-        if (summaryText) {
-          speak(`Reading Executive Summary: ${summaryText.slice(0, 300)}...`);
-        } else {
-          speak("Executive summary loaded, Boss.");
-        }
+        const text = onReadSummary();
+        if (text) speak(`Reading Executive Summary: ${text.slice(0, 300)}...`);
+        else speak("Executive Summary loaded, Boss.");
         return;
       }
 
-      if (cmd.includes("read validation") || cmd.includes("read verdict") || cmd.includes("read mentor verdict")) {
+      if (/(?:read|speak|narrate|tell\s*me).*(?:verdict|validation|mentor)/i.test(cmd)) {
         onNavigateTab("validation");
-        const verdictText = onReadValidation();
-        if (verdictText) {
-          speak(`VC Mentor Verdict: ${verdictText}`);
-        } else {
-          speak("Validation & Mentor report loaded, Boss.");
-        }
+        const text = onReadValidation();
+        if (text) speak(`VC Mentor Verdict: ${text}`);
+        else speak("Validation & Mentor report loaded, Boss.");
         return;
       }
 
-      // 6. Start new project
-      if (cmd.includes("start new project") || cmd.includes("new project") || cmd.includes("new blueprint") || cmd.includes("reset workspace")) {
+      // 4. Help & Workspace Commands
+      if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest)/i.test(cmd)) {
+        setShowHelp(true);
+        speak("Displaying IRRIS Voice Operations command manifest.");
+        return;
+      }
+
+      if (/(?:new\s*project|new\s*startup|reset|start\s*over|clear|home)/i.test(cmd)) {
         speak("Resetting workspace. Ready for your next startup concept, Boss.");
         onNewProject();
         return;
       }
 
-      // 7. Help
-      if (cmd.includes("help") || cmd.includes("what can you do") || cmd.includes("commands")) {
-        setShowHelp(true);
-        speak("Displaying IRRIS Voice Operations command manifest. You can control navigation, trigger blueprints, and export reports.");
+      // 5. Intelligent Natural Language Startup Creation Matching
+      let extractedIdea = "";
+
+      // Clean leading conversational prefixes
+      let cleanCmd = cmd.replace(/^(please|can\s+you|could\s+you|help\s+me|irris|friday|hey|hi)\s+/i, "").trim();
+
+      // Pattern A: "I want to start a backpack startup" / "create a startup for EV charging"
+      const matchA = cleanCmd.match(/(?:i\s+(?:am\s+)?want\s+to\s+)?(?:start|build|create|make|launch|generate)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|platform)?\s*(?:for|about|called|on)?\s*(.*)/i);
+      if (matchA && matchA[1] && matchA[1].trim().length > 2) {
+        extractedIdea = matchA[1].trim();
+      }
+
+      // Pattern B: "backpack startup" / "laundry app" / "fish marketplace"
+      if (!extractedIdea) {
+        const matchB = cleanCmd.match(/^(.*?)(?:\s+startup|\s+company|\s+business|\s+app|\s+platform|\s+idea)$/i);
+        if (matchB && matchB[1] && matchB[1].trim().length > 2) {
+          extractedIdea = matchB[1].trim();
+        }
+      }
+
+      // Fallback: If clean phrase contains 2 or more descriptive words
+      if (!extractedIdea && cleanCmd.split(" ").length >= 2) {
+        extractedIdea = cleanCmd;
+      }
+
+      if (extractedIdea && extractedIdea.length > 2) {
+        const formattedIdea = extractedIdea
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+
+        speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${formattedIdea}`, () => {
+          onStartProject(formattedIdea);
+        });
         return;
       }
 
-      // 8. Non-Synovia / Off-topic questions guardrail
-      speak("Negative, Boss. I am authorized strictly for Synovia operations and startup blueprint execution. Say 'Help' to see supported commands.");
+      // Default Fallback
+      speak("Negative, Boss. Command not recognized. Say 'Help' or describe your startup idea.");
     }, 400);
-  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, projectIdea]);
+  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject]);
+
 
   // Speech Recognition Setup
   const toggleListening = () => {
