@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://headset-ultram-fathers-consultants.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://tours-farms-namely-finger.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
