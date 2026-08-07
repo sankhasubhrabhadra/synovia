@@ -137,15 +137,207 @@ export function IrrisAssistant({
     synthRef.current.speak(utterance);
   }, [isMuted, voices]);
 
-  // Upgrade: Conversational AI LLM Brain + Operational Controller
+  // Upgrade: Hybrid Instant Direct Controller + Conversational AI LLM Engine
   const processVoiceCommand = useCallback(async (cmdRaw: string) => {
     const cmd = cmdRaw.trim();
     if (!cmd) return;
     setTranscript(cmdRaw);
     setIsThinking(true);
 
+    const cleanCmd = cmd.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+
+    // -------------------------------------------------------------
+    // 0. ACTIVE CONSULTATION STEPS
+    // -------------------------------------------------------------
+    if (consultationStep === "awaiting_idea") {
+      if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
+        setConsultationStep("idle");
+        setPendingIdea("");
+        speak("Consultation cancelled, Boss.");
+        setIsThinking(false);
+        return;
+      }
+
+      const cleanIdea = cleanCmd
+        .replace(/^(my\s+idea\s+is|it\s+is|a|an|the|i\s+want\s+to\s+build|i\s+want\s+to\s+start|i\s+was\s+thinking\s+of|how\s+about)\s+/i, "")
+        .trim();
+
+      if (cleanIdea.length > 2) {
+        const formattedIdea = cleanIdea
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+
+        setPendingIdea(formattedIdea);
+        setConsultationStep("awaiting_region");
+        speak(`Idea registered: ${formattedIdea}. Which target region should the agents analyze? Options: India, United States, Europe, Southeast Asia, or Global?`);
+        setIsThinking(false);
+        return;
+      }
+    }
+
+    if (consultationStep === "awaiting_region") {
+      if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
+        setConsultationStep("idle");
+        setPendingIdea("");
+        speak("Consultation cancelled, Boss.");
+        setIsThinking(false);
+        return;
+      }
+
+      const selectedRegion = cleanCmd
+        .replace(/^(target\s+market|region|in|for|the)\s+/i, "")
+        .trim();
+
+      const formattedRegion = selectedRegion
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+      const finalIdea = pendingIdea;
+      setConsultationStep("idle");
+      setPendingIdea("");
+
+      speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${finalIdea} in target market: ${formattedRegion}.`, () => {
+        onStartProject(finalIdea, formattedRegion);
+      });
+      setIsThinking(false);
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // 1. INSTANT DIRECT APP CONTROLS (Zero Latency, 100% Reliable)
+    // -------------------------------------------------------------
+    if (/(?:close|hide|exit|dismiss).*(?:history|drawer|sidebar)/i.test(cleanCmd)) {
+      if (onCloseHistory) onCloseHistory();
+      speak("Closing history drawer, Boss.");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:open|show|view|display|check|my).*(?:history|past\s+projects|saved|blueprints|projects)/i.test(cleanCmd) || cleanCmd === "history") {
+      if (onOpenHistory) onOpenHistory();
+      speak("Opening project history drawer, Boss.");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|create\s+new\s+blueprint|reset\s+workspace|clear|fresh\s+start)/i.test(cleanCmd)) {
+      setConsultationStep("idle");
+      setPendingIdea("");
+      onNewProject();
+      speak("Opening new blueprint workspace. Ready for your next concept, Boss.");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:close\s+application|close\s+app|close\s+studio|exit\s+app|exit\s+studio|go\s+home|cinematic|landing\s+page)/i.test(cleanCmd)) {
+      if (onExitStudio) onExitStudio();
+      speak("Closing studio application. Returning to main landing module.");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:mute|unmute|silence|quiet|audio\s+off|audio\s+on)/i.test(cleanCmd)) {
+      setIsMuted((prev) => !prev);
+      speak("Audio status toggled.");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:close\s+caption|hide\s+caption|dismiss\s+text|hide\s+box)/i.test(cleanCmd)) {
+      setShowCaption(false);
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest|capabilities|instructions)/i.test(cleanCmd)) {
+      setShowHelp(true);
+      speak("Displaying IRRIS Voice Operations command manifest. You can control navigation, trigger blueprints, and export reports.");
+      setIsThinking(false);
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // 2. INSTANT TAB NAVIGATION CONTROLS
+    // -------------------------------------------------------------
+    if (/(?:executive\s*summary|overview|summary|front\s*page|home\s*tab|main\s*page)/i.test(cleanCmd)) {
+      speak("Loading Executive Summary.");
+      onNavigateTab("summary");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:business\s*category|category|classification|type|anti-patterns?|business\s*model\s*type)/i.test(cleanCmd)) {
+      speak("Opening Business Category & Anti-Patterns breakdown.");
+      onNavigateTab("classification");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:market\s*analysis|market\s*research|tam|sam|som|market\s*size|personas?|user\s*pain|customers?|target\s*audience)/i.test(cleanCmd)) {
+      speak("Displaying Market Research, TAM, SAM, and SOM metrics.");
+      onNavigateTab("market");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:competitor|competition|rivals?|market\s*gap|moat|defensibility|who\s+are\s+the\s+competitors)/i.test(cleanCmd)) {
+      speak("Loading Competitor Intelligence matrix and defensibility gaps.");
+      onNavigateTab("competitors");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:product\s*spec|mvp|features?|priority\s*matrix|what\s+to\s+build|specification)/i.test(cleanCmd)) {
+      speak("Displaying MVP Feature Specification & Priority Matrix.");
+      onNavigateTab("product");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:roadmap|schedule|timeline|weeks?|execution\s*plan|action\s*items?)/i.test(cleanCmd)) {
+      speak("Opening 4-Week Agile Execution Roadmap.");
+      onNavigateTab("roadmap");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:pitch\s*deck|slides?|presentation|revenue|monetization|business\s*model|how\s+will\s+we\s+make\s+money|pitch\s*tab)/i.test(cleanCmd)) {
+      speak("Opening VC Pitch Deck & Revenue Streams.");
+      onNavigateTab("pitch");
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:validation|scores?|risks?|verdict|mentor|yc|is\s+this\s+a\s+good\s+idea|viability)/i.test(cleanCmd)) {
+      speak("Loading Validation Assessment & VC Mentor Verdict.");
+      onNavigateTab("validation");
+      setIsThinking(false);
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // 3. INSTANT REPORT EXPORTS
+    // -------------------------------------------------------------
+    if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cleanCmd) || cleanCmd === "pdf") {
+      speak("Compiling PDF Executive Report for instant download, Boss.");
+      onDownloadPdf();
+      setIsThinking(false);
+      return;
+    }
+
+    if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cleanCmd) || cleanCmd === "ppt") {
+      speak("Generating 10-slide PowerPoint Pitch Deck for download.");
+      onDownloadPpt();
+      setIsThinking(false);
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // 4. CONVERSATIONAL AI LLM BRAIN (For Smalltalk, Founder Empathy, Ideas & Q&A)
+    // -------------------------------------------------------------
     try {
-      // Query Conversational AI LLM Backend Router
       const res = await chatWithIrris(
         cmdRaw, 
         projectIdea, 
@@ -158,9 +350,7 @@ export function IrrisAssistant({
       const action = res.action;
       const payload = res.payload || {};
 
-      // Speak AI response in Siri/Alexa humanized voice
       speak(reply, () => {
-        // Execute application actions seamlessly after speaking
         if (action === "START_PROJECT" && payload.idea) {
           setConsultationStep("idle");
           setPendingIdea("");
@@ -168,41 +358,17 @@ export function IrrisAssistant({
         } else if (action === "ASK_REGION" && payload.idea) {
           setPendingIdea(payload.idea);
           setConsultationStep("awaiting_region");
-        } else if (action === "NAVIGATE_TAB" && payload.tab) {
-          onNavigateTab(payload.tab);
-        } else if (action === "OPEN_HISTORY" && onOpenHistory) {
-          onOpenHistory();
-        } else if (action === "CLOSE_HISTORY" && onCloseHistory) {
-          onCloseHistory();
-        } else if (action === "DOWNLOAD_PDF") {
-          onDownloadPdf();
-        } else if (action === "DOWNLOAD_PPT") {
-          onDownloadPpt();
-        } else if (action === "READ_SUMMARY") {
-          onNavigateTab("summary");
-          const text = onReadSummary();
-          if (text) speak(`Reading Executive Summary: ${text.slice(0, 300)}...`, undefined, true);
-        } else if (action === "READ_VALIDATION") {
-          onNavigateTab("validation");
-          const text = onReadValidation();
-          if (text) speak(`VC Mentor Verdict: ${text}`, undefined, true);
-        } else if (action === "NEW_PROJECT") {
-          setConsultationStep("idle");
-          setPendingIdea("");
-          onNewProject();
-        } else if (action === "EXIT_STUDIO" && onExitStudio) {
-          onExitStudio();
         }
       }, true);
 
     } catch (err) {
       console.warn("Conversational AI backend fallback:", err);
-      // Smart conversational fallback
-      speak("I am online, Boss. Ready to build your next breakthrough startup.", undefined, true);
+      speak("Command acknowledged, Boss. Tell me your startup idea or say 'Help' for system controls.", undefined, true);
     } finally {
       setIsThinking(false);
     }
   }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea, projectIdea, activeTab]);
+
 
 
   // Speech Recognition Setup

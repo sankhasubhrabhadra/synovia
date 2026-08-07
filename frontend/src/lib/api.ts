@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://cinema-frozen-roof-clone.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://screensaver-conjunction-buyers-only.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {

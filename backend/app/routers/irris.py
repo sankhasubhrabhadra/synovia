@@ -3,10 +3,11 @@ import logging
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.services.llm_service import llm_service
+from app.services.llm import llm_service
 
 logger = logging.getLogger("synovia.irris")
 router = APIRouter(prefix="/irris", tags=["IRRIS AI Operations Commander"])
+
 
 class IrrisChatRequest(BaseModel):
   user_speech: str

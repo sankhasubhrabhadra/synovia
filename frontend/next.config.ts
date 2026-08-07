@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const ACTIVE_TUNNEL_URL = "https://cinema-frozen-roof-clone.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://screensaver-conjunction-buyers-only.trycloudflare.com";
 
 const nextConfig: NextConfig = {
   async rewrites() {
