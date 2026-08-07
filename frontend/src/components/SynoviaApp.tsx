@@ -11,6 +11,7 @@ import { ExecutionScreen } from "@/components/ExecutionScreen";
 import { BlueprintView } from "@/components/BlueprintView";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { IntroSplash } from "@/components/IntroSplash";
+import { BackgroundCanvas } from "@/components/BackgroundCanvas";
 
 export function SynoviaApp() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
@@ -97,8 +98,11 @@ export function SynoviaApp() {
         <IntroSplash onComplete={() => setShowSplash(false)} />
       )}
 
-      <div className="min-h-screen bg-[#17110e] text-[#fffdfa] font-sans selection:bg-amber-600 selection:text-white relative overflow-x-hidden flex flex-col studio-canvas">
-        {/* Colorful Shifting Canvas Animation Layer */}
+      <div className="min-h-screen bg-white text-black font-sans selection:bg-amber-400 selection:text-black relative overflow-x-hidden flex flex-col studio-canvas">
+        {/* 2. Interactive 60FPS Neo-Brutalist Floating Background Animation */}
+        <BackgroundCanvas />
+
+        {/* Shifting Ambient Color Overlay */}
         <div className="colorful-bg-overlay" />
 
         {/* Persistent Header Navbar */}
@@ -110,7 +114,7 @@ export function SynoviaApp() {
           isExecuting={viewState === "executing"}
         />
 
-        {/* 2. Hidden History Drawer (Appears upon clicking History button) */}
+        {/* 3. Hidden History Drawer */}
         <SidebarDrawer
           isOpen={isHistoryOpen}
           onClose={() => setIsHistoryOpen(false)}
@@ -122,7 +126,7 @@ export function SynoviaApp() {
           isLoading={isLoadingHistory}
         />
 
-        {/* 3. Main Dynamic Content Area */}
+        {/* 4. Main Content Area */}
         <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative z-10">
           {viewState === "landing" && (
             <LandingHero
