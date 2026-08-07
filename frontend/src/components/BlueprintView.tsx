@@ -570,8 +570,9 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                       <span className="px-3 py-1 bg-[#f59e0b] text-black text-xs font-black uppercase border-2 border-black inline-block mb-2 shadow-[2px_2px_0px_#000000]">
                         Week {wk.week || i + 1}
                       </span>
-                      <h4 className="font-black text-base text-black uppercase">{safeRender(wk.title)}</h4>
+                      <h4 className="font-black text-base text-black uppercase">{safeRender(wk.title).replace(/^(?:Week\s*\d+\s*[:\-–—]?\s*)+/i, '')}</h4>
                       <p className="text-xs font-bold text-gray-700 italic mt-0.5">Focus: {safeRender(wk.goals)}</p>
+
                     </div>
 
                     <div className="flex-1 md:max-w-md">

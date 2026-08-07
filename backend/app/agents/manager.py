@@ -2,7 +2,9 @@ import logging
 import asyncio
 import json
 import ast
+import re
 from datetime import datetime
+
 from typing import Dict, Any, Optional, List
 from sqlalchemy.future import select
 
@@ -75,18 +77,42 @@ async def broadcast_status(
         for q in list(sse_subscribers[project_id]):
             await q.put(payload)
 
+def fix_currency_symbols(text: str) -> str:
+    """
+    Programmatically enforces correct symbol-to-currency mapping.
+    Replaces '$' with '₹' whenever INR, Indian Rupees, Crores, or Lakhs are referenced.
+    """
+    if not isinstance(text, str):
+        return text
+    # Fix "$8.5 billion INR" -> "₹8.5 billion"
+    text = re.sub(r'\$\s*([\d\.,]+(?:\s*(?:billion|million|trillion|crore|crores|lakh|lakhs|k|m|b))?\s*(?:INR|Indian Rupees))', r'₹\1', text, flags=re.IGNORECASE)
+    # Fix "$50 Crores" or "$10 Lakhs" -> "₹50 Crores" / "₹10 Lakhs"
+    text = re.sub(r'\$\s*([\d\.,]+\s*(?:Crores|Crore|Lakhs|Lakh|Cr))', r'₹\1', text, flags=re.IGNORECASE)
+    # Fix "INR $500" -> "₹500"
+    text = re.sub(r'\bINR\s*\$([\d\.,]+)', r'₹\1', text, flags=re.IGNORECASE)
+    # Fix "$500 INR" -> "₹500"
+    text = re.sub(r'\$([\d\.,]+)\s*INR\b', r'₹\1', text, flags=re.IGNORECASE)
+    return text
+
 def sanitize_unparsed_json(data: Any) -> Any:
     """
     Recursively inspects output data to detect and convert stringified dicts or JSON blobs
-    (e.g., "{'overall_score': 82, ...}") into clean formatted prose strings or structured objects.
-    Rejects any string starting with "{'" or containing "': '".
+    into clean formatted prose strings. Enforces currency symbol accuracy and strips duplicate Week N labels.
     """
     if isinstance(data, dict):
-        return {k: sanitize_unparsed_json(v) for k, v in data.items()}
+        cleaned = {}
+        for k, v in data.items():
+            if k == "title" and isinstance(v, str):
+                # Strip duplicate "Week N:" prefixes
+                v = re.sub(r'^(?:Week\s*\d+\s*[:\-–—]?\s*)+', '', v, flags=re.IGNORECASE).strip()
+            cleaned[k] = sanitize_unparsed_json(v)
+        return cleaned
     elif isinstance(data, list):
         return [sanitize_unparsed_json(item) for item in data]
     elif isinstance(data, str):
         s = data.strip()
+        # Apply currency symbol fixer
+        s = fix_currency_symbols(s)
         # Check if string looks like an unparsed python dict or json string
         if (s.startswith("{'") and s.endswith("'}")) or (s.startswith('{"') and s.endswith('"}')) or "': '" in s:
             try:
@@ -97,27 +123,25 @@ def sanitize_unparsed_json(data: Any) -> Any:
                     parsed = ast.literal_eval(s)
                 
                 if isinstance(parsed, dict):
-                    # Extract primary text fields if available
                     if "verdict" in parsed:
-                        return str(parsed["verdict"])
+                        return fix_currency_symbols(str(parsed["verdict"]))
                     if "final_verdict" in parsed:
-                        return str(parsed["final_verdict"])
+                        return fix_currency_symbols(str(parsed["final_verdict"]))
                     if "description" in parsed:
-                        return str(parsed["description"])
+                        return fix_currency_symbols(str(parsed["description"]))
                     if "recommendations" in parsed and isinstance(parsed["recommendations"], list):
-                        return " • ".join(str(r) for r in parsed["recommendations"])
-                    # Flatten remaining dictionary into readable prose
+                        return " • ".join(fix_currency_symbols(str(r)) for r in parsed["recommendations"])
                     parts = []
                     for k, v in parsed.items():
                         if not isinstance(v, (dict, list)):
-                            parts.append(f"{k.replace('_', ' ').title()}: {v}")
-                    return " • ".join(parts) if parts else str(parsed)
+                            parts.append(f"{k.replace('_', ' ').title()}: {fix_currency_symbols(str(v))}")
+                    return " • ".join(parts) if parts else fix_currency_symbols(str(parsed))
             except Exception:
-                # If literal_eval fails, strip out curly braces and quotes
                 cleaned = s.replace("{'", "").replace("'}", "").replace("'", "").replace('"', "")
-                return cleaned
+                return fix_currency_symbols(cleaned)
         return s
     return data
+
 
 class ManagerAgent:
     """
@@ -161,7 +185,7 @@ class ManagerAgent:
                 f"Analyzing market size & opportunities for [{biz_type}]..."
             )
             
-            research_task = asyncio.create_task(research_agent.run(product_title, target_market, classification_data))
+            research_task = asyncio.create_task(research_agent.run(idea, target_market, classification_data))
             research_data = await research_task
 
             await broadcast_status(
@@ -169,7 +193,7 @@ class ManagerAgent:
                 f"Analyzing real-world [{biz_type}] competitors and defensability strategy...", research_data
             )
             
-            competitor_task = asyncio.create_task(competitor_agent.run(product_title, research_data, classification_data))
+            competitor_task = asyncio.create_task(competitor_agent.run(idea, research_data, classification_data))
             competitor_data = await competitor_task
 
             # Phase 2: Product & Roadmap Agents (Classification Aware)
@@ -178,8 +202,8 @@ class ManagerAgent:
                 f"Designing MVP specs and 4-week execution roadmap tailored for [{biz_type}]..."
             )
             
-            product_task = asyncio.create_task(product_agent.run(product_title, research_data, competitor_data, classification_data))
-            roadmap_task = asyncio.create_task(roadmap_agent.run(product_title, {}, classification_data))
+            product_task = asyncio.create_task(product_agent.run(idea, research_data, competitor_data, classification_data))
+            roadmap_task = asyncio.create_task(roadmap_agent.run(idea, {}, classification_data))
             
             product_data, roadmap_data = await asyncio.gather(product_task, roadmap_task)
 
@@ -194,7 +218,7 @@ class ManagerAgent:
                 f"Crafting investor pitch deck and dynamic monetization model for [{biz_type}]...", step_data=None
             )
             
-            pitch_data = await pitch_agent.run(product_title, research_data, product_data, classification_data)
+            pitch_data = await pitch_agent.run(idea, research_data, product_data, classification_data)
 
             # Phase 4: Validation & Strategy Agent (Evaluates all previous agents)
             await broadcast_status(
@@ -203,7 +227,7 @@ class ManagerAgent:
             )
             
             validation_data = await validation_agent.run(
-                product_title, research_data, competitor_data, product_data, roadmap_data, pitch_data, classification_data
+                idea, research_data, competitor_data, product_data, roadmap_data, pitch_data, classification_data
             )
 
             # Phase 5: Quality Control Agent (Ensures no SaaS template leakage)
@@ -213,8 +237,9 @@ class ManagerAgent:
             )
 
             qc_data = await quality_control_agent.run(
-                product_title, classification_data, research_data, competitor_data, product_data, roadmap_data, pitch_data, validation_data
+                idea, classification_data, research_data, competitor_data, product_data, roadmap_data, pitch_data, validation_data
             )
+
 
             # Apply any corrected sections from Quality Control Agent
             corrected = qc_data.get("corrected_sections", {})

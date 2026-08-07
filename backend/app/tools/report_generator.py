@@ -312,9 +312,11 @@ class PDFReportGenerator:
             elements.append(Paragraph("6. 4-Week Agile Execution Roadmap", h1_style))
             schedule = roadmap.get("schedule", [])
             for wk in schedule:
-                title = clean(wk.get("title", f"Week {wk.get('week')}"))
-                goals = clean(wk.get("goals", ""))
-                elements.append(Paragraph(f"<b>Week {wk.get('week')}: {title}</b>", h2_style))
+                raw_title = clean(wk.get("title", f"Week {wk.get('week')}"))
+                import re
+                clean_title = re.sub(r'^(?:Week\s*\d+\s*[:\-–—]?\s*)+', '', raw_title, flags=re.IGNORECASE).strip()
+                elements.append(Paragraph(f"<b>Week {wk.get('week')}: {clean_title}</b>", h2_style))
+
                 if goals:
                     elements.append(Paragraph(f"<i>Focus:</i> {goals}", body_style))
                 for deliv in wk.get("deliverables", []):

@@ -248,24 +248,61 @@ class CompetitorAgent:
             fallback_data_generator=fallback_generator
         )
 
-        # Enforce Competitor Uniqueness Verification
+        # Enforce Competitor Uniqueness & Domain Relevance Verification
         try:
             validated = CompetitorOutput(**raw_json)
             out_dict = validated.model_dump()
-            comps = out_dict.get("competitors", [])
-            
-            # De-duplicate copy-pasted strengths/weaknesses across entries
-            seen_strengths = set()
-            for c in comps:
-                unique_s = []
-                for s in c.get("strengths", []):
-                    if s not in seen_strengths:
-                        seen_strengths.add(s)
-                        unique_s.append(s)
-                c["strengths"] = unique_s if unique_s else ["Strong domain brand presence"]
-            return out_dict
         except Exception:
-            return raw_json
+            out_dict = raw_json if isinstance(raw_json, dict) else {}
+
+        comps = out_dict.get("competitors", [])
+        clean_comps = []
+        
+        product_title = (classification_data.get('product_title') or idea).lower() if classification_data else idea.lower()
+        idea_keywords = set(k.lower() for k in idea.split() if len(k) > 3)
+        
+        prohibited_cpg_brands = [
+            "forest essentials", "patanjali", "organic india", "real juice", 
+            "id fresh", "himalaya", "dabur", "epigamia", "organic tattva"
+        ]
+        
+        business_type = classification_data.get('business_type', 'other') if classification_data else 'other'
+        is_cpg_food = business_type in ["food", "beauty", "wellness", "physical_cpg_herbal_supplement"]
+
+        
+        for c in comps:
+            name = c.get("name", "").strip()
+            name_lower = name.lower()
+            
+            # Rule 1: Exclude self-name or product title matches
+            if product_title in name_lower or any(kw in name_lower for kw in idea_keywords if len(kw) > 4):
+                logger.info(f"Filtered out self-competitor name: {name}")
+                continue
+                
+            # Rule 2: Exclude CPG/food brands for non-CPG/food industries
+            if not is_cpg_food and any(brand in name_lower for brand in prohibited_cpg_brands):
+                logger.info(f"Filtered out cross-domain CPG brand '{name}' for business type '{business_type}'")
+                continue
+                
+            clean_comps.append(c)
+            
+        # De-duplicate copy-pasted strengths/weaknesses across entries
+        seen_strengths = set()
+        for c in clean_comps:
+            unique_s = []
+            for s in c.get("strengths", []):
+                if s not in seen_strengths:
+                    seen_strengths.add(s)
+                    unique_s.append(s)
+            c["strengths"] = unique_s if unique_s else ["Strong domain brand presence"]
+
+        if not clean_comps:
+            fallback = fallback_generator()
+            clean_comps = fallback.get("competitors", [])
+
+        out_dict["competitors"] = clean_comps
+        return out_dict
+
 
 
 competitor_agent = CompetitorAgent()

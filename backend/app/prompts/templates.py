@@ -120,11 +120,10 @@ BUSINESS CLASSIFICATION CONTEXT:
 {classification_context}
 
 CRITICAL INSTRUCTIONS:
-- You MUST list REAL competitors operating in the SAME classified industry.
-- If startup = Herbal Products: List real brands like Dabur, Forest Essentials, Himalaya, Patanjali, Kama Ayurveda, Organic India.
-- If startup = Transportation/Logistics: List real logistics companies like Blue Dart, Delhivery, Porter, Gati.
-- If startup = Food: List real food/beverage brands like Organic Tattva, Real Juice, Epigamia, ID Fresh.
-- NEVER output generic placeholders like "Traditional Legacy Brands" or "Regional Competitors". Always name REAL, existing companies.
+- You MUST list REAL, existing competitor brand names operating in the EXACT SAME classified industry as {idea}.
+- Do NOT reuse generic herbal or food brand names (like Patanjali, Forest Essentials, Himalaya, Organic India, Real Juice) for non-herbal/non-food industries (such as hardware, logistics, mobile apps, software, fintech).
+- Do NOT list the startup idea itself or its product title as a competitor under any circumstances.
+- Pricing models and strengths MUST match the classified business type.
 
 Return structured JSON:
 {
@@ -135,13 +134,14 @@ Return structured JSON:
       "strengths": ["Key strength of this real competitor"],
       "weaknesses": ["Key weakness or gap"],
       "missing_opportunities": ["Unmet customer need in their offering"],
-      "pricing_model": "Pricing model appropriate for this industry (e.g. Per Unit / Retail Margin / D2C Pack)"
+      "pricing_model": "Pricing model appropriate for this industry"
     }
   ],
   "market_gaps": ["Critical market gap specific to this industry"],
-  "defensability_strategy": "Defensability moat appropriate for this business type (e.g., Proprietary formulation, Direct farmer sourcing, Brand trust)."
+  "defensability_strategy": "Defensability moat appropriate for this business type."
 }
 """
+
 
 PRODUCT_AGENT_PROMPT = """
 You are the Chief Product Officer & Lead PM Agent for Synovia.

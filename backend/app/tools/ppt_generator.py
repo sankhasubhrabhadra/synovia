@@ -15,11 +15,18 @@ def clean_str(val: Any) -> str:
     if isinstance(val, (int, float, bool)):
         return str(val)
     if isinstance(val, dict):
-        parts = [f"{k}: {clean_str(v)}" for k, v in val.items() if v]
+        parts = [f"{k.replace('_', ' ').title()}: {clean_str(v)}" for k, v in val.items() if v]
         return " • ".join(parts)
     if isinstance(val, list):
         return ", ".join(clean_str(v) for v in val if v)
-    return str(val).replace("■", "").strip()
+    s = str(val).replace("■", "").strip()
+    import re
+    s = re.sub(r'\$\s*([\d\.,]+(?:\s*(?:billion|million|trillion|crore|crores|lakh|lakhs|k|m|b))?\s*(?:INR|Indian Rupees))', r'₹\1', s, flags=re.IGNORECASE)
+    s = re.sub(r'\$\s*([\d\.,]+\s*(?:Crores|Crore|Lakhs|Lakh|Cr))', r'₹\1', s, flags=re.IGNORECASE)
+    s = re.sub(r'\bINR\s*\$([\d\.,]+)', r'₹\1', s, flags=re.IGNORECASE)
+    s = re.sub(r'\$([\d\.,]+)\s*INR\b', r'₹\1', s, flags=re.IGNORECASE)
+    return s
+
 
 def parse_score(val: Any, default: int = 80) -> int:
     if isinstance(val, (int, float)):
