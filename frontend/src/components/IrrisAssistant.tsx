@@ -56,14 +56,28 @@ export function IrrisAssistant({
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const prevStepRef = useRef<string | undefined>(currentAgentStep);
 
-  // Initialize Speech Synthesis
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // Asynchronously load and store available browser/OS voices
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       synthRef.current = window.speechSynthesis;
+
+      const updateVoices = () => {
+        if (synthRef.current) {
+          const loaded = synthRef.current.getVoices();
+          setVoices(loaded);
+        }
+      };
+
+      updateVoices();
+      if (synthRef.current.onvoiceschanged !== undefined) {
+        synthRef.current.onvoiceschanged = updateVoices;
+      }
     }
   }, []);
 
-  // Speak response function
+  // Speak response function with Alexa/Siri-like Neural Voice Selection
   const speak = useCallback((text: string, onEndCallback?: () => void, isWarm?: boolean) => {
     setLastResponse(text);
     setShowCaption(true);
@@ -78,18 +92,30 @@ export function IrrisAssistant({
 
     const utterance = new SpeechSynthesisUtterance(text);
     if (isWarm) {
-      utterance.rate = 0.92;
+      utterance.rate = 0.95;
       utterance.pitch = 1.02;
     } else {
-      utterance.rate = 1.05;
-      utterance.pitch = 0.95;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
     }
 
-    // Pick crisp female/natural voice if available
-    const voices = synthRef.current.getVoices();
-    const preferredVoice = voices.find(
-      (v) => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Female") || v.name.includes("Samantha") || v.name.includes("Zira") || v.name.includes("Google"))
-    ) || voices.find((v) => v.lang.startsWith("en")) || voices[0];
+    // Pick top Alexa/Siri-like Neural Voice
+    const available = voices.length > 0 ? voices : (synthRef.current ? synthRef.current.getVoices() : []);
+    
+    const preferredVoice = available.find(
+      (v) => v.lang.startsWith("en") && (
+        v.name.includes("Natural") || 
+        v.name.includes("Neural") || 
+        v.name.includes("Jenny") || 
+        v.name.includes("Aria") || 
+        v.name.includes("Samantha") || 
+        v.name.includes("Siri") || 
+        v.name.includes("Google US English") || 
+        v.name.includes("Google UK English Female")
+      )
+    ) || available.find(
+      (v) => v.lang.startsWith("en") && (v.name.includes("Female") || v.name.includes("Google") || v.name.includes("Zira"))
+    ) || available.find((v) => v.lang.startsWith("en")) || available[0];
 
     if (preferredVoice) utterance.voice = preferredVoice;
 
@@ -109,28 +135,31 @@ export function IrrisAssistant({
     };
 
     synthRef.current.speak(utterance);
-  }, [isMuted]);
+  }, [isMuted, voices]);
 
-  // Upgrade: Interactive Voice Consultation & Operational Speech Processor
+  // Upgrade: Comprehensive Alexa/Siri Intent & Voice Processor
   const processVoiceCommand = useCallback((cmdRaw: string) => {
     const cmd = cmdRaw.toLowerCase().trim();
     setTranscript(cmdRaw);
     setIsThinking(true);
 
     setTimeout(() => {
+      // Clean punctuation for ultra-clean matching
+      const cleanCmd = cmd.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+
       // -------------------------------------------------------------
       // 0. ACTIVE CONVERSATIONAL CONSULTATION STEPS
       // -------------------------------------------------------------
       if (consultationStep === "awaiting_idea") {
-        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cmd)) {
+        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
           setConsultationStep("idle");
           setPendingIdea("");
           speak("Consultation cancelled, Boss.");
           return;
         }
 
-        const cleanIdea = cmd
-          .replace(/^(my\s+idea\s+is|it\s+is|a|an|the|i\s+want\s+to\s+build|i\s+want\s+to\s+start)\s+/i, "")
+        const cleanIdea = cleanCmd
+          .replace(/^(my\s+idea\s+is|it\s+is|a|an|the|i\s+want\s+to\s+build|i\s+want\s+to\s+start|i\s+was\s+thinking\s+of|how\s+about)\s+/i, "")
           .trim();
 
         if (cleanIdea.length > 2) {
@@ -147,14 +176,14 @@ export function IrrisAssistant({
       }
 
       if (consultationStep === "awaiting_region") {
-        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cmd)) {
+        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
           setConsultationStep("idle");
           setPendingIdea("");
           speak("Consultation cancelled, Boss.");
           return;
         }
 
-        const selectedRegion = cmd
+        const selectedRegion = cleanCmd
           .replace(/^(target\s+market|region|in|for|the)\s+/i, "")
           .trim();
 
@@ -173,14 +202,37 @@ export function IrrisAssistant({
         return;
       }
 
-      // Strip punctuation for ultra-clean matching
-      const cleanCmd = cmd.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
-      const hasCreationKeyword = /(?:search|create|generate|build|make|start\s+(?:a|an)?\s*(?:startup|company|business|project|app))/i.test(cleanCmd);
+      // Check for idea creation trigger keywords
+      const searchPatterns = /(?:search|create|generate|build|make|start|launch|evaluate|analyze|investigate|look\s+up|explore|find|pitch|research|check|idea|concept)/i;
+      const hasCreationKeyword = searchPatterns.test(cleanCmd);
 
       // -------------------------------------------------------------
-      // 1. GREETINGS & FOUNDER MOTIVATION (Humanized Empathy)
+      // 1. IDENTITY, SMALLTALK & STATUS (Alexa/Siri Persona)
       // -------------------------------------------------------------
-      if (!hasCreationKeyword && /(?:^|\b)(?:hello|hi|hey|greetings|good\s+morning|good\s+afternoon|good\s+evening)(?:\b|$)/i.test(cleanCmd)) {
+      if (/(?:who\s+are\s+you|what\s+is\s+your\s+name|what\s+are\s+you|identify\s+yourself)/i.test(cleanCmd)) {
+        speak("I am IRRIS, your AI Operations Commander for Synovia. I coordinate 8 autonomous agents to generate startup blueprints, analyze markets, evaluate competitors, and manage your workspace.", undefined, true);
+        return;
+      }
+
+      if (/(?:how\s+are\s+you|how\s+do\s+you\s+do|how\s+is\s+it\s+going|are\s+you\s+okay|status)/i.test(cleanCmd)) {
+        speak("All operational systems are running at peak efficiency, Boss. Ready to build your next breakthrough startup.", undefined, true);
+        return;
+      }
+
+      if (/(?:thank\s+you|thanks|great\s+job|good\s+job|awesome|amazing|well\s+done)/i.test(cleanCmd)) {
+        speak("Always at your command, Boss. Let me know what we tackle next.", undefined, true);
+        return;
+      }
+
+      if (/(?:who\s+made\s+you|who\s+created\s+you|who\s+built\s+you)/i.test(cleanCmd)) {
+        speak("I was created by the Synovia Engineering Team to serve as your AI Operations Commander.", undefined, true);
+        return;
+      }
+
+      // -------------------------------------------------------------
+      // 2. GREETINGS & FOUNDER MOTIVATION (Humanized Empathy)
+      // -------------------------------------------------------------
+      if (!hasCreationKeyword && /(?:^|\b)(?:hello|hi|hey|greetings|good\s+morning|good\s+afternoon|good\s+evening|yo|sup)(?:\b|$)/i.test(cleanCmd)) {
         const greetings = [
           "Hello, Boss! How can I assist your startup operations today?",
           "Greetings, Boss. All systems nominal. What venture shall we conquer today?",
@@ -191,7 +243,7 @@ export function IrrisAssistant({
         return;
       }
 
-      if (/(?:demotivated|depressed|sad|give\s+up|giving\s+up|quit|too\s+hard|hopeless|burnt?\s*out|exhausted|failing|failed|discouraged|stress|stressed)/i.test(cleanCmd)) {
+      if (/(?:demotivated|depressed|sad|give\s+up|giving\s+up|quit|too\s+hard|hopeless|burnt?\s*out|exhausted|failing|failed|discouraged|stress|stressed|overwhelmed|struggling)/i.test(cleanCmd)) {
         const motivations = [
           "Listen to me, Boss. Building something great is supposed to be hard — that is what makes it rare and valuable. Every iconic founder faced moments of exhaustion and self-doubt. Take a deep breath. You don't have to conquer everything today. Just take one single step forward. I'm right here with you, Boss. Let's build your legacy together.",
           "Hey Boss, I hear you. The startup journey is a marathon filled with tough days, but you have the vision and resilience to push through. Take a short rest if you need to, but do not give up. I believe in your vision, and we will get there step by step."
@@ -201,153 +253,150 @@ export function IrrisAssistant({
         return;
       }
 
-
       // -------------------------------------------------------------
-      // 2. FULL APPLICATION SYSTEM CONTROLS
+      // 3. FULL APPLICATION SYSTEM CONTROLS
       // -------------------------------------------------------------
-
-      if (/(?:close|hide|exit).*(?:history|drawer)/i.test(cmd)) {
+      if (/(?:close|hide|exit|dismiss).*(?:history|drawer|sidebar)/i.test(cleanCmd)) {
         if (onCloseHistory) onCloseHistory();
         speak("Closing history drawer, Boss.");
         return;
       }
 
-      if (/(?:open|show|view|display)?.*history/i.test(cmd)) {
+      if (/(?:open|show|view|display|check|my).*(?:history|past\s+projects|saved|blueprints|projects)/i.test(cleanCmd)) {
         if (onOpenHistory) onOpenHistory();
         speak("Opening project history drawer, Boss.");
         return;
       }
 
-      if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|create\s+new\s+blueprint|reset\s+workspace)/i.test(cmd)) {
+      if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|create\s+new\s+blueprint|reset\s+workspace|clear|fresh\s+start)/i.test(cleanCmd)) {
         onNewProject();
         speak("Opening new blueprint workspace. Ready for your next concept, Boss.");
         return;
       }
 
-      if (/(?:close\s+application|close\s+app|close\s+studio|exit\s+app|exit\s+studio|go\s+home|cinematic)/i.test(cmd)) {
+      if (/(?:close\s+application|close\s+app|close\s+studio|exit\s+app|exit\s+studio|go\s+home|cinematic|landing\s+page)/i.test(cleanCmd)) {
         if (onExitStudio) onExitStudio();
         speak("Closing studio application. Returning to main landing module.");
         return;
       }
 
-      if (/(?:mute\s+voice|mute\s+audio|silence|unmute)/i.test(cmd)) {
+      if (/(?:mute|unmute|silence|quiet|audio\s+off|audio\s+on)/i.test(cleanCmd)) {
         setIsMuted((prev) => !prev);
         speak("Audio status toggled.");
         return;
       }
 
-      if (/(?:close\s+caption|hide\s+caption|dismiss\s+text)/i.test(cmd)) {
+      if (/(?:close\s+caption|hide\s+caption|dismiss\s+text|hide\s+box)/i.test(cleanCmd)) {
         setShowCaption(false);
         return;
       }
 
-      if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest)/i.test(cmd)) {
+      if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest|capabilities|instructions)/i.test(cleanCmd)) {
         setShowHelp(true);
-        speak("Displaying IRRIS Voice Operations command manifest.");
+        speak("Displaying IRRIS Voice Operations command manifest. You can control navigation, trigger blueprints, and export reports.");
         return;
       }
 
       // -------------------------------------------------------------
-      // 2. TAB NAVIGATION
+      // 4. TAB NAVIGATION SYNONYMS MATRIX
       // -------------------------------------------------------------
-      if (/(?:executive\s*summary|overview|summary\s*tab)/i.test(cmd)) {
+      if (/(?:executive\s*summary|overview|summary|front\s*page|home\s*tab|main\s*page)/i.test(cleanCmd)) {
         speak("Loading Executive Summary.");
         onNavigateTab("summary");
         return;
       }
 
-      if (/(?:business\s*category|category|classification|type|anti-pattern)/i.test(cmd)) {
+      if (/(?:business\s*category|category|classification|type|anti-patterns?|business\s*model\s*type)/i.test(cleanCmd)) {
         speak("Opening Business Category & Anti-Patterns breakdown.");
         onNavigateTab("classification");
         return;
       }
 
-      if (/(?:market\s*analysis|market\s*research|tam|sam|som|personas?|customer\s*pain)/i.test(cmd)) {
+      if (/(?:market\s*analysis|market\s*research|tam|sam|som|market\s*size|personas?|user\s*pain|customers?|target\s*audience)/i.test(cleanCmd)) {
         speak("Displaying Market Research, TAM, SAM, and SOM metrics.");
         onNavigateTab("market");
         return;
       }
 
-      if (/(?:competitor|competition|rival|market\s*gap|moat)/i.test(cmd)) {
+      if (/(?:competitor|competition|rivals?|market\s*gap|moat|defensibility|who\s+are\s+the\s+competitors)/i.test(cleanCmd)) {
         speak("Loading Competitor Intelligence matrix and defensibility gaps.");
         onNavigateTab("competitors");
         return;
       }
 
-      if (/(?:product\s*spec|mvp|feature|priority\s*matrix)/i.test(cmd)) {
+      if (/(?:product\s*spec|mvp|features?|priority\s*matrix|what\s+to\s+build|specification)/i.test(cleanCmd)) {
         speak("Displaying MVP Feature Specification & Priority Matrix.");
         onNavigateTab("product");
         return;
       }
 
-      if (/(?:roadmap|schedule|timeline|weeks?|execution\s*plan)/i.test(cmd)) {
+      if (/(?:roadmap|schedule|timeline|weeks?|execution\s*plan|action\s*items?)/i.test(cleanCmd)) {
         speak("Opening 4-Week Agile Execution Roadmap.");
         onNavigateTab("roadmap");
         return;
       }
 
-      if (/(?:pitch\s*deck|revenue|monetization|business\ model|pitch\s*tab)/i.test(cmd)) {
+      if (/(?:pitch\s*deck|slides?|presentation|revenue|monetization|business\s*model|how\s+will\s+we\s+make\s+money|pitch\s*tab)/i.test(cleanCmd)) {
         speak("Opening VC Pitch Deck & Revenue Streams.");
         onNavigateTab("pitch");
         return;
       }
 
-      if (/(?:validation|scores?|risks?|verdict|mentor|yc)/i.test(cmd)) {
+      if (/(?:validation|scores?|risks?|verdict|mentor|yc|is\s+this\s+a\s+good\s+idea|viability)/i.test(cleanCmd)) {
         speak("Loading Validation Assessment & VC Mentor Verdict.");
         onNavigateTab("validation");
         return;
       }
 
       // -------------------------------------------------------------
-      // 3. EXPORT REPORTS & AUDIO NARRATION
+      // 5. EXPORT REPORTS & AUDIO NARRATION
       // -------------------------------------------------------------
-      if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cmd) || cmd === "pdf") {
+      if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cleanCmd) || cleanCmd === "pdf") {
         speak("Compiling PDF Executive Report for instant download, Boss.");
         onDownloadPdf();
         return;
       }
 
-      if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cmd) || cmd === "ppt") {
+      if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cleanCmd) || cleanCmd === "ppt") {
         speak("Generating 10-slide PowerPoint Pitch Deck for download.");
         onDownloadPpt();
         return;
       }
 
-      if (/(?:read|speak|narrate|tell\s*me).*(?:summary|executive|overview)/i.test(cmd)) {
+      if (/(?:read|speak|narrate|tell\s*me).*(?:summary|executive|overview)/i.test(cleanCmd)) {
         onNavigateTab("summary");
         const text = onReadSummary();
-        if (text) speak(`Reading Executive Summary: ${text.slice(0, 300)}...`);
+        if (text) speak(`Reading Executive Summary: ${text.slice(0, 300)}...`, undefined, true);
         else speak("Executive Summary loaded, Boss.");
         return;
       }
 
-      if (/(?:read|speak|narrate|tell\s*me).*(?:verdict|validation|mentor)/i.test(cmd)) {
+      if (/(?:read|speak|narrate|tell\s*me).*(?:verdict|validation|mentor)/i.test(cleanCmd)) {
         onNavigateTab("validation");
         const text = onReadValidation();
-        if (text) speak(`VC Mentor Verdict: ${text}`);
+        if (text) speak(`VC Mentor Verdict: ${text}`, undefined, true);
         else speak("Validation & Mentor report loaded, Boss.");
         return;
       }
 
       // -------------------------------------------------------------
-      // 4. EXPLICIT STARTUP SEARCH & CONSULTATION TRIGGER
+      // 6. EXPLICIT STARTUP SEARCH & CONSULTATION TRIGGER
       // -------------------------------------------------------------
       if (hasCreationKeyword) {
-
-        let extractedIdea = cmd
-          .replace(/^(please|can\s+you|could\s+you|help\s+me|irris|friday|hey|hi)\s+/i, "")
-          .replace(/(?:search|create|generate|build|make|start)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|blueprint)?\s*(?:for|about|called|on)?\s*/i, "")
+        let extractedIdea = cleanCmd
+          .replace(/^(please|can\s+you|could\s+you|help\s+me|irris|friday|hey|hi|would\s+you|let's|lets)\s+/i, "")
+          .replace(/(?:search|create|generate|build|make|start|launch|evaluate|analyze|investigate|look\s+up|explore|find|pitch|research|check|idea|concept)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|platform|blueprint)?\s*(?:for|about|called|on|of|is)?\s*/i, "")
           .trim();
 
-        // Case A: User said "search" or "create a startup" without specifying an idea
+        // Case A: User said conversational trigger without specific idea
         if (!extractedIdea || extractedIdea.length <= 2) {
           setConsultationStep("awaiting_idea");
           speak("Understood, Boss. Initiating startup consultation. What is the core startup idea or business concept you'd like to analyze?");
           return;
         }
 
-        // Case B: User specified BOTH idea and region in one sentence (e.g. "...in India")
-        const regionMatch = extractedIdea.match(/(.*?)\s+(?:in|for|focused\s+on)\s+(india|united\s+states|us|usa|europe|asia|global|southeast\s+asia|uk|canada|latam)$/i);
+        // Case B: User specified BOTH idea and region in one sentence
+        const regionMatch = extractedIdea.match(/(.*?)\s+(?:in|for|focused\s+on)\s+(india|united\s+states|us|usa|europe|asia|global|southeast\s+asia|uk|canada|latam|bharat|america)$/i);
         if (regionMatch) {
           const mainIdea = regionMatch[1].trim();
           const regionName = regionMatch[2].trim();
@@ -373,12 +422,9 @@ export function IrrisAssistant({
       }
 
       // Default Fallback
-      speak("Command not recognized, Boss. To generate a startup, say 'Search [your idea]' or 'Create a startup for [your idea]'. Say 'Help' for controls.");
+      speak("Command not recognized, Boss. Say 'Search [your idea]' to build a blueprint, or say 'Help' for controls.");
     }, 400);
-  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea]);
-
-
-
+  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea, voices]);
 
   // Speech Recognition Setup
   const toggleListening = () => {
