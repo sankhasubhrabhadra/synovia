@@ -1,5 +1,7 @@
 import logging
 import asyncio
+import json
+import ast
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from sqlalchemy.future import select
@@ -73,6 +75,50 @@ async def broadcast_status(
         for q in list(sse_subscribers[project_id]):
             await q.put(payload)
 
+def sanitize_unparsed_json(data: Any) -> Any:
+    """
+    Recursively inspects output data to detect and convert stringified dicts or JSON blobs
+    (e.g., "{'overall_score': 82, ...}") into clean formatted prose strings or structured objects.
+    Rejects any string starting with "{'" or containing "': '".
+    """
+    if isinstance(data, dict):
+        return {k: sanitize_unparsed_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_unparsed_json(item) for item in data]
+    elif isinstance(data, str):
+        s = data.strip()
+        # Check if string looks like an unparsed python dict or json string
+        if (s.startswith("{'") and s.endswith("'}")) or (s.startswith('{"') and s.endswith('"}')) or "': '" in s:
+            try:
+                parsed = None
+                try:
+                    parsed = json.loads(s)
+                except Exception:
+                    parsed = ast.literal_eval(s)
+                
+                if isinstance(parsed, dict):
+                    # Extract primary text fields if available
+                    if "verdict" in parsed:
+                        return str(parsed["verdict"])
+                    if "final_verdict" in parsed:
+                        return str(parsed["final_verdict"])
+                    if "description" in parsed:
+                        return str(parsed["description"])
+                    if "recommendations" in parsed and isinstance(parsed["recommendations"], list):
+                        return " • ".join(str(r) for r in parsed["recommendations"])
+                    # Flatten remaining dictionary into readable prose
+                    parts = []
+                    for k, v in parsed.items():
+                        if not isinstance(v, (dict, list)):
+                            parts.append(f"{k.replace('_', ' ').title()}: {v}")
+                    return " • ".join(parts) if parts else str(parsed)
+            except Exception:
+                # If literal_eval fails, strip out curly braces and quotes
+                cleaned = s.replace("{'", "").replace("'}", "").replace("'", "").replace('"', "")
+                return cleaned
+        return s
+    return data
+
 class ManagerAgent:
     """
     High-Performance Multi-Agent Pipeline Orchestrator.
@@ -86,20 +132,27 @@ class ManagerAgent:
             # Phase 0: Idea Classification Agent
             await broadcast_status(
                 project_id, AgentStepEnum.CLASSIFICATION, StatusEnum.RUNNING, 5,
-                "Classifying startup business type, target market dynamics, and anti-patterns..."
+                "Classifying startup business type, target market dynamics, anti-patterns, and brand title..."
             )
             
             classification_data = await classifier_agent.run(idea, target_market)
-            industry_display_name = idea.title()
             
+            # Clean product title generation
+            product_title = classification_data.get("product_title")
+            if not product_title or len(product_title) < 3:
+                # Synthesize clean title from raw prompt
+                words = [w.capitalize() for w in idea.split()]
+                product_title = " ".join(words)
+            classification_data["product_title"] = product_title
+
             if classification_data.get("business_type") == "other":
-                classification_data["business_type"] = industry_display_name
+                classification_data["business_type"] = product_title
                 
             biz_type = classification_data.get("business_type", "other").replace("_", " ").title()
 
             await broadcast_status(
                 project_id, AgentStepEnum.CLASSIFICATION, StatusEnum.COMPLETED, 12,
-                f"Idea classified as [{biz_type}] in {classification_data.get('industry', 'Industry')}.", classification_data
+                f"Idea classified as [{biz_type}] ({product_title}) in {classification_data.get('industry', 'Industry')}.", classification_data
             )
 
             # Phase 1: Research & Competitor Agents (Classification Aware)
@@ -108,7 +161,7 @@ class ManagerAgent:
                 f"Analyzing market size & opportunities for [{biz_type}]..."
             )
             
-            research_task = asyncio.create_task(research_agent.run(idea, target_market, classification_data))
+            research_task = asyncio.create_task(research_agent.run(product_title, target_market, classification_data))
             research_data = await research_task
 
             await broadcast_status(
@@ -116,7 +169,7 @@ class ManagerAgent:
                 f"Analyzing real-world [{biz_type}] competitors and defensability strategy...", research_data
             )
             
-            competitor_task = asyncio.create_task(competitor_agent.run(idea, research_data, classification_data))
+            competitor_task = asyncio.create_task(competitor_agent.run(product_title, research_data, classification_data))
             competitor_data = await competitor_task
 
             # Phase 2: Product & Roadmap Agents (Classification Aware)
@@ -125,8 +178,8 @@ class ManagerAgent:
                 f"Designing MVP specs and 4-week execution roadmap tailored for [{biz_type}]..."
             )
             
-            product_task = asyncio.create_task(product_agent.run(idea, research_data, competitor_data, classification_data))
-            roadmap_task = asyncio.create_task(roadmap_agent.run(idea, {}, classification_data))
+            product_task = asyncio.create_task(product_agent.run(product_title, research_data, competitor_data, classification_data))
+            roadmap_task = asyncio.create_task(roadmap_agent.run(product_title, {}, classification_data))
             
             product_data, roadmap_data = await asyncio.gather(product_task, roadmap_task)
 
@@ -141,7 +194,7 @@ class ManagerAgent:
                 f"Crafting investor pitch deck and dynamic monetization model for [{biz_type}]...", step_data=None
             )
             
-            pitch_data = await pitch_agent.run(idea, research_data, product_data, classification_data)
+            pitch_data = await pitch_agent.run(product_title, research_data, product_data, classification_data)
 
             # Phase 4: Validation & Strategy Agent (Evaluates all previous agents)
             await broadcast_status(
@@ -150,7 +203,7 @@ class ManagerAgent:
             )
             
             validation_data = await validation_agent.run(
-                idea, research_data, competitor_data, product_data, roadmap_data, pitch_data, classification_data
+                product_title, research_data, competitor_data, product_data, roadmap_data, pitch_data, classification_data
             )
 
             # Phase 5: Quality Control Agent (Ensures no SaaS template leakage)
@@ -160,7 +213,7 @@ class ManagerAgent:
             )
 
             qc_data = await quality_control_agent.run(
-                idea, classification_data, research_data, competitor_data, product_data, roadmap_data, pitch_data, validation_data
+                product_title, classification_data, research_data, competitor_data, product_data, roadmap_data, pitch_data, validation_data
             )
 
             # Apply any corrected sections from Quality Control Agent
@@ -172,18 +225,27 @@ class ManagerAgent:
             if "roadmap" in corrected and isinstance(corrected["roadmap"], dict):
                 roadmap_data.update(corrected["roadmap"])
 
+            # Single-Source Score & Verdict Synchronization
+            viability_score = validation_data.get("viability_score") or 82
+            final_verdict = validation_data.get("final_verdict") or "STRONG PURSUE"
+            if isinstance(final_verdict, dict):
+                final_verdict = str(final_verdict.get("verdict") or final_verdict.get("final_verdict") or "STRONG PURSUE")
+            
+            validation_data["viability_score"] = viability_score
+            validation_data["final_verdict"] = final_verdict
+
             # Step 6: Finalize Merged Blueprint
-            industry_display_name = idea.title()
             executive_summary = (
-                f"Synovia Blueprint & Strategy Report for '{industry_display_name}': Targeting a "
+                f"Synovia Blueprint & Strategy Report for '{product_title}': Targeting a "
                 f"{research_data.get('market_size', {}).get('tam', 'multi-billion dollar')} market opportunity. "
-                f"Achieved a Viability Score of {validation_data.get('viability_score', 82)}/100. "
-                f"Verdict: '{validation_data.get('final_verdict', 'STRONG PURSUE')}'."
+                f"Achieved a Viability Score of {viability_score}/100. "
+                f"Verdict: '{final_verdict}'."
             )
 
-            merged_blueprint: Dict[str, Any] = {
+            raw_blueprint: Dict[str, Any] = {
                 "project_id": project_id,
-                "idea": idea,
+                "idea": product_title,
+                "raw_prompt": idea,
                 "target_market": target_market or "Global",
                 "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
                 "executive_summary": executive_summary,
@@ -196,6 +258,9 @@ class ManagerAgent:
                 "validation": validation_data,
                 "quality_control": qc_data
             }
+
+            # Run Unparsed JSON Sanitizer Engine across full blueprint tree
+            merged_blueprint = sanitize_unparsed_json(raw_blueprint)
 
             # Save full merged blueprint JSON to database
             async with AsyncSessionLocal() as session:
@@ -219,7 +284,8 @@ class ManagerAgent:
             logger.error(f"Error during ManagerAgent execution for project {project_id}: {e}", exc_info=True)
             fallback_blueprint: Dict[str, Any] = {
                 "project_id": project_id,
-                "idea": idea,
+                "idea": idea.title(),
+                "raw_prompt": idea,
                 "target_market": target_market or "Global",
                 "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
                 "executive_summary": f"Synovia Blueprint for '{idea.title()}'.",
@@ -248,4 +314,3 @@ class ManagerAgent:
             return fallback_blueprint
 
 manager_agent = ManagerAgent()
-

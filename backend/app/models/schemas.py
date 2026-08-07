@@ -38,6 +38,7 @@ class TargetUserGroup(BaseModel):
     pain_points: List[str] = Field(default_factory=list)
 
 class ClassificationOutput(BaseModel):
+    product_title: Optional[str] = None
     business_type: str
     industry: str
     target_customers: str
@@ -49,6 +50,7 @@ class ClassificationOutput(BaseModel):
     anti_patterns: List[str]
     recommended_business_models: List[str]
     recommended_roadmap_style: str
+
 
 class QualityControlOutput(BaseModel):
     violations_found: List[str]

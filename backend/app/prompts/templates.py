@@ -45,6 +45,8 @@ For example, physical/herbal products MUST NOT get: SaaS subscriptions, React da
 
 Return ONLY valid JSON:
 {
+  "product_title": "Clean, concise brand or product title extracted/invented from idea (e.g. FemmeTrip - Women's Solo Travel & Safety App)",
+
   "business_type": "one of the exact categories above",
   "industry": "Specific industry name (e.g., Herbal & Organic Wellness Products)",
   "target_customers": "Who are the primary customers (e.g., Health-conscious consumers, organic retail buyers)",
@@ -58,6 +60,7 @@ Return ONLY valid JSON:
   "recommended_roadmap_style": "physical_product or logistics or software or marketplace or healthcare or manufacturing or food or education or fintech or herbal_product or other"
 }
 """
+
 
 RESEARCH_AGENT_PROMPT = """
 You are the Principal Market Research & Venture Intelligence Agent for Synovia.
@@ -196,7 +199,7 @@ Return structured JSON:
 
 ROADMAP_AGENT_PROMPT = """
 You are the Agile Project Lead & Execution Roadmap Agent in Synovia.
-Create an aggressive 4-week execution roadmap specifically tailored to the classified business type.
+Create an aggressive 4-week execution roadmap strictly tailored to the classified business type.
 
 Startup Idea: {idea}
 
@@ -204,14 +207,11 @@ BUSINESS CLASSIFICATION CONTEXT:
 {classification_context}
 
 CRITICAL RULES:
-- Software roadmap != Physical product roadmap.
-- For HERBAL PRODUCTS / PHYSICAL GOODS, the roadmap MUST include:
-  Week 1: Supplier sourcing, raw ingredient procurement, market validation
-  Week 2: Prototype formulation, lab blending, preliminary safety testing
-  Week 3: Packaging design, regulatory compliance (AYUSH/FSSAI), shelf-life testing
-  Week 4: Pilot batch production, D2C launch, retail & distributor onboarding
-- For SOFTWARE / SAAS: Include wireframes, architecture, backend, frontend, deployment.
-- NEVER mention wireframes, backend, frontend, or cloud deployment for non-software businesses!
+- The roadmap MUST strictly align with the classified business type and industry in {classification_context}.
+- For MOBILE APP / SOFTWARE: Include UI wireframes, API endpoints, database setup, beta testing, and app store deployment.
+- For LOGISTICS / TRANSPORTATION: Include fleet acquisition, driver onboarding, route optimization, telemetry devices, and pilot freight runs. DO NOT mention software UI or lab blending.
+- For FOOD / CONSUMER GOODS: Include supplier sourcing, quality testing, packaging, pilot batching, and distributor onboarding. ONLY mention AYUSH or FSSAI if the business is explicitly an Indian herbal/food product.
+- For MARKETPLACE / TRAVEL: Include supply-side onboarding, payment escrow, buyer UX, and regional launch.
 
 Return structured JSON:
 {
@@ -229,10 +229,11 @@ Return structured JSON:
     "Milestone specific to this business type"
   ],
   "risk_mitigation": [
-    "Risk specific to this industry (e.g. Raw material price volatility, Regulatory certification delays)"
+    "Risk specific to this industry"
   ]
 }
 """
+
 
 VALIDATION_AGENT_PROMPT = """
 You are the Venture Validation & Regulatory Risk Agent for Synovia.

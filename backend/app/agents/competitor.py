@@ -141,7 +141,32 @@ class CompetitorAgent:
                     "defensability_strategy": "Proprietary industrial design patents, Make-in-India manufacturing contracts, and direct D2C brand equity."
                 }
 
-            # 5. Healthcare / Health Tech
+            # 5. Travel & Hospitality / Women's Solo Travel App
+            elif business_type in ["travel", "consumer_app", "mobile_app"] or any(k in idea_lower for k in ["travel", "trip", "tour", "women", "solo"]):
+                return {
+                    "competitors": [
+                        {
+                            "name": "NomadHer & SoloTrvler",
+                            "category": "Direct Women's Solo Travel Apps",
+                            "strengths": ["Female traveler verification & community chat", "Dedicated solo travel guides"],
+                            "weaknesses": ["Small niche user base outside Western Europe", "Limited real-time emergency SOS features"],
+                            "missing_opportunities": ["Live location sharing with emergency contacts", "Verified female-host hotel booking"],
+                            "pricing_model": "Freemium membership (₹299/mo / $4.99/mo)"
+                        },
+                        {
+                            "name": "Wanderlog & TripIt",
+                            "category": "General Travel Itinerary Competitors",
+                            "strengths": ["Comprehensive trip planning & route mapping", "Automated flight reservation sync"],
+                            "weaknesses": ["No female safety verification layer", "Lack of verified female local community guides"],
+                            "missing_opportunities": ["Gender-safe neighborhood safety ratings", "Group solo-female trip pairing"],
+                            "pricing_model": "Freemium with Pro subscription ($49.99/yr)"
+                        }
+                    ],
+                    "market_gaps": ["Lack of an end-to-end women's travel platform combining real-time emergency SOS tracking, verified female companion matching, and curated safe stay bookings."],
+                    "defensability_strategy": "Verified ID traveler authentication, proprietary AI danger-zone mapping, and exclusive female local guide network."
+                }
+
+            # 6. Healthcare / Health Tech
             elif business_type == "healthcare":
                 return {
                     "competitors": [
@@ -166,29 +191,55 @@ class CompetitorAgent:
                     "defensability_strategy": "HIPAA & ABDM certified data security layer, proprietary clinical AI model, and 1-click EHR sync."
                 }
 
-            # 6. Default Real-World Competitor Fallback (NO generic "Legacy Brands" placeholders)
-            else:
+            # 7. FinTech
+            elif business_type == "fintech":
                 return {
                     "competitors": [
                         {
-                            "name": f"Established Incumbents in {idea.title()}",
+                            "name": "Razorpay & Stripe",
+                            "category": "Direct Payment Gateway Leaders",
+                            "strengths": ["High API reliability & developer ecosystem", "Widespread merchant adoption"],
+                            "weaknesses": ["Complex fee structures for cross-border transactions", "Limited niche industry ledger tools"],
+                            "missing_opportunities": ["Specialized sector escrow workflows", "Instant zero-fee local settlement"],
+                            "pricing_model": "2% per transaction fee"
+                        },
+                        {
+                            "name": "Pine Labs & Paytm Business",
+                            "category": "Merchant Point-of-Sale Competitors",
+                            "strengths": ["Physical POS hardware terminal presence", "Established retail merchant relationships"],
+                            "weaknesses": ["Slow digital onboarding & higher hardware rental fees"],
+                            "missing_opportunities": ["Unified D2C & POS inventory ledger", "AI risk scoring"],
+                            "pricing_model": "Hardware rental + per-transaction fee"
+                        }
+                    ],
+                    "market_gaps": ["Market gap for a transparent, zero-friction financial workflow tailored specifically for SMB merchants."],
+                    "defensability_strategy": "Proprietary credit risk underwriting model, direct bank API pipes, and instant payout engine."
+                }
+
+            # 8. Default Real-World Competitor Fallback
+            else:
+                display_name = (classification_data.get('product_title') or idea).title() if classification_data else idea.title()
+                return {
+                    "competitors": [
+                        {
+                            "name": f"Incumbent Market Leaders in {display_name}",
                             "category": "Direct Market Leaders",
-                            "strengths": ["High brand recognition", "Established distributor relationships"],
-                            "weaknesses": ["Slow product innovation", "High retail/service markups"],
-                            "missing_opportunities": ["Direct-to-consumer transparent pricing", "Modern digital ordering"],
+                            "strengths": ["High brand recognition & established distributor relationships", "Capital reserves for marketing"],
+                            "weaknesses": ["Slow product innovation cycle", "High legacy markup pricing"],
+                            "missing_opportunities": ["Direct transparent pricing", "Modern digital ordering"],
                             "pricing_model": "Traditional wholesale & retail markup"
                         },
                         {
-                            "name": f"Regional Competitors in {idea.title()}",
+                            "name": f"Regional Operators in {display_name}",
                             "category": "Regional Market Players",
-                            "strengths": ["Local market presence", "Customer relationships"],
+                            "strengths": ["Local market presence & customer relationships", "Geographic proximity"],
                             "weaknesses": ["Limited geographic reach", "Manual un-automated operations"],
-                            "missing_opportunities": ["Online ordering & batch tracking", "Standardized quality guarantees"],
+                            "missing_opportunities": ["Online batch tracking", "Standardized quality guarantees"],
                             "pricing_model": "Local spot market pricing"
                         }
                     ],
-                    "market_gaps": [f"Significant market gap for a modernized, transparent solution in {idea.title()} delivering 10x higher quality and competitive direct pricing."],
-                    "defensability_strategy": f"Exclusive producer contracts, proprietary quality assurance standards, and strong D2C brand positioning."
+                    "market_gaps": [f"Significant market gap for a modernized, transparent solution in {display_name} delivering 10x higher quality and competitive direct pricing."],
+                    "defensability_strategy": f"Exclusive producer contracts, proprietary quality assurance standards, and strong brand positioning."
                 }
 
         raw_json = await llm_service.generate_structured_json(
@@ -197,10 +248,24 @@ class CompetitorAgent:
             fallback_data_generator=fallback_generator
         )
 
+        # Enforce Competitor Uniqueness Verification
         try:
             validated = CompetitorOutput(**raw_json)
-            return validated.model_dump()
+            out_dict = validated.model_dump()
+            comps = out_dict.get("competitors", [])
+            
+            # De-duplicate copy-pasted strengths/weaknesses across entries
+            seen_strengths = set()
+            for c in comps:
+                unique_s = []
+                for s in c.get("strengths", []):
+                    if s not in seen_strengths:
+                        seen_strengths.add(s)
+                        unique_s.append(s)
+                c["strengths"] = unique_s if unique_s else ["Strong domain brand presence"]
+            return out_dict
         except Exception:
             return raw_json
+
 
 competitor_agent = CompetitorAgent()

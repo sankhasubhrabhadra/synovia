@@ -27,65 +27,67 @@ class RoadmapAgent:
             words = [w.capitalize() for w in idea.split()[:3]]
             title_str = " ".join(words) if words else "Platform"
             
-            # Dynamic Roadmap based on Classification
-            business_type = classification_data.get('business_type', 'software_saas') if classification_data else 'software_saas'
-            
-            # Default to idea title if 'other' is somehow passed
-            if business_type.lower() == 'other':
-                business_type = idea.title()
-
-            is_physical = classification_data.get('digital_or_physical') == 'physical' if classification_data else False
+            # Dynamic Roadmap based strictly on Classification
+            business_type = (classification_data.get('business_type') or 'software_saas').lower() if classification_data else 'software_saas'
             
             schedule = []
-            if business_type == "transportation":
+            if business_type in ["travel", "consumer_app", "mobile_app"]:
                 schedule = [
-                    {"week": 1, "title": "Fleet Setup & Asset Tracking", "deliverables": ["Procure initial vehicle batch", "Install GPS telemetry devices", "Setup dispatch control center"], "goals": "Operational readiness for fleet"},
-                    {"week": 2, "title": "Partner Onboarding & Compliance", "deliverables": ["Hire and train pilot drivers", "Secure commercial insurance", "Verify transport permits"], "goals": "Legal and workforce readiness"},
-                    {"week": 3, "title": "Route Optimization & Software Integration", "deliverables": ["Deploy routing algorithm", "Test driver mobile app", "Integrate customer booking portal"], "goals": "End-to-end tech validation"},
-                    {"week": 4, "title": "Pilot Operations & Launch", "deliverables": ["Execute first 100 commercial trips", "Monitor fuel efficiency metrics", "Gather driver and client feedback"], "goals": "Successful initial roll-out"}
+                    {"week": 1, "title": "User Flow & Safety Architecture", "deliverables": ["Design mobile UI/UX wireframes", "Define user safety & emergency features", "Setup mobile app repository"], "goals": "User journey and safety specs approved"},
+                    {"week": 2, "title": "Core Mobile App & Backend APIs", "deliverables": ["Build authentication & profile modules", "Integrate location & mapping APIs", "Setup community/booking endpoints"], "goals": "Functional mobile app MVP"},
+                    {"week": 3, "title": "Beta Testing & Community Onboarding", "deliverables": ["Onboard 100 female beta travelers", "Conduct security and privacy audit", "Optimize real-time alert engine"], "goals": "Beta feedback incorporated"},
+                    {"week": 4, "title": "App Store Launch & Growth Campaign", "deliverables": ["Submit iOS/Android app store packages", "Launch referral and influencer campaigns", "Monitor active user retention"], "goals": "Public store release & initial traction"}
+                ]
+            elif business_type in ["transportation", "logistics"]:
+                schedule = [
+                    {"week": 1, "title": "Fleet & Supply Chain Planning", "deliverables": ["Audit route network & freight demands", "Install GPS/IoT telemetry devices", "Setup dispatch control portal"], "goals": "Fleet readiness & tracking operational"},
+                    {"week": 2, "title": "Driver Onboarding & Compliance", "deliverables": ["Hire and verify commercial drivers", "Secure transport insurance & permits", "Train drivers on mobile dispatch app"], "goals": "Legal and workforce compliance"},
+                    {"week": 3, "title": "Route Optimization & Booking Tech", "deliverables": ["Deploy load matching & route optimization", "Test shipper/consignee portal", "Integrate automated billing"], "goals": "End-to-end freight workflow validated"},
+                    {"week": 4, "title": "Commercial Pilot Freight Runs", "deliverables": ["Execute initial 100 commercial shipments", "Monitor transit SLA & fuel efficiency", "Onboard key wholesale distributors"], "goals": "Commercial SLA validation"}
                 ]
             elif business_type == "food":
                 schedule = [
-                    {"week": 1, "title": "Supplier Sourcing & Quality Checks", "deliverables": ["Identify farm/dock partners", "Establish quality grading standards", "Negotiate bulk pricing"], "goals": "Secure reliable supply"},
+                    {"week": 1, "title": "Supplier Sourcing & Quality Checks", "deliverables": ["Identify farm/producer partners", "Establish quality grading standards", "Negotiate bulk pricing"], "goals": "Secure reliable supply chain"},
                     {"week": 2, "title": "Facility Setup & Cold Storage", "deliverables": ["Lease warehouse space", "Install temperature-controlled units", "Procure insulated packaging"], "goals": "Cold chain infrastructure ready"},
-                    {"week": 3, "title": "Delivery Logistics & Tech Prep", "deliverables": ["Onboard delivery fleet", "Deploy inventory tracking software", "Integrate freshness monitoring IoT"], "goals": "Logistics network operational"},
-                    {"week": 4, "title": "Market Launch & Initial Fulfillment", "deliverables": ["Launch consumer ordering app", "Fulfill first 500 fresh orders", "Optimize last-mile routing"], "goals": "Validate market demand and delivery SLA"}
+                    {"week": 3, "title": "Fulfillment & Delivery Prep", "deliverables": ["Onboard delivery fleet", "Deploy inventory tracking software", "Integrate freshness monitoring IoT"], "goals": "Logistics network operational"},
+                    {"week": 4, "title": "Market Launch & Order Fulfillment", "deliverables": ["Launch ordering portal", "Fulfill first 500 orders", "Optimize last-mile delivery routes"], "goals": "Validate market demand and delivery SLA"}
                 ]
             elif business_type == "healthcare":
                 schedule = [
-                    {"week": 1, "title": "Compliance Research & Security Architecture", "deliverables": ["Audit HIPAA/ABDM requirements", "Design encrypted data storage", "Draft privacy policies"], "goals": "Regulatory foundation secured"},
-                    {"week": 2, "title": "Clinical Tool Development", "deliverables": ["Build core patient management module", "Integrate scheduling APIs", "Develop secure messaging"], "goals": "Core product functional"},
-                    {"week": 3, "title": "Provider Beta & Feedback", "deliverables": ["Onboard 3 pilot clinics", "Conduct workflow shadowing", "Implement requested UI adjustments"], "goals": "Validate clinical utility"},
-                    {"week": 4, "title": "Clinical Launch & Expansion Prep", "deliverables": ["Go live with pilot clinics", "Process real patient data", "Prepare sales collateral for scale"], "goals": "Successful real-world deployment"}
+                    {"week": 1, "title": "Compliance Audit & Data Architecture", "deliverables": ["Audit HIPAA/ABDM regulatory requirements", "Design encrypted EHR database", "Draft privacy policies"], "goals": "Regulatory and security foundation secured"},
+                    {"week": 2, "title": "Clinical Module Development", "deliverables": ["Build core patient portal", "Integrate telehealth/consultation APIs", "Develop provider dashboard"], "goals": "Core clinical workflow functional"},
+                    {"week": 3, "title": "Provider Beta & Workflow Shadowing", "deliverables": ["Onboard 5 pilot clinics", "Conduct clinical workflow tests", "Refine UX based on doctor feedback"], "goals": "Validate clinical utility"},
+                    {"week": 4, "title": "Commercial Launch & Pilot Deployment", "deliverables": ["Go live with partner clinics", "Process initial live patient consultations", "Prepare enterprise sales collateral"], "goals": "Successful clinical deployment"}
                 ]
-            elif business_type == "manufacturing":
+            elif business_type == "fintech":
                 schedule = [
-                    {"week": 1, "title": "Process Design & Equipment Sourcing", "deliverables": ["Map factory floor layout", "Order specialized machinery", "Define safety protocols"], "goals": "Production plan finalized"},
-                    {"week": 2, "title": "Prototype Run & Setup", "deliverables": ["Install and calibrate equipment", "Run initial test batches", "Train machine operators"], "goals": "Equipment operational"},
-                    {"week": 3, "title": "Production Optimization & QA", "deliverables": ["Implement quality control checkpoints", "Optimize yield rates", "Reduce cycle times"], "goals": "Achieve target defect rate"},
-                    {"week": 4, "title": "Commercial Batch & Fulfillment", "deliverables": ["Execute first full-scale production run", "Package goods for freight", "Fulfill initial B2B contracts"], "goals": "Deliver first commercial orders"}
+                    {"week": 1, "title": "Financial Compliance & Security Architecture", "deliverables": ["Audit regulatory licensing requirements", "Design PCI-DSS compliant architecture", "Setup ledger DB"], "goals": "Security & compliance lock"},
+                    {"week": 2, "title": "Payment & KYC API Integration", "deliverables": ["Integrate bank gateway/banking APIs", "Implement automated KYC/AML verification", "Build transaction engine"], "goals": "Core financial ledger active"},
+                    {"week": 3, "title": "Security Penetration & Closed Beta", "deliverables": ["Conduct third-party security audit", "Invite 200 closed beta testers", "Test transaction processing speed"], "goals": "Zero vulnerability verification"},
+                    {"week": 4, "title": "Public Launch & Customer Acquisition", "deliverables": ["Deploy production system", "Launch user acquisition campaign", "Monitor transaction success rate"], "goals": "Public commercial launch"}
                 ]
             elif business_type == "marketplace":
                 schedule = [
-                    {"week": 1, "title": "Supply-Side Research & Strategy", "deliverables": ["Identify target seller profiles", "Define commission structure", "Build seller landing page"], "goals": "Value proposition locked"},
-                    {"week": 2, "title": "Seller Onboarding & Platform Setup", "deliverables": ["Manually onboard initial 50 sellers", "Upload inventory catalogs", "Integrate payment escrow"], "goals": "Critical mass of supply achieved"},
-                    {"week": 3, "title": "Buyer Acquisition & Tech Polish", "deliverables": ["Launch buyer marketing campaigns", "Optimize search and discovery algorithms", "Implement review system"], "goals": "Drive initial buyer traffic"},
-                    {"week": 4, "title": "Marketplace Growth & Optimization", "deliverables": ["Facilitate first 1,000 transactions", "Monitor liquidity metrics", "Resolve early dispute tickets"], "goals": "Prove marketplace liquidity"}
+                    {"week": 1, "title": "Supply-Side Strategy & Onboarding", "deliverables": ["Identify target seller profiles", "Define commission & payout structures", "Build seller onboarding portal"], "goals": "Supply proposition locked"},
+                    {"week": 2, "title": "Catalog Setup & Payment Escrow", "deliverables": ["Onboard initial 50 key sellers", "Upload inventory catalogs", "Integrate payment escrow"], "goals": "Critical mass of supply cataloged"},
+                    {"week": 3, "title": "Buyer Experience & Discovery", "deliverables": ["Launch buyer web & mobile interface", "Optimize search & matching algorithms", "Implement review/rating system"], "goals": "Buyer traffic & search active"},
+                    {"week": 4, "title": "Marketplace Growth & Liquidity", "deliverables": ["Facilitate first 1,000 transactions", "Monitor marketplace liquidity metrics", "Resolve seller disputes"], "goals": "Liquidity & GMV milestone achieved"}
                 ]
-            elif is_physical or business_type in ["consumer_product", "physical_cpg_herbal_supplement", "hardware"]:
+            elif business_type in ["consumer_product", "physical_cpg_herbal_supplement", "beauty", "fashion", "hardware", "consumer_goods"]:
                 schedule = [
-                    {"week": 1, "title": "Customer Research & Design Specs", "deliverables": ["Conduct focus groups", "Finalize product CAD/designs", "Identify material suppliers"], "goals": "Lock product specifications"},
-                    {"week": 2, "title": "Prototype Development", "deliverables": ["Build initial working prototypes", "Conduct stress and quality testing", "Refine packaging design"], "goals": "Golden sample approval"},
-                    {"week": 3, "title": "Manufacturing Pilot & Supply Chain", "deliverables": ["Initiate small batch production", "Setup warehouse receiving", "Integrate e-commerce storefront"], "goals": "Inventory ready for sale"},
-                    {"week": 4, "title": "Sales Launch & Marketing", "deliverables": ["Launch D2C website", "Execute influencer marketing campaign", "Ship first pre-orders"], "goals": "Achieve initial revenue targets"}
+                    {"week": 1, "title": "Product Design & CAD Specifications", "deliverables": ["Conduct customer focus groups", "Finalize product CAD/packaging designs", "Identify raw material suppliers"], "goals": "Lock product specifications"},
+                    {"week": 2, "title": "Prototype Development & Sample Approval", "deliverables": ["Build initial working prototypes", "Conduct quality & durability testing", "Finalize golden sample"], "goals": "Golden sample approval"},
+                    {"week": 3, "title": "Batch Production & Supply Chain Setup", "deliverables": ["Initiate small batch manufacturing run", "Setup warehouse receiving", "Integrate D2C storefront"], "goals": "Inventory ready for dispatch"},
+                    {"week": 4, "title": "D2C Launch & Retail Distribution", "deliverables": ["Launch D2C website", "Execute digital marketing campaigns", "Ship first batch pre-orders"], "goals": "Achieve initial sales targets"}
                 ]
-            else: # software_saas or fallback
+            else: # software_saas, ai_platform, education, other
                 schedule = [
-                    {"week": 1, "title": f"System Architecture & UI Wireframes", "deliverables": ["Design database schema", "Create Figma wireframes", "Setup CI/CD pipeline"], "goals": "Technical foundation and design approval"},
-                    {"week": 2, "title": "Backend Development", "deliverables": ["Build core API endpoints", "Integrate authentication", "Setup cloud infrastructure"], "goals": "Functional backend ready"},
-                    {"week": 3, "title": "Frontend & Integration", "deliverables": ["Develop web/mobile UI", "Connect frontend to APIs", "Implement analytics tracking"], "goals": "End-to-end product functional"},
-                    {"week": 4, "title": "Deployment & Launch", "deliverables": ["Conduct security audit", "Deploy to production", "Launch marketing campaigns"], "goals": "Public release and first user acquisition"}
+                    {"week": 1, "title": "System Architecture & UI Wireframes", "deliverables": ["Design database schema", "Create Figma wireframes", "Setup CI/CD pipeline"], "goals": "Technical foundation approved"},
+                    {"week": 2, "title": "Backend API & Database Development", "deliverables": ["Build core API endpoints", "Integrate authentication", "Setup cloud database"], "goals": "Functional backend ready"},
+                    {"week": 3, "title": "Frontend Integration & Analytics", "deliverables": ["Develop web dashboard UI", "Connect frontend to APIs", "Implement analytics tracking"], "goals": "End-to-end product functional"},
+                    {"week": 4, "title": "Production Deployment & User Launch", "deliverables": ["Conduct security audit", "Deploy to cloud production", "Launch user acquisition campaign"], "goals": "Public release & initial users"}
                 ]
+
 
             return {
                 "schedule": schedule,

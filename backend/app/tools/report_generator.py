@@ -113,11 +113,22 @@ class PDFReportGenerator:
             if isinstance(val, (int, float, bool)):
                 return str(val)
             if isinstance(val, dict):
-                parts = [f"{k}: {clean(v)}" for k, v in val.items() if v]
+                parts = [f"{k.replace('_', ' ').title()}: {clean(v)}" for k, v in val.items() if v]
                 return " • ".join(parts)
             if isinstance(val, list):
                 return ", ".join(clean(v) for v in val if v)
-            return str(val).replace("■", "").strip()
+            s = str(val).replace("■", "").strip()
+            if (s.startswith("{'") and s.endswith("'}")) or (s.startswith('{"') and s.endswith('"}')) or "': '" in s:
+                try:
+                    import ast
+                    import json
+                    parsed = json.loads(s) if '{"' in s else ast.literal_eval(s)
+                    if isinstance(parsed, dict):
+                        return clean(parsed)
+                except Exception:
+                    return s.replace("{'", "").replace("'}", "").replace("'", "").replace('"', "")
+            return s
+
 
         def parse_score(val: Any, default: int = 80) -> int:
             if isinstance(val, (int, float)):
