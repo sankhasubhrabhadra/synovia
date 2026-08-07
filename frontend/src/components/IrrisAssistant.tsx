@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 interface IrrisAssistantProps {
-  onStartProject: (idea: string) => void;
+  onStartProject: (idea: string, targetMarket?: string) => void;
   onNavigateTab: (tab: string) => void;
   onDownloadPdf: () => void;
   onDownloadPpt: () => void;
@@ -47,6 +47,10 @@ export function IrrisAssistant({
   const [transcript, setTranscript] = useState<string>("");
   const [lastResponse, setLastResponse] = useState<string>("IRRIS // Online. Awaiting operational command, Boss.");
   const [showCaption, setShowCaption] = useState<boolean>(true);
+
+  // Multi-Step Conversational Onboarding Consultation State
+  const [consultationStep, setConsultationStep] = useState<"idle" | "awaiting_idea" | "awaiting_region">("idle");
+  const [pendingIdea, setPendingIdea] = useState<string>("");
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -102,7 +106,7 @@ export function IrrisAssistant({
     synthRef.current.speak(utterance);
   }, [isMuted]);
 
-  // Upgrade: Ultra-Flexible & Explicit Voice Command Processor
+  // Upgrade: Interactive Voice Consultation & Operational Speech Processor
   const processVoiceCommand = useCallback((cmdRaw: string) => {
     const cmd = cmdRaw.toLowerCase().trim();
     setTranscript(cmdRaw);
@@ -110,51 +114,98 @@ export function IrrisAssistant({
 
     setTimeout(() => {
       // -------------------------------------------------------------
-      // 1. FULL APPLICATION SYSTEM CONTROLS (Highest Priority)
+      // 0. ACTIVE CONVERSATIONAL CONSULTATION STEPS
       // -------------------------------------------------------------
+      if (consultationStep === "awaiting_idea") {
+        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cmd)) {
+          setConsultationStep("idle");
+          setPendingIdea("");
+          speak("Consultation cancelled, Boss.");
+          return;
+        }
 
-      // Close History Drawer
+        const cleanIdea = cmd
+          .replace(/^(my\s+idea\s+is|it\s+is|a|an|the|i\s+want\s+to\s+build|i\s+want\s+to\s+start)\s+/i, "")
+          .trim();
+
+        if (cleanIdea.length > 2) {
+          const formattedIdea = cleanIdea
+            .split(" ")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
+
+          setPendingIdea(formattedIdea);
+          setConsultationStep("awaiting_region");
+          speak(`Idea registered: ${formattedIdea}. Which target region should the agents analyze? Options: India, United States, Europe, Southeast Asia, or Global?`);
+          return;
+        }
+      }
+
+      if (consultationStep === "awaiting_region") {
+        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cmd)) {
+          setConsultationStep("idle");
+          setPendingIdea("");
+          speak("Consultation cancelled, Boss.");
+          return;
+        }
+
+        const selectedRegion = cmd
+          .replace(/^(target\s+market|region|in|for|the)\s+/i, "")
+          .trim();
+
+        const formattedRegion = selectedRegion
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+
+        const finalIdea = pendingIdea;
+        setConsultationStep("idle");
+        setPendingIdea("");
+
+        speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${finalIdea} in target market: ${formattedRegion}.`, () => {
+          onStartProject(finalIdea, formattedRegion);
+        });
+        return;
+      }
+
+      // -------------------------------------------------------------
+      // 1. FULL APPLICATION SYSTEM CONTROLS
+      // -------------------------------------------------------------
       if (/(?:close|hide|exit).*(?:history|drawer)/i.test(cmd)) {
         if (onCloseHistory) onCloseHistory();
         speak("Closing history drawer, Boss.");
         return;
       }
 
-      // Open History Drawer (Strict match - will NEVER be confused with startup search)
       if (/(?:open|show|view|display)?.*history/i.test(cmd)) {
         if (onOpenHistory) onOpenHistory();
         speak("Opening project history drawer, Boss.");
         return;
       }
 
-      // Open New Blueprint / Start New Project
       if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|create\s+new\s+blueprint|reset\s+workspace)/i.test(cmd)) {
         onNewProject();
         speak("Opening new blueprint workspace. Ready for your next concept, Boss.");
         return;
       }
 
-      // Close Application / Exit Studio / Go Home
       if (/(?:close\s+application|close\s+app|close\s+studio|exit\s+app|exit\s+studio|go\s+home|cinematic)/i.test(cmd)) {
         if (onExitStudio) onExitStudio();
         speak("Closing studio application. Returning to main landing module.");
         return;
       }
 
-      // Mute / Unmute Voice
       if (/(?:mute\s+voice|mute\s+audio|silence|unmute)/i.test(cmd)) {
         setIsMuted((prev) => !prev);
         speak("Audio status toggled.");
         return;
       }
 
-      // Hide / Close Caption Box
       if (/(?:close\s+caption|hide\s+caption|dismiss\s+text)/i.test(cmd)) {
         setShowCaption(false);
         return;
       }
 
-      // Command Help Manifest
       if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest)/i.test(cmd)) {
         setShowHelp(true);
         speak("Displaying IRRIS Voice Operations command manifest.");
@@ -162,7 +213,7 @@ export function IrrisAssistant({
       }
 
       // -------------------------------------------------------------
-      // 2. TAB NAVIGATION short-cuts
+      // 2. TAB NAVIGATION
       // -------------------------------------------------------------
       if (/(?:executive\s*summary|overview|summary\s*tab)/i.test(cmd)) {
         speak("Loading Executive Summary.");
@@ -244,8 +295,7 @@ export function IrrisAssistant({
       }
 
       // -------------------------------------------------------------
-      // 4. EXPLICIT STARTUP SEARCH / CREATION TRIGGER (STRICT RULE)
-      // Only triggers if explicit search/creation keywords are present!
+      // 4. EXPLICIT STARTUP SEARCH & CONSULTATION TRIGGER
       // -------------------------------------------------------------
       const hasCreationKeyword = /(?:search|create|generate|build|make|start\s+(?:a|an)?\s*(?:startup|company|business|project|app))/i.test(cmd);
 
@@ -255,23 +305,44 @@ export function IrrisAssistant({
           .replace(/(?:search|create|generate|build|make|start)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|blueprint)?\s*(?:for|about|called|on)?\s*/i, "")
           .trim();
 
-        if (extractedIdea && extractedIdea.length > 2) {
-          const formattedIdea = extractedIdea
-            .split(" ")
-            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(" ");
+        // Case A: User said "search" or "create a startup" without specifying an idea
+        if (!extractedIdea || extractedIdea.length <= 2) {
+          setConsultationStep("awaiting_idea");
+          speak("Understood, Boss. Initiating startup consultation. What is the core startup idea or business concept you'd like to analyze?");
+          return;
+        }
 
-          speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${formattedIdea}`, () => {
-            onStartProject(formattedIdea);
+        // Case B: User specified BOTH idea and region in one sentence (e.g. "...in India")
+        const regionMatch = extractedIdea.match(/(.*?)\s+(?:in|for|focused\s+on)\s+(india|united\s+states|us|usa|europe|asia|global|southeast\s+asia|uk|canada|latam)$/i);
+        if (regionMatch) {
+          const mainIdea = regionMatch[1].trim();
+          const regionName = regionMatch[2].trim();
+          const formattedIdea = mainIdea.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+          const formattedRegion = regionName.toUpperCase();
+
+          speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${formattedIdea} in target market: ${formattedRegion}.`, () => {
+            onStartProject(formattedIdea, formattedRegion);
           });
           return;
         }
+
+        // Case C: Idea is specified, ask for Region!
+        const formattedIdea = extractedIdea
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+
+        setPendingIdea(formattedIdea);
+        setConsultationStep("awaiting_region");
+        speak(`Idea registered: ${formattedIdea}. Which target region or market should we focus on? Options: India, United States, Europe, Southeast Asia, or Global?`);
+        return;
       }
 
-      // Default Fallback: Refuses to search unless explicit search keyword was spoken
+      // Default Fallback
       speak("Command not recognized, Boss. To generate a startup, say 'Search [your idea]' or 'Create a startup for [your idea]'. Say 'Help' for controls.");
     }, 400);
-  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio]);
+  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea]);
+
 
 
 
@@ -384,7 +455,17 @@ export function IrrisAssistant({
             </div>
 
             {/* Dynamic Status Badges */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              {consultationStep === "awaiting_idea" && (
+                <span className="px-2 py-0.5 bg-[#f59e0b] text-black border-2 border-black text-[10px] font-black uppercase tracking-wider animate-pulse">
+                  ⚡ STEP 1: TELL ME YOUR IDEA
+                </span>
+              )}
+              {consultationStep === "awaiting_region" && (
+                <span className="px-2 py-0.5 bg-[#3b82f6] text-white border-2 border-black text-[10px] font-black uppercase tracking-wider animate-pulse">
+                  ⚡ STEP 2: CHOOSE TARGET REGION
+                </span>
+              )}
               {isListening && (
                 <span className="px-2 py-0.5 bg-[#ec4899] text-white border-2 border-black text-[10px] font-black uppercase tracking-wider animate-bounce">
                   ● LISTENING
@@ -401,6 +482,7 @@ export function IrrisAssistant({
                 </span>
               )}
             </div>
+
 
             {/* Dialogue / Transcript Content */}
             <p className="text-xs font-black text-black leading-snug">
