@@ -243,23 +243,6 @@ export function BlueprintView({ project }: BlueprintViewProps) {
                 </div>
               )}
 
-              {/* Enforced Anti-Patterns Rules */}
-              {safeArray(classification.anti_patterns).length > 0 && (
-                <div className="p-5 rounded-2xl bg-rose-950/20 border border-rose-500/30 mb-6">
-                  <h4 className="text-xs font-extrabold text-rose-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-400" />
-                    <span>Enforced Anti-Pattern Rules (Prevented SaaS Bias)</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {safeArray(classification.anti_patterns).map((rule: string, idx: number) => (
-                      <div key={idx} className="p-2.5 rounded-xl bg-slate-950/90 text-xs text-rose-300 border border-rose-500/20 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
-                        <span>{rule}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Recommended Business Models */}
               {safeArray(classification.recommended_business_models).length > 0 && (
