@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const ACTIVE_TUNNEL_URL = "https://screensaver-conjunction-buyers-only.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://requirement-copyrights-paintings-recorder.trycloudflare.com";
 
 const nextConfig: NextConfig = {
   async rewrites() {

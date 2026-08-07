@@ -1,27 +1,26 @@
 import json
 import logging
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 from app.services.llm import llm_service
 
 logger = logging.getLogger("synovia.irris")
 router = APIRouter(prefix="/irris", tags=["IRRIS AI Operations Commander"])
 
-
 class IrrisChatRequest(BaseModel):
-  user_speech: str
-  current_project_idea: Optional[str] = None
-  active_tab: Optional[str] = None
-  consultation_step: Optional[str] = "idle"
-  pending_idea: Optional[str] = None
+    user_speech: str
+    current_project_idea: Optional[str] = None
+    active_tab: Optional[str] = None
+    consultation_step: Optional[str] = "idle"
+    pending_idea: Optional[str] = None
 
 IRRIS_SYSTEM_PROMPT = """
 You are IRRIS (AI Operations Commander), the voice operations controller for Synovia — an autonomous startup blueprint studio powered by 8 specialized AI agents.
 
 YOUR PERSONA:
 - You are a calm, highly intelligent, confident, conversational, and encouraging AI co-founder / commander (like FRIDAY from Iron Man or Siri/Alexa).
-- Speak naturally in concise 1-3 sentences suitable for voice output.
+- Speak naturally in concise 1-2 sentences suitable for voice output.
 - Never give long robotic walls of text. Be warm, direct, empathetic, and human.
 
 YOUR CAPABILITIES & COMMANDS:
@@ -53,6 +52,48 @@ Return ONLY valid JSON matching:
 
 @router.post("/chat")
 async def chat_with_irris(request: IrrisChatRequest):
+    def irris_fallback() -> Dict[str, Any]:
+        speech_lower = request.user_speech.lower().strip()
+        
+        # Backup / Alternative Idea
+        if any(k in speech_lower for k in ["backup", "another idea", "different concept", "new idea", "alternative"]):
+            return {
+                "reply": "Having a backup concept is smart strategy, Boss! Tell me your secondary startup idea or business pivot, and I'll deploy the 8-agent swarm to analyze it.",
+                "action": None,
+                "payload": {}
+            }
+        
+        # Greetings
+        elif any(k in speech_lower for k in ["hello", "hi", "hey", "greetings", "good morning", "good afternoon"]):
+            return {
+                "reply": "Hello, Boss! How can I assist your startup operations today?",
+                "action": None,
+                "payload": {}
+            }
+            
+        # Founder Empathy & Motivation
+        elif any(k in speech_lower for k in ["give up", "tired", "hard", "stress", "demotivated", "depressed", "struggling"]):
+            return {
+                "reply": "Listen to me, Boss. Building something great is supposed to be hard — that is what makes it rare and valuable. Take a deep breath. We'll conquer this step by step together.",
+                "action": None,
+                "payload": {}
+            }
+            
+        # Smalltalk / Status
+        elif any(k in speech_lower for k in ["who are you", "what are you", "your name"]):
+            return {
+                "reply": "I am IRRIS, your AI Operations Commander. I control navigation, market intelligence, blueprint generation, and workspace operations.",
+                "action": None,
+                "payload": {}
+            }
+            
+        # Default conversational acknowledgment
+        return {
+            "reply": f"Understood, Boss. Regarding '{request.user_speech}' — tell me your core startup concept or region focus and I'll initiate analysis.",
+            "action": None,
+            "payload": {}
+        }
+
     try:
         user_prompt = f"""
 Current Context:
@@ -64,33 +105,20 @@ Current Context:
 
 Generate conversational response and application action in JSON:
 """
-        response_text = await llm_service.call_llm(
+        result = await llm_service.generate_structured_json(
             system_prompt=IRRIS_SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            temperature=0.7,
-            max_tokens=250
+            fallback_data_generator=irris_fallback
         )
 
-        clean_text = response_text.strip()
-        if clean_text.startswith("```json"):
-            clean_text = clean_text[7:]
-        if clean_text.endswith("```"):
-            clean_text = clean_text[:-3]
+        if not result or not isinstance(result, dict) or "reply" not in result:
+            return irris_fallback()
 
-        parsed = json.loads(clean_text.strip())
         return {
-            "reply": parsed.get("reply", "I am online and ready for your operational commands, Boss."),
-            "action": parsed.get("action", None),
-            "payload": parsed.get("payload", {})
+            "reply": result.get("reply", "Understood, Boss."),
+            "action": result.get("action", None),
+            "payload": result.get("payload", {})
         }
     except Exception as err:
         logger.error(f"Error processing IRRIS chat: {err}")
-        # Smart conversational fallback
-        speech_lower = request.user_speech.lower()
-        if "hello" in speech_lower or "hi" in speech_lower:
-            return {"reply": "Hello, Boss! How can I assist your startup operations today?", "action": None, "payload": {}}
-        return {
-            "reply": "I am online and standing by. Say 'Search' followed by your idea to launch a blueprint.",
-            "action": None,
-            "payload": {}
-        }
+        return irris_fallback()
