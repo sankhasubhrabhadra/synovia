@@ -70,9 +70,19 @@ export function IrrisAssistant({
   ]);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
+  // State Refs to prevent stale closures in Web Speech callbacks
+  const autoListenRef = useRef(autoListen);
+  const isSpeakingRef = useRef(isSpeaking);
+  const isThinkingRef = useRef(isThinking);
+
+  useEffect(() => { autoListenRef.current = autoListen; }, [autoListen]);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
+  useEffect(() => { isThinkingRef.current = isThinking; }, [isThinking]);
+
   // Multi-Step Conversational Onboarding Consultation State
   const [consultationStep, setConsultationStep] = useState<"idle" | "awaiting_idea" | "awaiting_region">("idle");
   const [pendingIdea, setPendingIdea] = useState<string>("");
+
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -195,8 +205,9 @@ export function IrrisAssistant({
     const rawTrimmed = cmdRaw.trim();
     if (!rawTrimmed) return;
 
-    // Strip wake-word "irris" or "hey irris" if spoken at the beginning
-    let cleanSpeech = rawTrimmed.replace(/^(hey\s+)?irris[\s,.:!]*/i, "").trim();
+    // Comprehensive Phonetic Wake-Word Matching (irris, iris, irish, earis, hey iris, hi iris, hello iris, etc.)
+    const wakeWordRegex = /^(?:hey|hi|hello|ok|okay)?\s*(?:irris|iris|irish|earis|eares|ariz|eres)[\s,.:!]*/i;
+    let cleanSpeech = rawTrimmed.replace(wakeWordRegex, "").trim();
     if (!cleanSpeech) cleanSpeech = rawTrimmed;
 
     setTranscript(cleanSpeech);
@@ -204,6 +215,7 @@ export function IrrisAssistant({
     setIsThinking(true);
 
     const cleanCmd = cleanSpeech.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+
 
     // -------------------------------------------------------------
     // 0. ACTIVE CONSULTATION STEPS
@@ -489,14 +501,17 @@ export function IrrisAssistant({
       recognition.onend = () => {
         setIsListening(false);
         // Auto-restart recognition if autoListen mode is active and not currently speaking or thinking
-        if (autoListen && !isSpeaking && !isThinking) {
+        if (autoListenRef.current && !isSpeakingRef.current && !isThinkingRef.current) {
           setTimeout(() => {
             try {
-              if (!isSpeaking) recognition.start();
+              if (!isSpeakingRef.current) {
+                startRecognition();
+              }
             } catch {}
-          }, 350);
+          }, 300);
         }
       };
+
 
       recognitionRef.current = recognition;
       try {
