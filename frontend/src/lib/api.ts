@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://facility-pick-donated-joel.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://cinema-frozen-roof-clone.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
@@ -178,4 +178,31 @@ export async function downloadProjectPptFile(id: string, ideaName: string = "Pit
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/api/projects/${id}/ppt`;
   window.open(url, "_blank");
+}
+
+export async function chatWithIrris(
+  userSpeech: string,
+  currentProjectIdea?: string,
+  activeTab?: string,
+  consultationStep?: string,
+  pendingIdea?: string
+) {
+  const url = `${getApiBaseUrl()}/api/irris/chat`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_speech: userSpeech,
+      current_project_idea: currentProjectIdea,
+      active_tab: activeTab,
+      consultation_step: consultationStep,
+      pending_idea: pendingIdea
+    })
+  });
+
+  if (!res.ok) {
+    throw new Error("IRRIS API connection error");
+  }
+
+  return await res.json();
 }

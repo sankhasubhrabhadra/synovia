@@ -1,12 +1,12 @@
-"use client";
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Mic, MicOff, Volume2, VolumeX, HelpCircle, X, Sparkles, 
   Terminal, Shield, Play, FileText, Presentation, Activity, Command
 } from "lucide-react";
+import { chatWithIrris } from "@/lib/api";
 
 interface IrrisAssistantProps {
+
   onStartProject: (idea: string, targetMarket?: string) => void;
   onNavigateTab: (tab: string) => void;
   onDownloadPdf: () => void;
@@ -137,294 +137,73 @@ export function IrrisAssistant({
     synthRef.current.speak(utterance);
   }, [isMuted, voices]);
 
-  // Upgrade: Comprehensive Alexa/Siri Intent & Voice Processor
-  const processVoiceCommand = useCallback((cmdRaw: string) => {
-    const cmd = cmdRaw.toLowerCase().trim();
+  // Upgrade: Conversational AI LLM Brain + Operational Controller
+  const processVoiceCommand = useCallback(async (cmdRaw: string) => {
+    const cmd = cmdRaw.trim();
+    if (!cmd) return;
     setTranscript(cmdRaw);
     setIsThinking(true);
 
-    setTimeout(() => {
-      // Clean punctuation for ultra-clean matching
-      const cleanCmd = cmd.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+    try {
+      // Query Conversational AI LLM Backend Router
+      const res = await chatWithIrris(
+        cmdRaw, 
+        projectIdea, 
+        activeTab, 
+        consultationStep, 
+        pendingIdea
+      );
 
-      // -------------------------------------------------------------
-      // 0. ACTIVE CONVERSATIONAL CONSULTATION STEPS
-      // -------------------------------------------------------------
-      if (consultationStep === "awaiting_idea") {
-        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
+      const reply = res.reply || "I am online and ready for your operational commands, Boss.";
+      const action = res.action;
+      const payload = res.payload || {};
+
+      // Speak AI response in Siri/Alexa humanized voice
+      speak(reply, () => {
+        // Execute application actions seamlessly after speaking
+        if (action === "START_PROJECT" && payload.idea) {
           setConsultationStep("idle");
           setPendingIdea("");
-          speak("Consultation cancelled, Boss.");
-          return;
-        }
-
-        const cleanIdea = cleanCmd
-          .replace(/^(my\s+idea\s+is|it\s+is|a|an|the|i\s+want\s+to\s+build|i\s+want\s+to\s+start|i\s+was\s+thinking\s+of|how\s+about)\s+/i, "")
-          .trim();
-
-        if (cleanIdea.length > 2) {
-          const formattedIdea = cleanIdea
-            .split(" ")
-            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(" ");
-
-          setPendingIdea(formattedIdea);
+          onStartProject(payload.idea, payload.target_market || "Global");
+        } else if (action === "ASK_REGION" && payload.idea) {
+          setPendingIdea(payload.idea);
           setConsultationStep("awaiting_region");
-          speak(`Idea registered: ${formattedIdea}. Which target region should the agents analyze? Options: India, United States, Europe, Southeast Asia, or Global?`);
-          return;
-        }
-      }
-
-      if (consultationStep === "awaiting_region") {
-        if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
+        } else if (action === "NAVIGATE_TAB" && payload.tab) {
+          onNavigateTab(payload.tab);
+        } else if (action === "OPEN_HISTORY" && onOpenHistory) {
+          onOpenHistory();
+        } else if (action === "CLOSE_HISTORY" && onCloseHistory) {
+          onCloseHistory();
+        } else if (action === "DOWNLOAD_PDF") {
+          onDownloadPdf();
+        } else if (action === "DOWNLOAD_PPT") {
+          onDownloadPpt();
+        } else if (action === "READ_SUMMARY") {
+          onNavigateTab("summary");
+          const text = onReadSummary();
+          if (text) speak(`Reading Executive Summary: ${text.slice(0, 300)}...`, undefined, true);
+        } else if (action === "READ_VALIDATION") {
+          onNavigateTab("validation");
+          const text = onReadValidation();
+          if (text) speak(`VC Mentor Verdict: ${text}`, undefined, true);
+        } else if (action === "NEW_PROJECT") {
           setConsultationStep("idle");
           setPendingIdea("");
-          speak("Consultation cancelled, Boss.");
-          return;
+          onNewProject();
+        } else if (action === "EXIT_STUDIO" && onExitStudio) {
+          onExitStudio();
         }
+      }, true);
 
-        const selectedRegion = cleanCmd
-          .replace(/^(target\s+market|region|in|for|the)\s+/i, "")
-          .trim();
+    } catch (err) {
+      console.warn("Conversational AI backend fallback:", err);
+      // Smart conversational fallback
+      speak("I am online, Boss. Ready to build your next breakthrough startup.", undefined, true);
+    } finally {
+      setIsThinking(false);
+    }
+  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea, projectIdea, activeTab]);
 
-        const formattedRegion = selectedRegion
-          .split(" ")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-
-        const finalIdea = pendingIdea;
-        setConsultationStep("idle");
-        setPendingIdea("");
-
-        speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${finalIdea} in target market: ${formattedRegion}.`, () => {
-          onStartProject(finalIdea, formattedRegion);
-        });
-        return;
-      }
-
-      // Check for idea creation trigger keywords
-      const searchPatterns = /(?:search|create|generate|build|make|start|launch|evaluate|analyze|investigate|look\s+up|explore|find|pitch|research|check|idea|concept)/i;
-      const hasCreationKeyword = searchPatterns.test(cleanCmd);
-
-      // -------------------------------------------------------------
-      // 1. IDENTITY, SMALLTALK & STATUS (Alexa/Siri Persona)
-      // -------------------------------------------------------------
-      if (/(?:who\s+are\s+you|what\s+is\s+your\s+name|what\s+are\s+you|identify\s+yourself)/i.test(cleanCmd)) {
-        speak("I am IRRIS, your AI Operations Commander for Synovia. I coordinate 8 autonomous agents to generate startup blueprints, analyze markets, evaluate competitors, and manage your workspace.", undefined, true);
-        return;
-      }
-
-      if (/(?:how\s+are\s+you|how\s+do\s+you\s+do|how\s+is\s+it\s+going|are\s+you\s+okay|status)/i.test(cleanCmd)) {
-        speak("All operational systems are running at peak efficiency, Boss. Ready to build your next breakthrough startup.", undefined, true);
-        return;
-      }
-
-      if (/(?:thank\s+you|thanks|great\s+job|good\s+job|awesome|amazing|well\s+done)/i.test(cleanCmd)) {
-        speak("Always at your command, Boss. Let me know what we tackle next.", undefined, true);
-        return;
-      }
-
-      if (/(?:who\s+made\s+you|who\s+created\s+you|who\s+built\s+you)/i.test(cleanCmd)) {
-        speak("I was created by the Synovia Engineering Team to serve as your AI Operations Commander.", undefined, true);
-        return;
-      }
-
-      // -------------------------------------------------------------
-      // 2. GREETINGS & FOUNDER MOTIVATION (Humanized Empathy)
-      // -------------------------------------------------------------
-      if (!hasCreationKeyword && /(?:^|\b)(?:hello|hi|hey|greetings|good\s+morning|good\s+afternoon|good\s+evening|yo|sup)(?:\b|$)/i.test(cleanCmd)) {
-        const greetings = [
-          "Hello, Boss! How can I assist your startup operations today?",
-          "Greetings, Boss. All systems nominal. What venture shall we conquer today?",
-          "Hi Boss! Ready to analyze markets and build your next big idea."
-        ];
-        const pick = greetings[Math.floor(Math.random() * greetings.length)];
-        speak(pick, undefined, true);
-        return;
-      }
-
-      if (/(?:demotivated|depressed|sad|give\s+up|giving\s+up|quit|too\s+hard|hopeless|burnt?\s*out|exhausted|failing|failed|discouraged|stress|stressed|overwhelmed|struggling)/i.test(cleanCmd)) {
-        const motivations = [
-          "Listen to me, Boss. Building something great is supposed to be hard — that is what makes it rare and valuable. Every iconic founder faced moments of exhaustion and self-doubt. Take a deep breath. You don't have to conquer everything today. Just take one single step forward. I'm right here with you, Boss. Let's build your legacy together.",
-          "Hey Boss, I hear you. The startup journey is a marathon filled with tough days, but you have the vision and resilience to push through. Take a short rest if you need to, but do not give up. I believe in your vision, and we will get there step by step."
-        ];
-        const msg = motivations[Math.floor(Math.random() * motivations.length)];
-        speak(msg, undefined, true);
-        return;
-      }
-
-      // -------------------------------------------------------------
-      // 3. FULL APPLICATION SYSTEM CONTROLS
-      // -------------------------------------------------------------
-      if (/(?:close|hide|exit|dismiss).*(?:history|drawer|sidebar)/i.test(cleanCmd)) {
-        if (onCloseHistory) onCloseHistory();
-        speak("Closing history drawer, Boss.");
-        return;
-      }
-
-      if (/(?:open|show|view|display|check|my).*(?:history|past\s+projects|saved|blueprints|projects)/i.test(cleanCmd)) {
-        if (onOpenHistory) onOpenHistory();
-        speak("Opening project history drawer, Boss.");
-        return;
-      }
-
-      if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|create\s+new\s+blueprint|reset\s+workspace|clear|fresh\s+start)/i.test(cleanCmd)) {
-        onNewProject();
-        speak("Opening new blueprint workspace. Ready for your next concept, Boss.");
-        return;
-      }
-
-      if (/(?:close\s+application|close\s+app|close\s+studio|exit\s+app|exit\s+studio|go\s+home|cinematic|landing\s+page)/i.test(cleanCmd)) {
-        if (onExitStudio) onExitStudio();
-        speak("Closing studio application. Returning to main landing module.");
-        return;
-      }
-
-      if (/(?:mute|unmute|silence|quiet|audio\s+off|audio\s+on)/i.test(cleanCmd)) {
-        setIsMuted((prev) => !prev);
-        speak("Audio status toggled.");
-        return;
-      }
-
-      if (/(?:close\s+caption|hide\s+caption|dismiss\s+text|hide\s+box)/i.test(cleanCmd)) {
-        setShowCaption(false);
-        return;
-      }
-
-      if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest|capabilities|instructions)/i.test(cleanCmd)) {
-        setShowHelp(true);
-        speak("Displaying IRRIS Voice Operations command manifest. You can control navigation, trigger blueprints, and export reports.");
-        return;
-      }
-
-      // -------------------------------------------------------------
-      // 4. TAB NAVIGATION SYNONYMS MATRIX
-      // -------------------------------------------------------------
-      if (/(?:executive\s*summary|overview|summary|front\s*page|home\s*tab|main\s*page)/i.test(cleanCmd)) {
-        speak("Loading Executive Summary.");
-        onNavigateTab("summary");
-        return;
-      }
-
-      if (/(?:business\s*category|category|classification|type|anti-patterns?|business\s*model\s*type)/i.test(cleanCmd)) {
-        speak("Opening Business Category & Anti-Patterns breakdown.");
-        onNavigateTab("classification");
-        return;
-      }
-
-      if (/(?:market\s*analysis|market\s*research|tam|sam|som|market\s*size|personas?|user\s*pain|customers?|target\s*audience)/i.test(cleanCmd)) {
-        speak("Displaying Market Research, TAM, SAM, and SOM metrics.");
-        onNavigateTab("market");
-        return;
-      }
-
-      if (/(?:competitor|competition|rivals?|market\s*gap|moat|defensibility|who\s+are\s+the\s+competitors)/i.test(cleanCmd)) {
-        speak("Loading Competitor Intelligence matrix and defensibility gaps.");
-        onNavigateTab("competitors");
-        return;
-      }
-
-      if (/(?:product\s*spec|mvp|features?|priority\s*matrix|what\s+to\s+build|specification)/i.test(cleanCmd)) {
-        speak("Displaying MVP Feature Specification & Priority Matrix.");
-        onNavigateTab("product");
-        return;
-      }
-
-      if (/(?:roadmap|schedule|timeline|weeks?|execution\s*plan|action\s*items?)/i.test(cleanCmd)) {
-        speak("Opening 4-Week Agile Execution Roadmap.");
-        onNavigateTab("roadmap");
-        return;
-      }
-
-      if (/(?:pitch\s*deck|slides?|presentation|revenue|monetization|business\s*model|how\s+will\s+we\s+make\s+money|pitch\s*tab)/i.test(cleanCmd)) {
-        speak("Opening VC Pitch Deck & Revenue Streams.");
-        onNavigateTab("pitch");
-        return;
-      }
-
-      if (/(?:validation|scores?|risks?|verdict|mentor|yc|is\s+this\s+a\s+good\s+idea|viability)/i.test(cleanCmd)) {
-        speak("Loading Validation Assessment & VC Mentor Verdict.");
-        onNavigateTab("validation");
-        return;
-      }
-
-      // -------------------------------------------------------------
-      // 5. EXPORT REPORTS & AUDIO NARRATION
-      // -------------------------------------------------------------
-      if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cleanCmd) || cleanCmd === "pdf") {
-        speak("Compiling PDF Executive Report for instant download, Boss.");
-        onDownloadPdf();
-        return;
-      }
-
-      if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cleanCmd) || cleanCmd === "ppt") {
-        speak("Generating 10-slide PowerPoint Pitch Deck for download.");
-        onDownloadPpt();
-        return;
-      }
-
-      if (/(?:read|speak|narrate|tell\s*me).*(?:summary|executive|overview)/i.test(cleanCmd)) {
-        onNavigateTab("summary");
-        const text = onReadSummary();
-        if (text) speak(`Reading Executive Summary: ${text.slice(0, 300)}...`, undefined, true);
-        else speak("Executive Summary loaded, Boss.");
-        return;
-      }
-
-      if (/(?:read|speak|narrate|tell\s*me).*(?:verdict|validation|mentor)/i.test(cleanCmd)) {
-        onNavigateTab("validation");
-        const text = onReadValidation();
-        if (text) speak(`VC Mentor Verdict: ${text}`, undefined, true);
-        else speak("Validation & Mentor report loaded, Boss.");
-        return;
-      }
-
-      // -------------------------------------------------------------
-      // 6. EXPLICIT STARTUP SEARCH & CONSULTATION TRIGGER
-      // -------------------------------------------------------------
-      if (hasCreationKeyword) {
-        let extractedIdea = cleanCmd
-          .replace(/^(please|can\s+you|could\s+you|help\s+me|irris|friday|hey|hi|would\s+you|let's|lets)\s+/i, "")
-          .replace(/(?:search|create|generate|build|make|start|launch|evaluate|analyze|investigate|look\s+up|explore|find|pitch|research|check|idea|concept)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|platform|blueprint)?\s*(?:for|about|called|on|of|is)?\s*/i, "")
-          .trim();
-
-        // Case A: User said conversational trigger without specific idea
-        if (!extractedIdea || extractedIdea.length <= 2) {
-          setConsultationStep("awaiting_idea");
-          speak("Understood, Boss. Initiating startup consultation. What is the core startup idea or business concept you'd like to analyze?");
-          return;
-        }
-
-        // Case B: User specified BOTH idea and region in one sentence
-        const regionMatch = extractedIdea.match(/(.*?)\s+(?:in|for|focused\s+on)\s+(india|united\s+states|us|usa|europe|asia|global|southeast\s+asia|uk|canada|latam|bharat|america)$/i);
-        if (regionMatch) {
-          const mainIdea = regionMatch[1].trim();
-          const regionName = regionMatch[2].trim();
-          const formattedIdea = mainIdea.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-          const formattedRegion = regionName.toUpperCase();
-
-          speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${formattedIdea} in target market: ${formattedRegion}.`, () => {
-            onStartProject(formattedIdea, formattedRegion);
-          });
-          return;
-        }
-
-        // Case C: Idea is specified, ask for Region!
-        const formattedIdea = extractedIdea
-          .split(" ")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-
-        setPendingIdea(formattedIdea);
-        setConsultationStep("awaiting_region");
-        speak(`Idea registered: ${formattedIdea}. Which target region or market should we focus on? Options: India, United States, Europe, Southeast Asia, or Global?`);
-        return;
-      }
-
-      // Default Fallback
-      speak("Command not recognized, Boss. Say 'Search [your idea]' to build a blueprint, or say 'Help' for controls.");
-    }, 400);
-  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea, voices]);
 
   // Speech Recognition Setup
   const toggleListening = () => {

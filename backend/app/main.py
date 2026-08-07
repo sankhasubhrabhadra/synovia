@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from app.database.session import init_db
 from app.routers.projects import router as projects_router
+from app.routers.irris import router as irris_router
 
 load_dotenv()
 
@@ -44,6 +45,9 @@ app.add_middleware(
 # Dual-mount routes to support both local /api/projects AND Vercel Serverless /projects
 app.include_router(projects_router, prefix="/api")
 app.include_router(projects_router)
+app.include_router(irris_router, prefix="/api")
+app.include_router(irris_router)
+
 
 @app.get("/health")
 @app.get("/api/health")
