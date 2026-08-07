@@ -12,12 +12,13 @@ import { BlueprintView } from "@/components/BlueprintView";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { IntroSplash } from "@/components/IntroSplash";
 import { BackgroundCanvas } from "@/components/BackgroundCanvas";
+import { CinematicLanding } from "@/components/CinematicLanding";
 
 export function SynoviaApp() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
-  const [viewState, setViewState] = useState<"landing" | "executing" | "blueprint">("landing");
+  const [viewState, setViewState] = useState<"cinematic" | "prompt_workspace" | "executing" | "blueprint">("cinematic");
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
@@ -77,7 +78,7 @@ export function SynoviaApp() {
       await deleteProject(id);
       if (activeProject?.id === id) {
         setActiveProject(null);
-        setViewState("landing");
+        setViewState("cinematic");
       }
       fetchHistory();
     } catch (err) {
@@ -85,10 +86,10 @@ export function SynoviaApp() {
     }
   };
 
-  // Handle resetting back to landing screen
+  // Handle resetting back to cinematic landing screen
   const handleNewProject = () => {
     setActiveProject(null);
-    setViewState("landing");
+    setViewState("prompt_workspace");
   };
 
   return (
@@ -126,9 +127,18 @@ export function SynoviaApp() {
           isLoading={isLoadingHistory}
         />
 
-        {/* 4. Main Content Area */}
+        {/* 4. Main Dynamic View Area */}
         <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative z-10">
-          {viewState === "landing" && (
+          {viewState === "cinematic" && (
+            <CinematicLanding
+              onEnterStudio={() => setViewState("prompt_workspace")}
+              onSelectPreset={(idea, market) => handleCreateProject(idea, market)}
+              onOpenHistory={() => setIsHistoryOpen(true)}
+              historyCount={projects.length}
+            />
+          )}
+
+          {viewState === "prompt_workspace" && (
             <LandingHero
               onSubmitIdea={handleCreateProject}
               isSubmitting={isSubmitting}
