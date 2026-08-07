@@ -5,18 +5,21 @@ import {
   createProject, listProjects, getProject, deleteProject, Project 
 } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
-import { Sidebar } from "@/components/Sidebar";
+import { SidebarDrawer } from "@/components/SidebarDrawer";
 import { LandingHero } from "@/components/LandingHero";
 import { ExecutionScreen } from "@/components/ExecutionScreen";
 import { BlueprintView } from "@/components/BlueprintView";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { IntroSplash } from "@/components/IntroSplash";
 
 export function SynoviaApp() {
+  const [showSplash, setShowSplash] = useState<boolean>(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [viewState, setViewState] = useState<"landing" | "executing" | "blueprint">("landing");
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
 
   // Load project history
   const fetchHistory = async () => {
@@ -51,7 +54,7 @@ export function SynoviaApp() {
     }
   };
 
-  // Handle selecting a project from history sidebar
+  // Handle selecting a project from history drawer
   const handleSelectProject = async (id: string) => {
     try {
       const proj = await getProject(id);
@@ -88,18 +91,29 @@ export function SynoviaApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 font-sans selection:bg-blue-600 selection:text-white relative overflow-x-hidden flex flex-col studio-canvas">
-      {/* Persistent Navbar Header */}
-      <Navbar
-        onNewProject={handleNewProject}
-        activeProjectIdea={activeProject?.idea}
-        isExecuting={viewState === "executing"}
-      />
+    <>
+      {/* 1. Animated Intro Splash Screen with Logo */}
+      {showSplash && (
+        <IntroSplash onComplete={() => setShowSplash(false)} />
+      )}
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 relative">
-        {/* Left Project History Drawer */}
-        <Sidebar
+      <div className="min-h-screen bg-[#17110e] text-[#fffdfa] font-sans selection:bg-amber-600 selection:text-white relative overflow-x-hidden flex flex-col studio-canvas">
+        {/* Colorful Shifting Canvas Animation Layer */}
+        <div className="colorful-bg-overlay" />
+
+        {/* Persistent Header Navbar */}
+        <Navbar
+          onNewProject={handleNewProject}
+          onOpenHistory={() => setIsHistoryOpen(true)}
+          historyCount={projects.length}
+          activeProjectIdea={activeProject?.idea}
+          isExecuting={viewState === "executing"}
+        />
+
+        {/* 2. Hidden History Drawer (Appears upon clicking History button) */}
+        <SidebarDrawer
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
           projects={projects}
           activeProjectId={activeProject?.id || null}
           onSelectProject={handleSelectProject}
@@ -108,8 +122,8 @@ export function SynoviaApp() {
           isLoading={isLoadingHistory}
         />
 
-        {/* Dynamic View States */}
-        <main className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+        {/* 3. Main Dynamic Content Area */}
+        <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative z-10">
           {viewState === "landing" && (
             <LandingHero
               onSubmitIdea={handleCreateProject}
@@ -142,6 +156,6 @@ export function SynoviaApp() {
           )}
         </main>
       </div>
-    </div>
+    </>
   );
 }

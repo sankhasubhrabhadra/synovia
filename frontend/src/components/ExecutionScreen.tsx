@@ -23,7 +23,7 @@ interface StepLog {
 }
 
 const AGENTS_LIST = [
-  { id: "classification", name: "1. Idea Classification Agent", icon: Layers, role: "Business Type & Anti-Pattern Rules", userMessage: "Classifying business type & domain anti-patterns..." },
+  { id: "classification", name: "1. Idea Classification Agent", icon: Layers, role: "Business Type & Domain Anti-Patterns", userMessage: "Classifying business type & domain anti-patterns..." },
   { id: "research", name: "2. Market Research Agent", icon: Search, role: "Industry TAM/SAM/SOM & Personas", userMessage: "Researching market dynamics & customer pain points..." },
   { id: "competitor", name: "3. Competitor Intelligence Agent", icon: Users, role: "Real Incumbents & Moat Strategy", userMessage: "Benchmarking competitors & defensibility gaps..." },
   { id: "product", name: "4. MVP Product Manager Agent", icon: Layout, role: "Domain Features & Priority Matrix", userMessage: "Designing MVP features matching business category..." },
@@ -43,7 +43,6 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
-    // Polling fallback every 2.5s ensures completion even if SSE connection drops
     const checkProjectStatus = async () => {
       if (isCompletedRef.current) return;
       try {
@@ -68,7 +67,6 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
 
     timer = setInterval(checkProjectStatus, 2500);
 
-    // SSE Stream
     const streamUrl = getProjectStreamUrl(project.id);
     const eventSource = new EventSource(streamUrl);
 
@@ -107,42 +105,42 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 relative z-10">
       {/* Studio Header Info Banner */}
-      <div className="studio-panel p-6 rounded-3xl mb-8 border border-blue-500/20 glow-gemini">
+      <div className="studio-panel p-6 rounded-3xl mb-8 border border-[#e8ded2]/20 shadow-2xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <Sparkles className="w-4 h-4 text-blue-400 animate-spin" />
-              <span className="text-xs font-extrabold uppercase tracking-wider text-blue-300">
+              <Sparkles className="w-4 h-4 text-[#f59e0b] animate-spin" />
+              <span className="text-xs font-black uppercase tracking-wider text-[#fefae0]">
                 Studio Swarm Pipeline Active (8 Agents)
               </span>
             </div>
-            <h2 className="text-xl md:text-2xl font-black text-white leading-tight">
+            <h2 className="text-xl md:text-2xl font-black text-[#fffdfa] leading-tight">
               "{project.idea}"
             </h2>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <span className="text-xs text-slate-400 block font-medium">Pipeline Progress</span>
-              <span className="text-xl font-black text-gradient-gemini">{progress}%</span>
+              <span className="text-xs text-[#d4c4b5] block font-medium">Pipeline Progress</span>
+              <span className="text-2xl font-black text-[#f59e0b]">{progress}%</span>
             </div>
           </div>
         </div>
 
-        {/* Gemini Gradient Progress Bar */}
-        <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
+        {/* Glowing Progress Bar */}
+        <div className="w-full h-3.5 bg-[#17110e] rounded-full overflow-hidden p-0.5 border border-[#e8ded2]/20">
           <div 
-            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-500 shadow-lg shadow-blue-500/50"
+            className="h-full bg-gradient-to-r from-amber-600 via-rose-600 to-amber-400 rounded-full transition-all duration-500 shadow-lg shadow-amber-600/50"
             style={{ width: `${Math.max(progress, 5)}%` }}
           />
         </div>
 
         {/* Live Status Banner */}
-        <div className="mt-4 p-3 rounded-xl bg-blue-950/40 border border-blue-500/30 flex items-center gap-3">
-          <Loader2 className="w-4 h-4 text-blue-400 animate-spin shrink-0" />
-          <span className="text-xs text-blue-200 font-medium">{latestMessage}</span>
+        <div className="mt-4 p-3.5 rounded-xl bg-[#261c17]/90 border border-[#f59e0b]/30 flex items-center gap-3">
+          <Loader2 className="w-4 h-4 text-[#f59e0b] animate-spin shrink-0" />
+          <span className="text-xs text-[#fefae0] font-medium">{latestMessage}</span>
         </div>
       </div>
 
@@ -157,47 +155,47 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
               key={agent.id}
               className={`p-4 rounded-2xl border transition-all duration-300 ${
                 status === "completed"
-                  ? "bg-slate-900/80 border-emerald-500/40 shadow-lg shadow-emerald-500/5"
+                  ? "bg-[#251c17]/90 border-emerald-500/40 shadow-lg shadow-emerald-950/20"
                   : status === "running"
-                  ? "bg-blue-950/80 border-blue-500/80 glow-blue gemini-border-beam scanline-sweep scale-[1.02]"
-                  : "bg-slate-950/40 border-slate-800/60 opacity-60"
+                  ? "bg-[#33241d]/90 border-[#f59e0b] scale-[1.02] shadow-xl shadow-amber-950/40"
+                  : "bg-[#1f1613]/50 border-[#e8ded2]/10 opacity-60"
               }`}
             >
               <div className="flex items-center justify-between mb-2.5">
                 <div className={`p-2 rounded-xl ${
                   status === "completed" 
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" 
                     : status === "running"
-                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                    : "bg-slate-800/50 text-slate-500"
+                    ? "bg-[#d97706]/25 text-[#fefae0] border border-[#f59e0b]/40"
+                    : "bg-[#2a1d17] text-[#a39284]"
                 }`}>
                   <Icon className="w-4 h-4" />
                 </div>
 
                 <div>
                   {status === "completed" && (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase">
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase">
                       <CheckCircle2 className="w-3 h-3" /> Ready
                     </span>
                   )}
                   {status === "running" && (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/40 uppercase animate-pulse">
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-[#d97706]/25 text-[#fef3c7] border border-[#f59e0b]/40 uppercase animate-pulse">
                       <Loader2 className="w-3 h-3 animate-spin" /> Thinking
                     </span>
                   )}
                   {status === "pending" && (
-                    <span className="text-[9px] font-bold text-slate-500 uppercase">
+                    <span className="text-[9px] font-bold text-[#a39284] uppercase">
                       Queued
                     </span>
                   )}
                 </div>
               </div>
 
-              <h3 className="font-bold text-xs text-white mb-0.5 leading-snug">{agent.name}</h3>
-              <p className="text-[10px] text-slate-400 font-medium mb-2">{agent.role}</p>
+              <h3 className="font-bold text-xs text-[#fffdfa] mb-0.5 leading-snug">{agent.name}</h3>
+              <p className="text-[10px] text-[#d4c4b5] font-medium mb-2">{agent.role}</p>
 
               {status === "running" && (
-                <p className="text-[10px] text-blue-300 italic animate-pulse">
+                <p className="text-[10px] text-[#fefae0] italic animate-pulse font-medium">
                   {agent.userMessage}
                 </p>
               )}
@@ -207,24 +205,24 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
       </div>
 
       {/* Live Swarm Telemetry Terminal */}
-      <div className="studio-panel p-5 rounded-2xl border border-slate-800">
-        <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-3">
+      <div className="studio-panel p-5 rounded-2xl border border-[#e8ded2]/15">
+        <div className="flex items-center justify-between mb-3 border-b border-[#e8ded2]/15 pb-3">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-blue-400" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+            <Activity className="w-4 h-4 text-[#f59e0b]" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[#fefae0]">
               Live Swarm Console & Telemetry Output
             </span>
           </div>
-          <span className="text-[10px] text-slate-500 font-mono">Stream Active</span>
+          <span className="text-[10px] text-[#d4c4b5] font-mono">Stream Active</span>
         </div>
 
-        <div className="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-48 overflow-y-auto space-y-2 border border-slate-900 scrollbar-thin">
+        <div className="bg-[#120c0a] p-4 rounded-xl font-mono text-xs max-h-48 overflow-y-auto space-y-2 border border-[#e8ded2]/15 scrollbar-thin">
           {logs.length === 0 ? (
-            <p className="text-slate-500 italic">Listening for live agent telemetry stream...</p>
+            <p className="text-[#a39284] italic">Listening for live agent telemetry stream...</p>
           ) : (
             logs.map((log, idx) => (
               <div key={idx} className="flex items-start gap-3">
-                <span className="text-[10px] text-slate-600 shrink-0 mt-0.5">
+                <span className="text-[10px] text-[#a39284] shrink-0 mt-0.5">
                   {(() => {
                     try {
                       const d = new Date(log.timestamp);
@@ -235,7 +233,7 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
                   })()}
                 </span>
                 <span className={`text-xs ${
-                  log.status === "completed" ? "text-emerald-400" : log.status === "failed" ? "text-rose-400" : "text-blue-300"
+                  log.status === "completed" ? "text-emerald-400" : log.status === "failed" ? "text-rose-400" : "text-[#fefae0]"
                 }`}>
                   [{String(log.step || "step").toUpperCase()}] {log.message}
                 </span>

@@ -155,16 +155,17 @@ export function BlueprintView({ project }: BlueprintViewProps) {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 border border-blue-400/40"
-                  : "bg-slate-900/60 text-slate-400 border border-slate-800/60 hover:bg-slate-800/80 hover:text-slate-200"
+                  ? "bg-gradient-to-r from-amber-600 via-amber-700 to-rose-700 text-[#fffdfa] shadow-lg shadow-amber-950/40 border border-[#f59e0b]/50"
+                  : "bg-[#251b17]/80 text-[#d4c4b5] border border-[#e8ded2]/15 hover:bg-[#33241e] hover:text-[#fffdfa]"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4 text-[#f59e0b]" />
               <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
+
 
       {/* Tab Content Display */}
       <div className="space-y-6">
