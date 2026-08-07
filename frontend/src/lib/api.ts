@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://requirement-copyrights-paintings-recorder.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://large-apply-occurring-bench.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {

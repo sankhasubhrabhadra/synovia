@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Mic, MicOff, Volume2, VolumeX, HelpCircle, X, Sparkles, 
-  Terminal, Shield, Play, FileText, Presentation, Activity, Command
+  Terminal, Shield, Play, FileText, Presentation, Activity, Command,
+  MessageSquare, Send, Radio, ChevronDown, ChevronUp
 } from "lucide-react";
 import { chatWithIrris } from "@/lib/api";
 
-interface IrrisAssistantProps {
+export interface ChatMessage {
+  id: string;
+  sender: "user" | "irris";
+  text: string;
+  timestamp: string;
+  action?: string;
+}
 
+interface IrrisAssistantProps {
   onStartProject: (idea: string, targetMarket?: string) => void;
   onNavigateTab: (tab: string) => void;
   onDownloadPdf: () => void;
@@ -47,6 +55,20 @@ export function IrrisAssistant({
   const [transcript, setTranscript] = useState<string>("");
   const [lastResponse, setLastResponse] = useState<string>("IRRIS // Online. Awaiting operational command, Boss.");
   const [showCaption, setShowCaption] = useState<boolean>(true);
+  
+  // Chatbot Intelligence Feed Box & Auto-Listen State
+  const [showChatFeed, setShowChatFeed] = useState<boolean>(true);
+  const [textInput, setTextInput] = useState<string>("");
+  const [autoListen, setAutoListen] = useState<boolean>(true);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "welcome-1",
+      sender: "irris",
+      text: "IRRIS AI Operations Commander online. Ask for startup ideas, market analysis, or give operational commands naturally.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   // Multi-Step Conversational Onboarding Consultation State
   const [consultationStep, setConsultationStep] = useState<"idle" | "awaiting_idea" | "awaiting_region">("idle");
@@ -55,6 +77,7 @@ export function IrrisAssistant({
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const prevStepRef = useRef<string | undefined>(currentAgentStep);
+
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
@@ -77,10 +100,28 @@ export function IrrisAssistant({
     }
   }, []);
 
-  // Speak response function with Alexa/Siri-like Neural Voice Selection
+  // Helper to append message to Chatbot Intelligence Feed Box
+  const addMessage = useCallback((sender: "user" | "irris", text: string, action?: string) => {
+    const newMsg: ChatMessage = {
+      id: Date.now().toString() + Math.random().toString().slice(2, 6),
+      sender,
+      text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      action
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setTimeout(() => {
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
+    }, 50);
+  }, []);
+
+  // Speak response function with Alexa/Siri-like Neural Voice Selection & Chat Logging
   const speak = useCallback((text: string, onEndCallback?: () => void, isWarm?: boolean) => {
     setLastResponse(text);
     setShowCaption(true);
+    addMessage("irris", text);
 
     if (isMuted || !synthRef.current) {
       if (onEndCallback) onEndCallback();
@@ -135,16 +176,23 @@ export function IrrisAssistant({
     };
 
     synthRef.current.speak(utterance);
-  }, [isMuted, voices]);
+  }, [isMuted, voices, addMessage]);
 
   // Upgrade: Hybrid Instant Direct Controller + Conversational AI LLM Engine
   const processVoiceCommand = useCallback(async (cmdRaw: string) => {
-    const cmd = cmdRaw.trim();
-    if (!cmd) return;
-    setTranscript(cmdRaw);
+    const rawTrimmed = cmdRaw.trim();
+    if (!rawTrimmed) return;
+
+    // Strip wake-word "irris" or "hey irris" if spoken at the beginning
+    let cleanSpeech = rawTrimmed.replace(/^(hey\s+)?irris[\s,.:!]*/i, "").trim();
+    if (!cleanSpeech) cleanSpeech = rawTrimmed;
+
+    setTranscript(cleanSpeech);
+    addMessage("user", cleanSpeech);
     setIsThinking(true);
 
-    const cleanCmd = cmd.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+    const cleanCmd = cleanSpeech.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+
 
     // -------------------------------------------------------------
     // 0. ACTIVE CONSULTATION STEPS
@@ -371,17 +419,23 @@ export function IrrisAssistant({
 
 
 
-  // Speech Recognition Setup
+  // Speech Recognition & Auto-Listen Setup
   const toggleListening = () => {
     if (isListening) {
+      setAutoListen(false);
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try { recognitionRef.current.stop(); } catch {}
       }
       setIsListening(false);
       setIsThinking(false);
       return;
     }
 
+    setAutoListen(true);
+    startRecognition();
+  };
+
+  const startRecognition = () => {
     if (typeof window === "undefined") return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -392,6 +446,10 @@ export function IrrisAssistant({
     }
 
     try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
@@ -415,22 +473,23 @@ export function IrrisAssistant({
       };
 
       recognition.onerror = (event: any) => {
-        console.warn("Speech recognition error:", event.error);
         setIsListening(false);
         setIsThinking(false);
-        if (event.error !== "no-speech") {
-          speak("Voice input error. Please try clicking the microphone again, Boss.");
-        }
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        // Auto-restart recognition if autoListen mode is active
+        if (autoListen && !isSpeaking && !isThinking) {
+          setTimeout(() => {
+            try { recognition.start(); } catch {}
+          }, 300);
+        }
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
-      console.error("Failed to start speech recognition:", err);
       setIsListening(false);
     }
   };
@@ -460,27 +519,46 @@ export function IrrisAssistant({
       {/* Neo-Brutalist HUD Assistant Widget (Fixed Bottom Right) */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 font-sans selection:bg-black selection:text-white">
         
-        {/* Caption Dialogue Box */}
+        {/* Chatbot Intelligence Feed Box (Scrollable Log + Text Input) */}
         {showCaption && (
-          <div className="w-72 sm:w-80 p-4 bg-[#fefae0] border-4 border-black shadow-[6px_6px_0px_#000000] relative animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="w-80 sm:w-96 p-4 bg-[#fefae0] border-4 border-black shadow-[6px_6px_0px_#000000] relative animate-in fade-in slide-in-from-bottom-3 duration-200">
             <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-[#f59e0b] border border-black animate-pulse" />
                 <span className="text-[11px] font-black uppercase tracking-wider text-black">
-                  IRRIS // COMMANDER
+                  IRRIS // CHAT & INTELLIGENCE FEED
                 </span>
               </div>
-              <button 
-                onClick={() => setShowCaption(false)}
-                className="p-0.5 hover:bg-black hover:text-white border border-black text-black transition-colors"
-                title="Dismiss caption"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowChatFeed(!showChatFeed)}
+                  className="p-1 hover:bg-black hover:text-white border border-black text-black transition-colors"
+                  title={showChatFeed ? "Collapse Feed" : "Expand Feed"}
+                >
+                  {showChatFeed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+                <button 
+                  onClick={() => setShowCaption(false)}
+                  className="p-1 hover:bg-black hover:text-white border border-black text-black transition-colors"
+                  title="Dismiss HUD"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Dynamic Status Badges */}
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              <button 
+                onClick={() => setAutoListen(!autoListen)}
+                className={`px-2 py-0.5 border-2 border-black text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all ${
+                  autoListen ? "bg-black text-white" : "bg-gray-200 text-gray-700"
+                }`}
+                title="Toggle Auto-Listen / Wake-Word mode"
+              >
+                <Radio className={`w-2.5 h-2.5 ${autoListen ? "text-[#10b981] animate-pulse" : "text-gray-400"}`} />
+                WAKE-WORD: "IRRIS"
+              </button>
               {consultationStep === "awaiting_idea" && (
                 <span className="px-2 py-0.5 bg-[#f59e0b] text-black border-2 border-black text-[10px] font-black uppercase tracking-wider animate-pulse">
                   ⚡ STEP 1: TELL ME YOUR IDEA
@@ -508,24 +586,84 @@ export function IrrisAssistant({
               )}
             </div>
 
-
-            {/* Dialogue / Transcript Content */}
-            <p className="text-xs font-black text-black leading-snug">
-              {lastResponse}
-            </p>
-
-            {transcript && (
-              <div className="mt-2 pt-2 border-t-2 border-dashed border-black/40 text-[11px] font-bold text-gray-800 flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-black shrink-0" />
-                <span className="italic">"{transcript}"</span>
+            {/* Expandable Chat Log Feed */}
+            {showChatFeed && (
+              <div 
+                ref={chatScrollRef}
+                className="max-h-64 overflow-y-auto space-y-2 bg-[#fffdf0] border-2 border-black p-2.5 mb-3 font-mono"
+              >
+                {messages.map((m) => (
+                  <div 
+                    key={m.id}
+                    className={`p-2 border-2 border-black text-xs font-bold ${
+                      m.sender === "user"
+                        ? "bg-[#10b981]/20 text-black border-black text-right ml-6"
+                        : "bg-black text-white border-black text-left mr-2"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[9px] opacity-70 mb-1 font-sans">
+                      <span>{m.sender === "user" ? "YOU" : "IRRIS COMMANDER"}</span>
+                      <span>{m.timestamp}</span>
+                    </div>
+                    <p className="whitespace-pre-wrap leading-relaxed font-sans">{m.text}</p>
+                  </div>
+                ))}
               </div>
             )}
+
+            {/* Text & Voice Command Bar */}
+            <div className="flex items-center gap-1.5 border-2 border-black bg-white p-1">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && textInput.trim()) {
+                    const val = textInput.trim();
+                    setTextInput("");
+                    processVoiceCommand(val);
+                  }
+                }}
+                placeholder="Type command or say 'IRRIS'..."
+                className="flex-1 px-2 py-1 text-xs font-bold text-black outline-none placeholder:text-gray-500"
+              />
+              <button
+                onClick={() => {
+                  if (textInput.trim()) {
+                    const val = textInput.trim();
+                    setTextInput("");
+                    processVoiceCommand(val);
+                  }
+                }}
+                className="px-2.5 py-1 bg-black text-white hover:bg-zinc-800 border border-black text-xs font-black uppercase transition-colors"
+                title="Send command"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* Action Controls & Avatar Orb Row */}
         <div className="flex items-center gap-2">
           
+          {/* Quick Chat Feed Toggle Button */}
+          <button
+            onClick={() => {
+              setShowCaption(true);
+              setShowChatFeed(!showChatFeed);
+            }}
+            className="p-3 bg-white text-black border-3 border-black shadow-[4px_4px_0px_#000000] hover:bg-[#fefae0] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all font-black relative"
+            title="Toggle IRRIS Chat & Feed"
+          >
+            <MessageSquare className="w-5 h-5 stroke-[2.5]" />
+            {messages.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#ec4899] text-white border border-black rounded-full text-[9px] font-black flex items-center justify-center">
+                {messages.length}
+              </span>
+            )}
+          </button>
+
           {/* Quick Help Button */}
           <button
             onClick={() => setShowHelp(!showHelp)}
@@ -561,7 +699,7 @@ export function IrrisAssistant({
                 ? "bg-[#f59e0b] text-black"
                 : "bg-[#000000] text-white hover:bg-[#18181b]"
             }`}
-            title={isListening ? "Listening... Click to stop" : "Click to give voice command to IRRIS"}
+            title={isListening ? "Listening... Click to pause auto-listen" : "Click to wake up IRRIS voice assistant"}
           >
             {/* Equalizer Wave / Mic Core */}
             <div className="flex items-center gap-1.5 h-6 px-1">
