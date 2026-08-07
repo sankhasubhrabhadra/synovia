@@ -212,11 +212,15 @@ export function SynoviaApp() {
             return "";
           }}
           onNewProject={handleNewProject}
+          onOpenHistory={() => setIsHistoryOpen(true)}
+          onCloseHistory={() => setIsHistoryOpen(false)}
+          onExitStudio={() => setViewState("cinematic")}
           activeTab={activeTabOverride}
           isExecuting={viewState === "executing"}
           currentAgentStep={activeProject?.current_step}
           projectIdea={activeProject?.idea}
         />
+
       </div>
     </>
   );

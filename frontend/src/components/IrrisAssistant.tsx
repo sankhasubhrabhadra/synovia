@@ -14,6 +14,9 @@ interface IrrisAssistantProps {
   onReadSummary: () => string | void;
   onReadValidation: () => string | void;
   onNewProject: () => void;
+  onOpenHistory?: () => void;
+  onCloseHistory?: () => void;
+  onExitStudio?: () => void;
   activeTab?: string;
   isExecuting?: boolean;
   currentAgentStep?: string;
@@ -28,6 +31,9 @@ export function IrrisAssistant({
   onReadSummary,
   onReadValidation,
   onNewProject,
+  onOpenHistory,
+  onCloseHistory,
+  onExitStudio,
   activeTab,
   isExecuting,
   currentAgentStep,
@@ -96,14 +102,68 @@ export function IrrisAssistant({
     synthRef.current.speak(utterance);
   }, [isMuted]);
 
-  // Upgrade: Ultra-Flexible Natural Language Speech Processor
+  // Upgrade: Ultra-Flexible & Explicit Voice Command Processor
   const processVoiceCommand = useCallback((cmdRaw: string) => {
     const cmd = cmdRaw.toLowerCase().trim();
     setTranscript(cmdRaw);
     setIsThinking(true);
 
     setTimeout(() => {
-      // 1. Navigation Commands (Fuzzy Match across synonyms)
+      // -------------------------------------------------------------
+      // 1. FULL APPLICATION SYSTEM CONTROLS (Highest Priority)
+      // -------------------------------------------------------------
+
+      // Close History Drawer
+      if (/(?:close|hide|exit).*(?:history|drawer)/i.test(cmd)) {
+        if (onCloseHistory) onCloseHistory();
+        speak("Closing history drawer, Boss.");
+        return;
+      }
+
+      // Open History Drawer (Strict match - will NEVER be confused with startup search)
+      if (/(?:open|show|view|display)?.*history/i.test(cmd)) {
+        if (onOpenHistory) onOpenHistory();
+        speak("Opening project history drawer, Boss.");
+        return;
+      }
+
+      // Open New Blueprint / Start New Project
+      if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|create\s+new\s+blueprint|reset\s+workspace)/i.test(cmd)) {
+        onNewProject();
+        speak("Opening new blueprint workspace. Ready for your next concept, Boss.");
+        return;
+      }
+
+      // Close Application / Exit Studio / Go Home
+      if (/(?:close\s+application|close\s+app|close\s+studio|exit\s+app|exit\s+studio|go\s+home|cinematic)/i.test(cmd)) {
+        if (onExitStudio) onExitStudio();
+        speak("Closing studio application. Returning to main landing module.");
+        return;
+      }
+
+      // Mute / Unmute Voice
+      if (/(?:mute\s+voice|mute\s+audio|silence|unmute)/i.test(cmd)) {
+        setIsMuted((prev) => !prev);
+        speak("Audio status toggled.");
+        return;
+      }
+
+      // Hide / Close Caption Box
+      if (/(?:close\s+caption|hide\s+caption|dismiss\s+text)/i.test(cmd)) {
+        setShowCaption(false);
+        return;
+      }
+
+      // Command Help Manifest
+      if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest)/i.test(cmd)) {
+        setShowHelp(true);
+        speak("Displaying IRRIS Voice Operations command manifest.");
+        return;
+      }
+
+      // -------------------------------------------------------------
+      // 2. TAB NAVIGATION short-cuts
+      // -------------------------------------------------------------
       if (/(?:executive\s*summary|overview|summary\s*tab)/i.test(cmd)) {
         speak("Loading Executive Summary.");
         onNavigateTab("summary");
@@ -152,20 +212,21 @@ export function IrrisAssistant({
         return;
       }
 
-      // 2. Download / Export Reports
-      if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cmd) || cmd.includes("pdf")) {
+      // -------------------------------------------------------------
+      // 3. EXPORT REPORTS & AUDIO NARRATION
+      // -------------------------------------------------------------
+      if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cmd) || cmd === "pdf") {
         speak("Compiling PDF Executive Report for instant download, Boss.");
         onDownloadPdf();
         return;
       }
 
-      if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cmd) || cmd.includes("ppt") || cmd.includes("pitch deck")) {
+      if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cmd) || cmd === "ppt") {
         speak("Generating 10-slide PowerPoint Pitch Deck for download.");
         onDownloadPpt();
         return;
       }
 
-      // 3. Read Aloud Commands
       if (/(?:read|speak|narrate|tell\s*me).*(?:summary|executive|overview)/i.test(cmd)) {
         onNavigateTab("summary");
         const text = onReadSummary();
@@ -182,60 +243,36 @@ export function IrrisAssistant({
         return;
       }
 
-      // 4. Help & Workspace Commands
-      if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest)/i.test(cmd)) {
-        setShowHelp(true);
-        speak("Displaying IRRIS Voice Operations command manifest.");
-        return;
-      }
+      // -------------------------------------------------------------
+      // 4. EXPLICIT STARTUP SEARCH / CREATION TRIGGER (STRICT RULE)
+      // Only triggers if explicit search/creation keywords are present!
+      // -------------------------------------------------------------
+      const hasCreationKeyword = /(?:search|create|generate|build|make|start\s+(?:a|an)?\s*(?:startup|company|business|project|app))/i.test(cmd);
 
-      if (/(?:new\s*project|new\s*startup|reset|start\s*over|clear|home)/i.test(cmd)) {
-        speak("Resetting workspace. Ready for your next startup concept, Boss.");
-        onNewProject();
-        return;
-      }
+      if (hasCreationKeyword) {
+        let extractedIdea = cmd
+          .replace(/^(please|can\s+you|could\s+you|help\s+me|irris|friday|hey|hi)\s+/i, "")
+          .replace(/(?:search|create|generate|build|make|start)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|blueprint)?\s*(?:for|about|called|on)?\s*/i, "")
+          .trim();
 
-      // 5. Intelligent Natural Language Startup Creation Matching
-      let extractedIdea = "";
+        if (extractedIdea && extractedIdea.length > 2) {
+          const formattedIdea = extractedIdea
+            .split(" ")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
 
-      // Clean leading conversational prefixes
-      let cleanCmd = cmd.replace(/^(please|can\s+you|could\s+you|help\s+me|irris|friday|hey|hi)\s+/i, "").trim();
-
-      // Pattern A: "I want to start a backpack startup" / "create a startup for EV charging"
-      const matchA = cleanCmd.match(/(?:i\s+(?:am\s+)?want\s+to\s+)?(?:start|build|create|make|launch|generate)\s+(?:a|an|the)?\s*(?:startup|company|business|project|app|platform)?\s*(?:for|about|called|on)?\s*(.*)/i);
-      if (matchA && matchA[1] && matchA[1].trim().length > 2) {
-        extractedIdea = matchA[1].trim();
-      }
-
-      // Pattern B: "backpack startup" / "laundry app" / "fish marketplace"
-      if (!extractedIdea) {
-        const matchB = cleanCmd.match(/^(.*?)(?:\s+startup|\s+company|\s+business|\s+app|\s+platform|\s+idea)$/i);
-        if (matchB && matchB[1] && matchB[1].trim().length > 2) {
-          extractedIdea = matchB[1].trim();
+          speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${formattedIdea}`, () => {
+            onStartProject(formattedIdea);
+          });
+          return;
         }
       }
 
-      // Fallback: If clean phrase contains 2 or more descriptive words
-      if (!extractedIdea && cleanCmd.split(" ").length >= 2) {
-        extractedIdea = cleanCmd;
-      }
-
-      if (extractedIdea && extractedIdea.length > 2) {
-        const formattedIdea = extractedIdea
-          .split(" ")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-
-        speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${formattedIdea}`, () => {
-          onStartProject(formattedIdea);
-        });
-        return;
-      }
-
-      // Default Fallback
-      speak("Negative, Boss. Command not recognized. Say 'Help' or describe your startup idea.");
+      // Default Fallback: Refuses to search unless explicit search keyword was spoken
+      speak("Command not recognized, Boss. To generate a startup, say 'Search [your idea]' or 'Create a startup for [your idea]'. Say 'Help' for controls.");
     }, 400);
-  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject]);
+  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio]);
+
 
 
   // Speech Recognition Setup
