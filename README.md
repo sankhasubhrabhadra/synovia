@@ -81,10 +81,26 @@ Live Demo: **[synovia.vercel.app](https://synovia.vercel.app)**
   - **6. VC Pitch & Strategy Agent**: Formulates 10x solutions, monetization streams, and a 60-second elevator pitch.
   - **7. Validation & Strategy Mentor Agent**: Evaluates 5 viability metrics (Viability, Innovation, Market Opp, Feasibility, Scalability) and provides a final VC verdict.
   - **8. Quality Control Audit Agent**: Runs a final verification gate ensuring zero generic SaaS template leakage.
+- **🎙️ BLUE // COMMANDER — Autonomous Voice Assistant**:
+  - **Male Neural Voice Engine**: Responds in an authoritative, natural male voice with real-time text-to-speech feedback.
+  - **Wake-Word Activation**: Activates microphone HUD automatically when called with `"blue"`, `"hey blue"`, `"hi blue"`, or `"commander"`.
+  - **Exact Operational Voice Commands**:
+    - `search this idea [idea]` — Initiates 8-agent swarm analysis for any startup concept.
+    - `navigate to history box` / `open history box` — Opens the project history drawer.
+    - `open number [N] result from history box` — Loads the N-th blueprint directly from history.
+    - `close studio` / `exit app` — Exits workspace and returns to home landing page.
+    - Tab navigation (`executive summary`, `market research`, `competitors`, `mvp product`, `roadmap`, `pitch deck`, `validation`).
+    - 1-click export commands (`download pdf`, `download ppt`).
+  - **Manual & Text Controls**: Full manual mic toggle button and scrollable chatbot feed box for both voice and typed interactions.
+- **🏆 Algolympia 2026 Competition Bounties (Team BongCoders)**:
+  - **🎯 CORE BOUNTY (Source Checklists)**: Role-specific source input verification checklists for all 8 agents (`4/4 Verified`, `100%`) with `[⚠]` missing evidence flags and SQLite persistence.
+  - **🔍 ADVANCED BOUNTY (Section Search & Filters)**: Mission Control toolbar with universal section search, multi-select filters (**Agent**, **Status**, **Data Quality**), `X MATCHING` counter, and 1-click `[Jump to Section]` controls.
+  - **📄 ELITE BOUNTY (Multi-Format Agent Export)**: Individual agent report downloads in **PDF**, **CSV**, and **HTML** formats with interactive `AgentDetailsModal` drawer.
 - **Neo-Brutalist White Design System**: Crisp white background theme with 4px solid black borders, hard 2D offset drop shadows, high-impact bold typography, and interactive button press mechanics.
 - **60FPS Animated Canvas Background**: Interactive background animation with floating geometric particles drifting across dynamic connecting laser node lines.
 - **Cinematic Landing Page View & Toggleable History Drawer**: Full cinematic landing page showcasing agent architecture and 1-click domain presets, with project history hidden inside a toggleable drawer button.
 - **1-Click PDF & PPT Pitch Deck Exports**: Instant generation of downloadable PDF operational reports and PowerPoint pitch decks.
+
 
 ---
 
