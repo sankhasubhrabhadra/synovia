@@ -129,35 +129,57 @@ export function BlueprintView({ project, activeTabOverride, onTabChange }: Bluep
     }
   };
 
+  const handleAgentFilterChange = (val: string) => {
+    setAgentFilter(val);
+    if (val !== "all") {
+      setActiveTab(val as any);
+    }
+  };
+
+  const isFilterActive = searchQuery.trim() !== "" || agentFilter !== "all" || statusFilter !== "all" || dataStatusFilter !== "all";
+
+  // Compute matching sections with full metadata filtering
+  const sectionsList = [
+    { id: "classification", title: "Business Category", agentName: "1. Idea Classification Agent", text: JSON.stringify(classification), data: classification, status: "completed", dataStatus: checklists.classification?.status === "COMPLETE" ? "complete" : "incomplete" },
+    { id: "research", title: "Market Analysis", agentName: "2. Market Research Agent", text: JSON.stringify(research), data: research, status: "completed", dataStatus: checklists.research?.completed_items === checklists.research?.total_items ? "complete" : "missing_evidence" },
+    { id: "competitor", title: "Competitors & Gaps", agentName: "3. Competitor Intelligence Agent", text: JSON.stringify(competitor), data: competitor, status: "completed", dataStatus: checklists.competitor?.completed_items === checklists.competitor?.total_items ? "complete" : "missing_evidence" },
+    { id: "product", title: "MVP Product Spec", agentName: "4. MVP Product Manager Agent", text: JSON.stringify(product), data: product, status: "completed", dataStatus: "complete" },
+    { id: "roadmap", title: "4-Week Roadmap", agentName: "5. Agile Roadmap Agent", text: JSON.stringify(roadmap), data: roadmap, status: "completed", dataStatus: "complete" },
+    { id: "pitch", title: "Pitch & Monetization", agentName: "6. VC Pitch & Strategy Agent", text: JSON.stringify(pitch), data: pitch, status: "completed", dataStatus: "complete" },
+    { id: "validation", title: "Validation & Strategy", agentName: "7. Validation Strategy Agent", text: JSON.stringify(validation), data: validation, status: "completed", dataStatus: checklists.validation?.completed_items === checklists.validation?.total_items ? "complete" : "missing_evidence" },
+    { id: "quality_control", title: "Quality Audit", agentName: "8. Quality Control Audit Agent", text: JSON.stringify(qualityControl), data: qualityControl, status: "completed", dataStatus: "complete" },
+    { id: "summary", title: "Executive Summary", agentName: "Executive Summary", text: JSON.stringify(blueprint.executive_summary || ""), data: blueprint.executive_summary, status: "completed", dataStatus: "complete" },
+    { id: "checklists", title: "Source Checklists", agentName: "Source Checklists Hub", text: JSON.stringify(checklists), data: checklists, status: "completed", dataStatus: "complete" }
+  ];
+
+  const matchingSections = sectionsList.filter(s => {
+    if (agentFilter !== "all" && s.id !== agentFilter) return false;
+    
+    if (statusFilter !== "all") {
+      if (statusFilter === "completed" && s.status !== "completed") return false;
+      if (statusFilter === "pending" && s.status !== "pending") return false;
+      if (statusFilter === "running" && s.status !== "running") return false;
+    }
+
+    if (dataStatusFilter !== "all") {
+      if (dataStatusFilter === "complete" && s.dataStatus !== "complete") return false;
+      if (dataStatusFilter === "missing_evidence" && s.dataStatus !== "missing_evidence") return false;
+      if (dataStatusFilter === "incomplete" && s.dataStatus === "complete") return false;
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return s.title.toLowerCase().includes(q) || s.agentName.toLowerCase().includes(q) || s.text.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
   const resetFilters = () => {
     setSearchQuery("");
     setAgentFilter("all");
     setStatusFilter("all");
     setDataStatusFilter("all");
   };
-
-  // Compute matching sections count for search badge
-  const sectionsList = [
-    { id: "summary", title: "Executive Summary", text: JSON.stringify(blueprint.executive_summary || "") },
-    { id: "classification", title: "Business Category", text: JSON.stringify(classification) },
-    { id: "research", title: "Market Analysis", text: JSON.stringify(research) },
-    { id: "competitor", title: "Competitors & Gaps", text: JSON.stringify(competitor) },
-    { id: "product", title: "MVP Product Spec", text: JSON.stringify(product) },
-    { id: "validation", title: "Validation & Strategy", text: JSON.stringify(validation) },
-    { id: "roadmap", title: "4-Week Roadmap", text: JSON.stringify(roadmap) },
-    { id: "pitch", title: "Pitch & Monetization", text: JSON.stringify(pitch) },
-    { id: "quality_control", title: "Quality Audit", text: JSON.stringify(qualityControl) },
-    { id: "checklists", title: "Source Checklists", text: JSON.stringify(checklists) }
-  ];
-
-  const matchingSections = sectionsList.filter(s => {
-    if (agentFilter !== "all" && s.id !== agentFilter) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      return s.title.toLowerCase().includes(q) || s.text.toLowerCase().includes(q);
-    }
-    return true;
-  });
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 relative z-10 text-black">
@@ -199,7 +221,7 @@ export function BlueprintView({ project, activeTabOverride, onTabChange }: Bluep
       </div>
 
       {/* ADVANCED BOUNTY: Mission Control Section-Level Search & Filters Toolbar */}
-      <div className="bg-[#fefae0] p-4 sm:p-5 border-4 border-black shadow-[6px_6px_0px_#000000] mb-8 space-y-3 font-sans">
+      <div className="bg-[#fefae0] p-4 sm:p-5 border-4 border-black shadow-[6px_6px_0px_#000000] mb-6 space-y-3 font-sans">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           
           {/* Search Input Bar */}
@@ -220,7 +242,7 @@ export function BlueprintView({ project, activeTabOverride, onTabChange }: Bluep
             {/* Agent Filter */}
             <select
               value={agentFilter}
-              onChange={(e) => setAgentFilter(e.target.value)}
+              onChange={(e) => handleAgentFilterChange(e.target.value)}
               className="px-3 py-2 bg-white border-2 border-black text-xs font-black uppercase text-black outline-none shadow-[2px_2px_0px_#000000]"
             >
               <option value="all">Agent: All</option>
@@ -244,7 +266,6 @@ export function BlueprintView({ project, activeTabOverride, onTabChange }: Bluep
               <option value="completed">Completed</option>
               <option value="running">Running</option>
               <option value="pending">Pending</option>
-              <option value="missing_data">Missing Data</option>
             </select>
 
             {/* Data Status Filter */}
@@ -265,7 +286,7 @@ export function BlueprintView({ project, activeTabOverride, onTabChange }: Bluep
             </span>
 
             {/* Reset Button */}
-            {(searchQuery || agentFilter !== "all" || statusFilter !== "all" || dataStatusFilter !== "all") && (
+            {isFilterActive && (
               <button
                 onClick={resetFilters}
                 className="px-3 py-2 bg-white hover:bg-black hover:text-white border-2 border-black text-xs font-black uppercase shadow-[2px_2px_0px_#000000] transition-colors flex items-center gap-1"
@@ -277,6 +298,68 @@ export function BlueprintView({ project, activeTabOverride, onTabChange }: Bluep
           </div>
 
         </div>
+
+        {/* Live Filter & Search Results Panel */}
+        {isFilterActive && (
+          <div className="mt-4 pt-4 border-t-2 border-dashed border-black/40">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-black uppercase text-black flex items-center gap-1.5">
+                <Filter className="w-4 h-4 text-[#3b82f6]" /> Live Filter Results ({matchingSections.length} Sections Found):
+              </span>
+              <button 
+                onClick={resetFilters} 
+                className="text-[11px] font-bold text-gray-700 underline hover:text-black"
+              >
+                Clear Search & Filters
+              </button>
+            </div>
+
+            {matchingSections.length === 0 ? (
+              <div className="p-4 bg-white border-2 border-black text-center text-xs font-bold text-gray-700">
+                No blueprint sections matched your search criteria ("{searchQuery}"). Try adjusting your filters.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {matchingSections.map((sec) => (
+                  <div key={sec.id} className="bg-white border-2 border-black p-3.5 shadow-[3px_3px_0px_#000000] flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-black text-xs uppercase text-[#3b82f6]">{sec.agentName}</span>
+                        <span className="px-2 py-0.5 bg-[#10b981] border border-black text-[9px] font-black uppercase">
+                          {sec.status}
+                        </span>
+                      </div>
+                      <h4 className="font-black text-sm uppercase text-black mb-1">{sec.title}</h4>
+                      <p className="text-xs font-bold text-gray-700 line-clamp-2 leading-relaxed">
+                        {sec.text.slice(0, 180)}...
+                      </p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-gray-200 flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => setActiveTab(sec.id as any)}
+                        className="px-3 py-1 bg-[#f59e0b] hover:bg-[#fbbf24] border border-black text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#000000] flex items-center gap-1"
+                      >
+                        <ArrowUpRight className="w-3.5 h-3.5" /> Jump to Section
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedAgentModal({
+                          agentName: sec.agentName,
+                          agentData: sec.data,
+                          checklist: checklists[sec.id] || { status: "COMPLETE", completion_percentage: 100, completed_items: 4, total_items: 4, items: [] }
+                        })}
+                        className="px-2.5 py-1 bg-white hover:bg-black hover:text-white border border-black text-[11px] font-black uppercase shadow-[1.5px_1.5px_0px_#000000] flex items-center gap-1"
+                      >
+                        <Eye className="w-3 h-3" /> View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs Navigation Header */}
