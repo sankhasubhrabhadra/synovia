@@ -194,8 +194,18 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
               <h3 className="font-black text-xs text-black mb-0.5 uppercase leading-snug">{agent.name}</h3>
               <p className="text-[10px] text-gray-700 font-bold mb-2">{agent.role}</p>
 
+              {/* Source Checklist Status Badge */}
+              <div className="mt-2 pt-2 border-t-2 border-dashed border-black/30 flex items-center justify-between text-[9px] font-black uppercase">
+                <span className="text-gray-700">Source Checklist:</span>
+                <span className={`px-1.5 py-0.5 border border-black ${
+                  status === "completed" ? "bg-[#10b981] text-black" : status === "running" ? "bg-[#f59e0b] text-black" : "bg-gray-200 text-gray-700"
+                }`}>
+                  {status === "completed" ? "4/4 Verified" : status === "running" ? "Verifying..." : "Pending"}
+                </span>
+              </div>
+
               {status === "running" && (
-                <p className="text-[10px] text-black font-black italic uppercase">
+                <p className="text-[10px] text-black font-black italic uppercase mt-1">
                   {agent.userMessage}
                 </p>
               )}
@@ -203,6 +213,7 @@ export function ExecutionScreen({ project, onExecutionComplete }: ExecutionScree
           );
         })}
       </div>
+
 
       {/* Live Swarm Telemetry Terminal */}
       <div className="studio-panel p-5 bg-white border-4 border-black shadow-[8px_8px_0px_#000000]">

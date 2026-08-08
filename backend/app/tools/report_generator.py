@@ -347,3 +347,163 @@ class PDFReportGenerator:
         doc.build(elements)
         buffer.seek(0)
         return buffer.getvalue()
+
+    @staticmethod
+    def generate_agent_pdf_report(project_id: str, idea: str, agent_name: str, agent_data: Dict[str, Any], checklist: Dict[str, Any], created_at: str) -> bytes:
+        """
+        Generates a formal, project-specific PDF report for a single AI agent/task.
+        """
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+        styles = getSampleStyleSheet()
+
+        PRIMARY = colors.HexColor("#0F172A")
+        ACCENT = colors.HexColor("#4F46E5")
+        SECONDARY = colors.HexColor("#334155")
+        LIGHT_BG = colors.HexColor("#F8FAFC")
+
+        title_style = ParagraphStyle("AgentDocTitle", parent=styles["Normal"], fontName="NotoSans-Bold", fontSize=20, leading=24, textColor=PRIMARY, spaceAfter=4)
+        subtitle_style = ParagraphStyle("AgentDocSub", parent=styles["Normal"], fontName="NotoSans-Bold", fontSize=11, leading=14, textColor=ACCENT, spaceAfter=10)
+        h1_style = ParagraphStyle("AgentH1", parent=styles["Normal"], fontName="NotoSans-Bold", fontSize=13, leading=16, textColor=ACCENT, spaceBefore=10, spaceAfter=5)
+        h2_style = ParagraphStyle("AgentH2", parent=styles["Normal"], fontName="NotoSans-Bold", fontSize=10.5, leading=13, textColor=PRIMARY, spaceBefore=6, spaceAfter=3)
+        body_style = ParagraphStyle("AgentBody", parent=styles["Normal"], fontName="NotoSans", fontSize=9, leading=13, textColor=SECONDARY, spaceAfter=4)
+        bullet_style = ParagraphStyle("AgentBullet", parent=styles["Normal"], fontName="NotoSans", fontSize=9, leading=12, textColor=SECONDARY, leftIndent=12, spaceAfter=2)
+
+        def clean(val):
+            if val is None: return ""
+            return str(val).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+        elements = []
+        elements.append(Paragraph(f"AGENT AUDIT REPORT: {agent_name.upper()}", title_style))
+        elements.append(Paragraph(f"Project: {clean(idea)} | Generated: {clean(created_at)} | ID: {clean(project_id[:12])}", subtitle_style))
+        elements.append(HRFlowable(width="100%", thickness=1.5, color=ACCENT, spaceAfter=10))
+
+        # Checklist Section
+        if checklist:
+            elements.append(Paragraph("1. Source Checklist & Verification", h1_style))
+            chk_status = checklist.get("status", "COMPLETE")
+            comp_pct = checklist.get("completion_percentage", 100)
+            elements.append(Paragraph(f"<b>Overall Status:</b> {chk_status} ({comp_pct}% Complete - {checklist.get('completed_items')}/{checklist.get('total_items')} Items)", body_style))
+            
+            items = checklist.get("items", [])
+            chk_table_data = [["Item Name", "Status", "Type"]]
+            for item in items:
+                st = "[✓] COMPLETE" if item.get("completed") else "[⚠] MISSING / PENDING"
+                tp = "Evidence Source" if item.get("is_evidence") else "Core Input"
+                chk_table_data.append([item.get("name"), st, tp])
+            
+            t = Table(chk_table_data, colWidths=[240, 150, 140])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), LIGHT_BG),
+                ('TEXTCOLOR', (0,0), (-1,0), PRIMARY),
+                ('FONTNAME', (0,0), (-1,0), 'NotoSans-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), 8.5),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+                ('TOPPADDING', (0,0), (-1,-1), 5),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
+            ]))
+            elements.append(t)
+            elements.append(Spacer(1, 10))
+
+        # Agent Data & Findings Section
+        elements.append(Paragraph("2. Agent Findings & Output Deliverables", h1_style))
+        if isinstance(agent_data, dict):
+            for k, v in agent_data.items():
+                k_title = k.replace("_", " ").title()
+                elements.append(Paragraph(f"<b>{k_title}:</b>", h2_style))
+                if isinstance(v, list):
+                    for item in v:
+                        if isinstance(item, dict):
+                            parts = [f"<b>{subk.replace('_', ' ').title()}:</b> {clean(subv)}" for subk, subv in item.items() if not isinstance(subv, (dict, list))]
+                            elements.append(Paragraph(f"• {' | '.join(parts)}", bullet_style))
+                        else:
+                            elements.append(Paragraph(f"• {clean(item)}", bullet_style))
+                elif isinstance(v, dict):
+                    for subk, subv in v.items():
+                        elements.append(Paragraph(f"• <b>{subk.replace('_', ' ').title()}:</b> {clean(subv)}", bullet_style))
+                else:
+                    elements.append(Paragraph(clean(v), body_style))
+        else:
+            elements.append(Paragraph(clean(agent_data), body_style))
+
+        elements.append(Spacer(1, 10))
+        elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#CBD5E1"), spaceAfter=10))
+        elements.append(Paragraph("Report compiled autonomously by Synovia Multi-Agent System (Team BongCoders | Algolympia 2026).", ParagraphStyle("Footer", parent=body_style, fontSize=8, textColor=colors.HexColor("#64748B"))))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    @staticmethod
+    def generate_agent_csv_report(project_id: str, idea: str, agent_name: str, agent_data: Dict[str, Any], checklist: Dict[str, Any], created_at: str) -> str:
+        """
+        Generates a CSV report string for a single AI agent task.
+        """
+        lines = []
+        lines.append("Field,Value")
+        lines.append(f'Project ID,"{project_id}"')
+        lines.append(f'Startup Idea,"{idea}"')
+        lines.append(f'Agent Name,"{agent_name}"')
+        lines.append(f'Generated At,"{created_at}"')
+        
+        if checklist:
+            lines.append(f'Checklist Status,"{checklist.get("status")}"')
+            lines.append(f'Checklist Completion,"{checklist.get("completion_percentage")}%"')
+            for item in checklist.get("items", []):
+                st = "COMPLETE" if item.get("completed") else "MISSING"
+                lines.append(f'Checklist Item: {item.get("name")},"{st}"')
+        
+        if isinstance(agent_data, dict):
+            for k, v in agent_data.items():
+                val_str = str(v).replace('"', '""')
+                lines.append(f'"{k}","{val_str}"')
+                
+        return "\n".join(lines)
+
+    @staticmethod
+    def generate_agent_html_report(project_id: str, idea: str, agent_name: str, agent_data: Dict[str, Any], checklist: Dict[str, Any], created_at: str) -> str:
+        """
+        Generates an HTML report string for a single AI agent task.
+        """
+        import json
+        chk_html = ""
+        if checklist:
+            chk_rows = "".join(f"<tr><td>{i.get('name')}</td><td>{'<span style=\"color:green;\">✓ COMPLETE</span>' if i.get('completed') else '<span style=\"color:red;\">⚠ MISSING</span>'}</td></tr>" for i in checklist.get("items", []))
+            chk_html = f"""
+            <h3>Source Checklist ({checklist.get('completion_percentage')}% Complete)</h3>
+            <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%;">
+                <thead><tr style="background:#f1f5f9;"><th>Item</th><th>Status</th></tr></thead>
+                <tbody>{chk_rows}</tbody>
+            </table>
+            """
+
+        data_json = json.dumps(agent_data, indent=2)
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Agent Report - {agent_name} ({idea})</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; background: #0f172a; color: #f8fafc; }}
+        .card {{ background: #1e293b; border: 2px solid #3b82f6; padding: 24px; border-radius: 8px; max-width: 800px; margin: 0 auto; }}
+        h1 {{ color: #60a5fa; margin-top: 0; }}
+        pre {{ background: #090d16; p: 16px; border: 1px solid #334155; border-radius: 4px; overflow-x: auto; color: #34d399; }}
+        table {{ color: #f8fafc; margin-bottom: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>{agent_name.upper()} REPORT</h1>
+        <p><strong>Project:</strong> {idea} | <strong>ID:</strong> {project_id}</p>
+        <p><strong>Timestamp:</strong> {created_at}</p>
+        <hr style="border-color:#334155;">
+        {chk_html}
+        <h3>Deliverables & Output Data</h3>
+        <pre>{data_json}</pre>
+        <footer style="margin-top:20px; font-size:12px; color:#94a3b8;">Synovia Multi-Agent System — Team BongCoders (Algolympia 2026)</footer>
+    </div>
+</body>
+</html>
+"""
+        return html
+

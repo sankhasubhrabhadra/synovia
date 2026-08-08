@@ -240,3 +240,76 @@ async def download_ppt_deck(project_id: str, db: AsyncSession = Depends(get_db))
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/{project_id}/agent-report/{agent_name}/{fmt}")
+async def export_agent_specific_report(
+    project_id: str, 
+    agent_name: str, 
+    fmt: str, 
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Exports a project-specific report for an individual agent in PDF, CSV, or HTML format.
+    """
+    result = await db.execute(select(ProjectDB).where(ProjectDB.id == project_id))
+    proj = result.scalar_one_or_none()
+    
+    if not proj or not proj.blueprint_json:
+        raise HTTPException(status_code=404, detail="Project blueprint data not found.")
+        
+    bp = proj.blueprint_json
+    agent_key = agent_name.lower().replace(" ", "_").replace("_agent", "")
+    agent_data = bp.get(agent_key) or bp.get(f"{agent_key}_output") or {}
+    
+    checklists = bp.get("checklists") or {}
+    checklist = checklists.get(agent_key) or {}
+    
+    idea = proj.idea
+    created_at = proj.created_at.isoformat() if hasattr(proj.created_at, 'isoformat') else str(proj.created_at)
+    clean_name = agent_name.replace(" ", "_").title()
+    
+    if fmt == "pdf":
+        pdf_bytes = PDFReportGenerator.generate_agent_pdf_report(
+            project_id=project_id,
+            idea=idea,
+            agent_name=clean_name,
+            agent_data=agent_data,
+            checklist=checklist,
+            created_at=created_at
+        )
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=Synovia_{clean_name}_{project_id[:8]}.pdf"}
+        )
+    elif fmt == "csv":
+        csv_str = PDFReportGenerator.generate_agent_csv_report(
+            project_id=project_id,
+            idea=idea,
+            agent_name=clean_name,
+            agent_data=agent_data,
+            checklist=checklist,
+            created_at=created_at
+        )
+        return Response(
+            content=csv_str,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=Synovia_{clean_name}_{project_id[:8]}.csv"}
+        )
+    elif fmt == "html":
+        html_str = PDFReportGenerator.generate_agent_html_report(
+            project_id=project_id,
+            idea=idea,
+            agent_name=clean_name,
+            agent_data=agent_data,
+            checklist=checklist,
+            created_at=created_at
+        )
+        return Response(
+            content=html_str,
+            media_type="text/html",
+            headers={"Content-Disposition": f"attachment; filename=Synovia_{clean_name}_{project_id[:8]}.html"}
+        )
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'. Must be 'pdf', 'csv', or 'html'.")
+

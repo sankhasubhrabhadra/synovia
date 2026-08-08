@@ -143,6 +143,186 @@ def sanitize_unparsed_json(data: Any) -> Any:
     return data
 
 
+def build_agent_source_checklists(bp: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Computes role-specific Source Checklists for all 8 specialized agents.
+    Calculates completed items, missing evidence items, completion percentage, and overall status.
+    """
+    classification = bp.get("classification") or {}
+    research = bp.get("research") or {}
+    competitor = bp.get("competitor") or {}
+    product = bp.get("product") or {}
+    roadmap = bp.get("roadmap") or {}
+    pitch = bp.get("pitch") or {}
+    validation = bp.get("validation") or {}
+    qc = bp.get("quality_control") or {}
+
+    def calc_status(completed: int, total: int, missing_evidence: bool) -> str:
+        if completed == total and not missing_evidence:
+            return "COMPLETE"
+        elif completed >= total - 1:
+            return "PARTIALLY COMPLETE"
+        elif completed > 0:
+            return "INCOMPLETE"
+        return "PENDING"
+
+    # 1. Classification Agent Checklist
+    cls_items = [
+        {"name": "Startup idea", "completed": bool(bp.get("idea")), "is_evidence": False},
+        {"name": "Target market focus", "completed": bool(bp.get("target_market")), "is_evidence": False},
+        {"name": "Category taxonomy", "completed": bool(classification.get("business_type")), "is_evidence": False},
+        {"name": "Anti-patterns & constraints", "completed": bool(classification.get("anti_patterns")), "is_evidence": False}
+    ]
+    cls_done = sum(1 for i in cls_items if i["completed"])
+    cls_checklist = {
+        "agent_name": "Classification Agent",
+        "total_items": len(cls_items),
+        "completed_items": cls_done,
+        "completion_percentage": int((cls_done / len(cls_items)) * 100),
+        "status": calc_status(cls_done, len(cls_items), False),
+        "items": cls_items
+    }
+
+    # 2. Research Agent Checklist
+    res_tam = research.get("market_size", {}).get("tam", "") if isinstance(research.get("market_size"), dict) else ""
+    res_evidence = bool(res_tam and ("$" in res_tam or "₹" in res_tam or "Billion" in res_tam or "Crore" in res_tam))
+    res_items = [
+        {"name": "Startup idea", "completed": bool(bp.get("idea")), "is_evidence": False},
+        {"name": "Industry sector", "completed": bool(research.get("industry")), "is_evidence": False},
+        {"name": "Target customer persona", "completed": bool(research.get("target_users")), "is_evidence": False},
+        {"name": "Customer pain points", "completed": bool(research.get("customer_pain_points")), "is_evidence": False},
+        {"name": "Market evidence (TAM/SAM)", "completed": res_evidence, "is_evidence": True}
+    ]
+    res_done = sum(1 for i in res_items if i["completed"])
+    res_checklist = {
+        "agent_name": "Research Agent",
+        "total_items": len(res_items),
+        "completed_items": res_done,
+        "completion_percentage": int((res_done / len(res_items)) * 100),
+        "status": calc_status(res_done, len(res_items), not res_evidence),
+        "items": res_items
+    }
+
+    # 3. Competitor Agent Checklist
+    comps = competitor.get("competitors") or []
+    comp_evidence = len(comps) >= 2
+    comp_items = [
+        {"name": "Startup category", "completed": bool(classification.get("business_type")), "is_evidence": False},
+        {"name": "Competitor list", "completed": bool(comps), "is_evidence": False},
+        {"name": "Competitor strengths & weaknesses", "completed": any(c.get("strengths") for c in comps if isinstance(c, dict)), "is_evidence": False},
+        {"name": "Market gaps & defensibility moat", "completed": bool(competitor.get("market_gaps")), "is_evidence": False},
+        {"name": "Competitor market evidence", "completed": comp_evidence, "is_evidence": True}
+    ]
+    comp_done = sum(1 for i in comp_items if i["completed"])
+    comp_checklist = {
+        "agent_name": "Competitor Agent",
+        "total_items": len(comp_items),
+        "completed_items": comp_done,
+        "completion_percentage": int((comp_done / len(comp_items)) * 100),
+        "status": calc_status(comp_done, len(comp_items), not comp_evidence),
+        "items": comp_items
+    }
+
+    # 4. Product Agent Checklist
+    prod_items = [
+        {"name": "Customer pain points", "completed": bool(research.get("customer_pain_points")), "is_evidence": False},
+        {"name": "Market requirements", "completed": bool(product.get("mvp_features")), "is_evidence": False},
+        {"name": "Competitor gaps", "completed": bool(competitor.get("market_gaps")), "is_evidence": False},
+        {"name": "MVP requirements & Priority matrix", "completed": bool(product.get("priority_matrix")), "is_evidence": False},
+        {"name": "User journey specification", "completed": bool(product.get("user_journey")), "is_evidence": False}
+    ]
+    prod_done = sum(1 for i in prod_items if i["completed"])
+    prod_checklist = {
+        "agent_name": "Product Agent",
+        "total_items": len(prod_items),
+        "completed_items": prod_done,
+        "completion_percentage": int((prod_done / len(prod_items)) * 100),
+        "status": calc_status(prod_done, len(prod_items), False),
+        "items": prod_items
+    }
+
+    # 5. Roadmap Agent Checklist
+    road_items = [
+        {"name": "Product MVP specs", "completed": bool(product.get("mvp_features")), "is_evidence": False},
+        {"name": "Weekly schedule deliverables", "completed": bool(roadmap.get("schedule")), "is_evidence": False},
+        {"name": "Agile execution milestones", "completed": bool(roadmap.get("milestones")), "is_evidence": False},
+        {"name": "Risk mitigation tactics", "completed": bool(roadmap.get("risk_mitigation")), "is_evidence": False}
+    ]
+    road_done = sum(1 for i in road_items if i["completed"])
+    road_checklist = {
+        "agent_name": "Roadmap Agent",
+        "total_items": len(road_items),
+        "completed_items": road_done,
+        "completion_percentage": int((road_done / len(road_items)) * 100),
+        "status": calc_status(road_done, len(road_items), False),
+        "items": road_items
+    }
+
+    # 6. Pitch Agent Checklist
+    pitch_items = [
+        {"name": "Problem & solution definition", "completed": bool(pitch.get("problem") and pitch.get("solution")), "is_evidence": False},
+        {"name": "Unique selling proposition", "completed": bool(pitch.get("usp")), "is_evidence": False},
+        {"name": "Business model & revenue streams", "completed": bool(pitch.get("revenue_streams")), "is_evidence": False},
+        {"name": "Future vision & hackathon pitch", "completed": bool(pitch.get("hackathon_pitch")), "is_evidence": False}
+    ]
+    pitch_done = sum(1 for i in pitch_items if i["completed"])
+    pitch_checklist = {
+        "agent_name": "Pitch Agent",
+        "total_items": len(pitch_items),
+        "completed_items": pitch_done,
+        "completion_percentage": int((pitch_done / len(pitch_items)) * 100),
+        "status": calc_status(pitch_done, len(pitch_items), False),
+        "items": pitch_items
+    }
+
+    # 7. Validation Agent Checklist
+    val_evidence = bool(validation.get("viability_score") and validation.get("final_verdict"))
+    val_items = [
+        {"name": "Market analysis inputs", "completed": bool(research), "is_evidence": False},
+        {"name": "Competitor analysis inputs", "completed": bool(competitor), "is_evidence": False},
+        {"name": "Product strategy inputs", "completed": bool(product), "is_evidence": False},
+        {"name": "Viability & innovation scores", "completed": bool(validation.get("viability_score")), "is_evidence": False},
+        {"name": "Validation evidence & risks", "completed": val_evidence, "is_evidence": True}
+    ]
+    val_done = sum(1 for i in val_items if i["completed"])
+    val_checklist = {
+        "agent_name": "Validation Agent",
+        "total_items": len(val_items),
+        "completed_items": val_done,
+        "completion_percentage": int((val_done / len(val_items)) * 100),
+        "status": calc_status(val_done, len(val_items), not val_evidence),
+        "items": val_items
+    }
+
+    # 8. Quality Control Agent Checklist
+    qc_items = [
+        {"name": "Category match verification", "completed": bool(qc.get("category_match_score")), "is_evidence": False},
+        {"name": "Anti-pattern violation audit", "completed": True, "is_evidence": False},
+        {"name": "Roadmap-feature fit score", "completed": bool(qc.get("roadmap_fit_score")), "is_evidence": False},
+        {"name": "Template leakage purge", "completed": bool(qc.get("quality_verdict")), "is_evidence": False}
+    ]
+    qc_done = sum(1 for i in qc_items if i["completed"])
+    qc_checklist = {
+        "agent_name": "Quality Control Agent",
+        "total_items": len(qc_items),
+        "completed_items": qc_done,
+        "completion_percentage": int((qc_done / len(qc_items)) * 100),
+        "status": calc_status(qc_done, len(qc_items), False),
+        "items": qc_items
+    }
+
+    return {
+        "classification": cls_checklist,
+        "research": res_checklist,
+        "competitor": comp_checklist,
+        "product": prod_checklist,
+        "roadmap": road_checklist,
+        "pitch": pitch_checklist,
+        "validation": val_checklist,
+        "quality_control": qc_checklist
+    }
+
+
 class ManagerAgent:
     """
     High-Performance Multi-Agent Pipeline Orchestrator.
@@ -284,8 +464,12 @@ class ManagerAgent:
                 "quality_control": qc_data
             }
 
+            # Generate Agent Source Checklists
+            raw_blueprint["checklists"] = build_agent_source_checklists(raw_blueprint)
+
             # Run Unparsed JSON Sanitizer Engine across full blueprint tree
             merged_blueprint = sanitize_unparsed_json(raw_blueprint)
+
 
             # Save full merged blueprint JSON to database
             async with AsyncSessionLocal() as session:

@@ -137,6 +137,20 @@ class ValidationOutput(BaseModel):
     long_term_growth_strategy: str
     final_verdict: str
 
+class ChecklistItem(BaseModel):
+    name: str
+    completed: bool = True
+    is_evidence: bool = False
+    details: Optional[str] = None
+
+class AgentSourceChecklist(BaseModel):
+    agent_name: str
+    total_items: int
+    completed_items: int
+    completion_percentage: int
+    status: str # COMPLETE, PARTIALLY COMPLETE, INCOMPLETE, PENDING
+    items: List[ChecklistItem]
+
 class StartupBlueprint(BaseModel):
     project_id: str
     idea: str
@@ -150,6 +164,8 @@ class StartupBlueprint(BaseModel):
     classification: Optional[ClassificationOutput] = None
     quality_control: Optional[QualityControlOutput] = None
     executive_summary: Optional[str] = None
+    checklists: Optional[Dict[str, Any]] = None
+
 
 class AgentProgressUpdate(BaseModel):
     project_id: str

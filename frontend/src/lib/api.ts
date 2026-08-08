@@ -86,7 +86,7 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const response = await fetch(url, { ...options, mode: "cors", headers });
-      return response; // Return response directly regardless of HTTP status code
+      return response;
     } catch (err) {
       lastError = err;
     }
@@ -99,51 +99,57 @@ async function fetchResilient(path: string, options: RequestInit = {}): Promise<
   throw new Error("Unable to connect to Synovia Backend. Please verify the backend server is active.");
 }
 
-export async function checkBackendHealth(): Promise<boolean> {
-  try {
-    const response = await fetchResilient("/api/health");
-    return response.ok;
-  } catch {
-    return false;
+export async function loginUser(email: string, password: string): Promise<AuthResponse> {
+  const response = await fetchResilient(`/api/auth/login`, {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || "Invalid login credentials");
   }
+
+  const data: AuthResponse = await response.json();
+  setAuthSession(data.access_token, data.user);
+  return data;
 }
 
 export async function signupUser(email: string, password: string, fullName: string): Promise<AuthResponse> {
-  return {
-    access_token: "guest",
-    token_type: "bearer",
-    user: { id: "guest", email, full_name: fullName, created_at: new Date().toISOString() }
-  };
+  const response = await fetchResilient(`/api/auth/signup`, {
+    method: "POST",
+    body: JSON.stringify({ email, password, full_name: fullName })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to create account");
+  }
+
+  const data: AuthResponse = await response.json();
+  setAuthSession(data.access_token, data.user);
+  return data;
 }
 
-export async function loginUser(email: string, password: string): Promise<AuthResponse> {
-  return {
-    access_token: "guest",
-    token_type: "bearer",
-    user: { id: "guest", email, full_name: "Guest", created_at: new Date().toISOString() }
-  };
-}
 
-export async function getMe(): Promise<User> {
-  return { id: "guest", email: "guest@synovia.ai", full_name: "Guest User", created_at: new Date().toISOString() };
-}
+export async function createProject(idea: string, targetMarket?: string, userGoal?: string): Promise<Project> {
 
-/* Project API Functions */
-export async function createProject(idea: string, targetMarket?: string): Promise<Project> {
   const response = await fetchResilient(`/api/projects`, {
     method: "POST",
-    body: JSON.stringify({ idea, target_market: targetMarket }),
+    body: JSON.stringify({ idea, target_market: targetMarket, user_goal: userGoal })
   });
+
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Failed to create blueprint (${response.status} ${response.statusText})`);
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to create project blueprint");
   }
+
   return response.json();
 }
 
 export async function listProjects(limit: number = 200): Promise<Project[]> {
   const response = await fetchResilient(`/api/projects?limit=${limit}`);
-  if (!response.ok) throw new Error(`Failed to list projects`);
+  if (!response.ok) throw new Error("Failed to load project history");
   return response.json();
 }
 
@@ -177,6 +183,12 @@ export async function downloadProjectPdfFile(id: string, ideaName: string = "Blu
 export async function downloadProjectPptFile(id: string, ideaName: string = "Pitch_Deck"): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}/api/projects/${id}/ppt`;
+  window.open(url, "_blank");
+}
+
+export async function downloadAgentReportFile(id: string, agentName: string, format: "pdf" | "csv" | "html" = "pdf"): Promise<void> {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/api/projects/${id}/agent-report/${encodeURIComponent(agentName)}/${format}`;
   window.open(url, "_blank");
 }
 
