@@ -412,24 +412,30 @@ export function IrrisAssistant({
       }
 
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = "en-US";
 
       recognition.onstart = () => {
         setIsListening(true);
         setIsThinking(false);
-        setTranscript("Listening...");
+        setTranscript("Listening for commands...");
       };
 
       recognition.onresult = (event: any) => {
-        const current = event.resultIndex;
-        const resultTranscript = event.results[current][0].transcript;
-        setTranscript(resultTranscript);
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const resultTranscript = event.results[i][0].transcript;
+          setTranscript(resultTranscript);
 
-        if (event.results[current].isFinal) {
-          setIsListening(false);
-          processVoiceCommand(resultTranscript);
+          if (event.results[i].isFinal) {
+            processVoiceCommand(resultTranscript);
+          } else {
+            // Check for wake word in interim speech
+            const lower = resultTranscript.toLowerCase();
+            if (/\b(?:blue|hey blue|hi blue|commander)\b/.test(lower) && !isSpeakingRef.current && !isThinkingRef.current) {
+              processVoiceCommand(resultTranscript);
+            }
+          }
         }
       };
 
@@ -440,6 +446,16 @@ export function IrrisAssistant({
 
       recognition.onend = () => {
         setIsListening(false);
+        // Auto-restart continuous listening so wake word is always active!
+        if (autoListenRef.current && !isSpeakingRef.current) {
+          setTimeout(() => {
+            try {
+              if (recognitionRef.current) {
+                recognitionRef.current.start();
+              }
+            } catch {}
+          }, 300);
+        }
       };
 
       recognitionRef.current = recognition;
@@ -450,6 +466,17 @@ export function IrrisAssistant({
       setIsListening(false);
     }
   };
+
+  // Auto-activate wake word listener on initial mount
+  useEffect(() => {
+    setAutoListen(true);
+    autoListenRef.current = true;
+    const timer = setTimeout(() => {
+      startRecognition();
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
 
   // Announce live agent step completions
   useEffect(() => {
