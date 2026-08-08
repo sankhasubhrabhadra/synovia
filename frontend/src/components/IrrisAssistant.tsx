@@ -417,22 +417,24 @@ export function IrrisAssistant({
       recognition.lang = "en-US";
 
       recognition.onstart = () => {
-        setIsListening(true);
         setIsThinking(false);
-        setTranscript("Listening for commands...");
       };
 
       recognition.onresult = (event: any) => {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const resultTranscript = event.results[i][0].transcript;
-          setTranscript(resultTranscript);
+          const lower = resultTranscript.toLowerCase();
+
+          // Check if wake word ("blue", "hey blue", "hi blue") is triggered
+          if (/\b(?:blue|hey blue|hi blue|commander)\b/.test(lower)) {
+            setIsListening(true); // Turn ON mic HUD when wake word is spoken!
+          }
 
           if (event.results[i].isFinal) {
             processVoiceCommand(resultTranscript);
           } else {
-            // Check for wake word in interim speech
-            const lower = resultTranscript.toLowerCase();
             if (/\b(?:blue|hey blue|hi blue|commander)\b/.test(lower) && !isSpeakingRef.current && !isThinkingRef.current) {
+              setIsListening(true);
               processVoiceCommand(resultTranscript);
             }
           }
@@ -445,8 +447,7 @@ export function IrrisAssistant({
       };
 
       recognition.onend = () => {
-        setIsListening(false);
-        // Auto-restart continuous listening so wake word is always active!
+        // Keep silent background wake-word detection ready without showing mic active HUD
         if (autoListenRef.current && !isSpeakingRef.current) {
           setTimeout(() => {
             try {
@@ -454,9 +455,12 @@ export function IrrisAssistant({
                 recognitionRef.current.start();
               }
             } catch {}
-          }, 300);
+          }, 400);
+        } else {
+          setIsListening(false);
         }
       };
+
 
       recognitionRef.current = recognition;
       try {
