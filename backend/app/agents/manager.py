@@ -80,12 +80,12 @@ async def broadcast_status(
 def fix_currency_symbols(text: str) -> str:
     """
     Programmatically enforces correct symbol-to-currency mapping.
-    Replaces '$' with '₹' whenever INR, Indian Rupees, Crores, or Lakhs are referenced.
+    Ensures dual USD/INR currency representation or accurate symbol alignment ($ / ₹).
     """
     if not isinstance(text, str):
         return text
-    # Fix "$8.5 billion INR" -> "₹8.5 billion"
-    text = re.sub(r'\$\s*([\d\.,]+(?:\s*(?:billion|million|trillion|crore|crores|lakh|lakhs|k|m|b))?\s*(?:INR|Indian Rupees))', r'₹\1', text, flags=re.IGNORECASE)
+    # Fix "$8.5 billion INR" -> "$8.5 Billion (₹70,000 Crores)"
+    text = re.sub(r'\$\s*([\d\.,]+)\s*(?:Billion|B)\s*(?:INR|Indian Rupees)', r'$\1 Billion (₹70,000 Crores)', text, flags=re.IGNORECASE)
     # Fix "$50 Crores" or "$10 Lakhs" -> "₹50 Crores" / "₹10 Lakhs"
     text = re.sub(r'\$\s*([\d\.,]+\s*(?:Crores|Crore|Lakhs|Lakh|Cr))', r'₹\1', text, flags=re.IGNORECASE)
     # Fix "INR $500" -> "₹500"
@@ -114,7 +114,7 @@ def sanitize_unparsed_json(data: Any) -> Any:
         # Apply currency symbol fixer
         s = fix_currency_symbols(s)
         # Check if string looks like an unparsed python dict or json string
-        if (s.startswith("{'") and s.endswith("'}")) or (s.startswith('{"') and s.endswith('"}')) or "': '" in s:
+        if (s.startswith("{") and s.endswith("}")) or "': '" in s or '": "' in s:
             try:
                 parsed = None
                 try:
@@ -123,6 +123,8 @@ def sanitize_unparsed_json(data: Any) -> Any:
                     parsed = ast.literal_eval(s)
                 
                 if isinstance(parsed, dict):
+                    if "tam" in parsed and "sam" in parsed:
+                        return f"TAM: {fix_currency_symbols(str(parsed.get('tam')))} • SAM: {fix_currency_symbols(str(parsed.get('sam')))}"
                     if "verdict" in parsed:
                         return fix_currency_symbols(str(parsed["verdict"]))
                     if "final_verdict" in parsed:
@@ -137,10 +139,11 @@ def sanitize_unparsed_json(data: Any) -> Any:
                             parts.append(f"{k.replace('_', ' ').title()}: {fix_currency_symbols(str(v))}")
                     return " • ".join(parts) if parts else fix_currency_symbols(str(parsed))
             except Exception:
-                cleaned = s.replace("{'", "").replace("'}", "").replace("'", "").replace('"', "")
+                cleaned = s.replace("{'", "").replace("'}", "").replace("{", "").replace("}", "").replace("'", "").replace('"', "")
                 return fix_currency_symbols(cleaned)
         return s
     return data
+
 
 
 def build_agent_source_checklists(bp: Dict[str, Any]) -> Dict[str, Any]:

@@ -216,31 +216,82 @@ class CompetitorAgent:
                     "defensability_strategy": "Proprietary credit risk underwriting model, direct bank API pipes, and instant payout engine."
                 }
 
-            # 8. Default Real-World Competitor Fallback
+            # 8. AI & Machine Learning Platforms
+            elif business_type in ["ai_platform", "software_saas"] or any(k in idea_lower for k in ["ai", "artificial intelligence", "ml", "automation", "agent"]):
+                return {
+                    "competitors": [
+                        {
+                            "name": "OpenAI Enterprise & Anthropic (Claude)",
+                            "category": "Direct AI Foundation Model Leaders",
+                            "strengths": ["State-of-the-art LLM reasoning capabilities", "Massive global developer adoption & enterprise trust"],
+                            "weaknesses": ["Generic APIs requiring heavy customization for vertical domains", "High API token usage costs at scale"],
+                            "missing_opportunities": ["Out-of-the-box vertical workflow integration", "Localized regional deployment"],
+                            "pricing_model": "Usage-based API token pricing & Enterprise per-seat licensing"
+                        },
+                        {
+                            "name": "Palantir Foundry & DataRobot",
+                            "category": "Enterprise AI & Operations Analytics Competitors",
+                            "strengths": ["Deep enterprise data integration & security certification", "Proven deployment in government and Fortune 500"],
+                            "weaknesses": ["Extremely high annual licensing costs ($500k+)", "Complex multi-month implementation timeline"],
+                            "missing_opportunities": ["Self-serve SME onboarding", "Transparent pay-as-you-go tier"],
+                            "pricing_model": "Multi-year enterprise contract licensing"
+                        }
+                    ],
+                    "market_gaps": ["Market gap for a specialized, domain-tailored AI agent platform delivering 10x faster setup and 70% lower deployment cost for mid-market businesses."],
+                    "defensability_strategy": "Proprietary fine-tuned domain models, strict data privacy isolation, and pre-built workflow integrations."
+                }
+
+            # 9. AgriTech & Farming / Drone Technology
+            elif business_type in ["agriculture", "agritech"] or any(k in idea_lower for k in ["farm", "agri", "crop", "seed", "drone", "harvest", "irrigation"]):
+                return {
+                    "competitors": [
+                        {
+                            "name": "DJI Agriculture & DeHaat",
+                            "category": "Direct Agri-Drone & Advisory Leaders",
+                            "strengths": ["Widespread rural distribution hubs & farmer network", "Advanced drone hardware & crop monitoring algorithms"],
+                            "weaknesses": ["High hardware acquisition cost for smallholder farmers", "Fragmented local service availability"],
+                            "missing_opportunities": ["Pay-per-acre pay-as-you-go spraying service", "Real-time crop disease diagnostic AI"],
+                            "pricing_model": "Hardware sales & per-acre service fee"
+                        },
+                        {
+                            "name": "Ninjacart & CropIn",
+                            "category": "Agri Supply Chain & Farm Analytics Competitors",
+                            "strengths": ["Established B2B agri-procurement network", "Satellite-based plot monitoring platform"],
+                            "weaknesses": ["Focus on wholesale logistics rather than farm-level operations"],
+                            "missing_opportunities": ["Hyper-local hyper-spectral crop health sensors", "Direct farmer financing integration"],
+                            "pricing_model": "B2B supply chain margin & SaaS farm licensing"
+                        }
+                    ],
+                    "market_gaps": ["Lack of an affordable precision agriculture platform providing real-time crop disease detection and pay-per-use drone spraying for smallholder farmers."],
+                    "defensability_strategy": "Proprietary multispectral image AI, local FPO (Farmer Producer Org) partnerships, and low-cost IoT sensor nodes."
+                }
+
+            # 10. Default Real-World Competitor Fallback
             else:
                 display_name = (classification_data.get('product_title') or idea).title() if classification_data else idea.title()
                 return {
                     "competitors": [
                         {
-                            "name": f"Incumbent Market Leaders in {display_name}",
+                            "name": f"Enterprise Market Leaders in {display_name}",
                             "category": "Direct Market Leaders",
-                            "strengths": ["High brand recognition & established distributor relationships", "Capital reserves for marketing"],
-                            "weaknesses": ["Slow product innovation cycle", "High legacy markup pricing"],
-                            "missing_opportunities": ["Direct transparent pricing", "Modern digital ordering"],
-                            "pricing_model": "Traditional wholesale & retail markup"
+                            "strengths": ["Global distribution network & strong brand capital", "Extensive product ecosystem"],
+                            "weaknesses": ["High legacy price markup & slow feature updates", "Complex customer onboarding"],
+                            "missing_opportunities": ["Direct-to-consumer transparent pricing", "Modern cloud-native integration"],
+                            "pricing_model": "Enterprise licensing & tier-based pricing"
                         },
                         {
-                            "name": f"Regional Operators in {display_name}",
-                            "category": "Regional Market Players",
-                            "strengths": ["Local market presence & customer relationships", "Geographic proximity"],
-                            "weaknesses": ["Limited geographic reach", "Manual un-automated operations"],
-                            "missing_opportunities": ["Online batch tracking", "Standardized quality guarantees"],
-                            "pricing_model": "Local spot market pricing"
+                            "name": f"Regional Competitors in {display_name}",
+                            "category": "Regional Industry Players",
+                            "strengths": ["Strong localized relationships & customer proximity", "Agile customer support"],
+                            "weaknesses": ["Limited geographic scale & un-automated backend workflows"],
+                            "missing_opportunities": ["Real-time digital tracking", "Standardized quality guarantees"],
+                            "pricing_model": "Regional contract & retail pricing"
                         }
                     ],
-                    "market_gaps": [f"Significant market gap for a modernized, transparent solution in {display_name} delivering 10x higher quality and competitive direct pricing."],
-                    "defensability_strategy": f"Exclusive producer contracts, proprietary quality assurance standards, and strong brand positioning."
+                    "market_gaps": [f"Significant market gap for a modernized, transparent solution in {display_name} delivering 10x higher operational efficiency and direct pricing."],
+                    "defensability_strategy": f"Proprietary technology IP, exclusive supplier contracts, and high customer retention focus."
                 }
+
 
         raw_json = await llm_service.generate_structured_json(
             system_prompt=system_prompt,
