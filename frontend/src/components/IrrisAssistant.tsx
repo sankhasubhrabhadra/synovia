@@ -174,6 +174,12 @@ export function IrrisAssistant({
     utterance.onend = () => {
       setIsSpeaking(false);
       if (onEndCallback) onEndCallback();
+      // Auto-turn on mic after BLUE finishes speaking so user can speak immediately
+      setTimeout(() => {
+        if (!isMuted) {
+          startRecognition();
+        }
+      }, 400);
     };
 
     utterance.onerror = () => {
@@ -189,9 +195,10 @@ export function IrrisAssistant({
     const rawTrimmed = cmdRaw.trim();
     if (!rawTrimmed) return;
 
-    // Wake-Word Matching: "hey blue", "hi blue", "blue"
+    // Wake-Word Matching: "hey blue", "hi blue", "blue", "ok blue"
     const wakeWordRegex = /^(?:hey|hi|hello|ok|okay)?\s*(?:blue|bloo|bleu)[\s,.:!]*/i;
     let cleanSpeech = rawTrimmed.replace(wakeWordRegex, "").trim();
+    const isWakeWordOnly = !cleanSpeech || cleanSpeech.toLowerCase() === "blue" || cleanSpeech.toLowerCase() === "hey blue";
     if (!cleanSpeech) cleanSpeech = rawTrimmed;
 
     setTranscript(cleanSpeech);
@@ -199,6 +206,14 @@ export function IrrisAssistant({
     setIsThinking(true);
 
     const cleanCmd = cleanSpeech.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
+
+    // If user just called "blue" or "hey blue", activate mic & acknowledge!
+    if (isWakeWordOnly || cleanCmd === "blue" || cleanCmd === "hey blue" || cleanCmd === "hi blue") {
+      speak("Yes Boss? BLUE online and listening.");
+      setIsThinking(false);
+      return;
+    }
+
 
     // -------------------------------------------------------------
     // 1. SEARCH THIS IDEA / STARTUP RESULT COMMANDS
