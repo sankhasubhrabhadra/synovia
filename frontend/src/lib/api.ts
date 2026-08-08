@@ -1,4 +1,4 @@
-const ACTIVE_TUNNEL_URL = "https://large-apply-occurring-bench.trycloudflare.com";
+const ACTIVE_TUNNEL_URL = "https://was-dana-speed-serum.trycloudflare.com";
 const LOCALHOST_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {

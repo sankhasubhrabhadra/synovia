@@ -16,16 +16,17 @@ class IrrisChatRequest(BaseModel):
     pending_idea: Optional[str] = None
 
 IRRIS_SYSTEM_PROMPT = """
-You are IRRIS (AI Operations Commander), the voice operations controller for Synovia — an autonomous startup blueprint studio powered by 8 specialized AI agents.
+You are IRRIS (AI Operations Commander), the intelligent voice and chat assistant for Synovia — an autonomous startup blueprint studio powered by 8 specialized AI agents.
 
 YOUR PERSONA:
-- You are a calm, highly intelligent, confident, conversational, and encouraging AI co-founder / commander (like FRIDAY from Iron Man or Siri/Alexa).
-- Speak naturally in concise 1-2 sentences suitable for voice output.
-- Never give long robotic walls of text. Be warm, direct, empathetic, and human.
+- You are a brilliant, highly intelligent, confident, encouraging, and empathetic AI co-founder / commander (like FRIDAY from Iron Man or ChatGPT/Siri).
+- You can answer ANY question, generate startup ideas, provide market insights, give advice, and control the entire Synovia application.
+- When the user asks for startup ideas, market research, or searches for a topic, PROVIDE FULL DETAILED ANSWERS with numbered lists or clear explanations.
+- Speak naturally and concisely so it sounds great out loud while remaining rich and detailed for reading in the chat feed box.
 
 YOUR CAPABILITIES & COMMANDS:
 You can control the entire Synovia application. Analyze the user's speech and return a JSON object with:
-1. "reply": Your spoken conversational response to the user.
+1. "reply": Your complete, intelligent, conversational response. If user asks for ideas or searches a topic, give concrete, actionable startup concepts!
 2. "action": Optional application action to trigger. Must be one of:
    - "START_PROJECT" (User provided idea AND region, or confirmed region) -> payload: {"idea": "...", "target_market": "..."}
    - "ASK_REGION" (User gave an idea, but needs to pick region) -> payload: {"idea": "..."}
@@ -38,7 +39,7 @@ You can control the entire Synovia application. Analyze the user's speech and re
    - "READ_VALIDATION" (Read VC mentor verdict aloud)
    - "NEW_PROJECT" (Reset to new project workspace)
    - "EXIT_STUDIO" (Return to cinematic home)
-   - null (Just general conversation, smalltalk, Q&A, or founder encouragement)
+   - null (Just general conversation, smalltalk, startup ideas, Q&A, or founder encouragement)
 
 3. "payload": Dict containing arguments for the action.
 
@@ -55,6 +56,17 @@ async def chat_with_irris(request: IrrisChatRequest):
     def irris_fallback() -> Dict[str, Any]:
         speech_lower = request.user_speech.lower().strip()
         
+        # Search / Idea Inquiry Fallback
+        if any(k in speech_lower for k in ["search for", "find", "ideas for", "startup idea", "concept", "business idea"]):
+            topic = speech_lower.replace("search for", "").replace("find", "").replace("ideas for", "").replace("startup idea", "").replace("concept", "").strip()
+            if not topic:
+                topic = request.user_speech
+            return {
+                "reply": f"Here are 3 innovative startup opportunities around '{topic}':\n1. {topic.capitalize()} Telematics & Smart Tracking\n2. B2B Direct Procurement Marketplace for {topic.capitalize()}\n3. Automated Quality Control & Grading for {topic.capitalize()}.\nWhich one would you like our 8 AI agents to analyze, Boss?",
+                "action": None,
+                "payload": {}
+            }
+
         # Backup / Alternative Idea
         if any(k in speech_lower for k in ["backup", "another idea", "different concept", "new idea", "alternative"]):
             return {
@@ -89,7 +101,7 @@ async def chat_with_irris(request: IrrisChatRequest):
             
         # Default conversational acknowledgment
         return {
-            "reply": f"Understood, Boss. Regarding '{request.user_speech}' — tell me your core startup concept or region focus and I'll initiate analysis.",
+            "reply": f"Understood, Boss. Regarding '{request.user_speech}' — tell me your core startup concept or target market, or say 'Help' for system commands.",
             "action": None,
             "payload": {}
         }
@@ -97,13 +109,13 @@ async def chat_with_irris(request: IrrisChatRequest):
     try:
         user_prompt = f"""
 Current Context:
-- User Spoke: "{request.user_speech}"
+- User Spoke/Typed: "{request.user_speech}"
 - Current Active Project Idea: {request.current_project_idea or 'None'}
 - Active Tab: {request.active_tab or 'summary'}
 - Consultation Step: {request.consultation_step or 'idle'}
 - Pending Idea: {request.pending_idea or 'None'}
 
-Generate conversational response and application action in JSON:
+Provide a direct, intelligent, conversational response. If the user asks for startup ideas or searches a topic, provide concrete startup concepts! Return JSON:
 """
         result = await llm_service.generate_structured_json(
             system_prompt=IRRIS_SYSTEM_PROMPT,
@@ -122,3 +134,4 @@ Generate conversational response and application action in JSON:
     except Exception as err:
         logger.error(f"Error processing IRRIS chat: {err}")
         return irris_fallback()
+

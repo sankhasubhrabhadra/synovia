@@ -8,13 +8,13 @@ import { chatWithIrris } from "@/lib/api";
 
 export interface ChatMessage {
   id: string;
-  sender: "user" | "irris";
+  sender: "user" | "blue";
   text: string;
   timestamp: string;
   action?: string;
 }
 
-interface IrrisAssistantProps {
+export interface IrrisAssistantProps {
   onStartProject: (idea: string, targetMarket?: string) => void;
   onNavigateTab: (tab: string) => void;
   onDownloadPdf: () => void;
@@ -24,6 +24,7 @@ interface IrrisAssistantProps {
   onNewProject: () => void;
   onOpenHistory?: () => void;
   onCloseHistory?: () => void;
+  onOpenHistoryIndex?: (index: number) => void;
   onExitStudio?: () => void;
   activeTab?: string;
   isExecuting?: boolean;
@@ -41,6 +42,7 @@ export function IrrisAssistant({
   onNewProject,
   onOpenHistory,
   onCloseHistory,
+  onOpenHistoryIndex,
   onExitStudio,
   activeTab,
   isExecuting,
@@ -53,18 +55,18 @@ export function IrrisAssistant({
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<string>("");
-  const [lastResponse, setLastResponse] = useState<string>("IRRIS // Online. Awaiting operational command, Boss.");
+  const [lastResponse, setLastResponse] = useState<string>("BLUE // Online. Ready for operational commands, Boss.");
   const [showCaption, setShowCaption] = useState<boolean>(true);
   
-  // Chatbot Intelligence Feed Box & Auto-Listen State
+  // Chatbot Intelligence Feed Box & Listening State (No Auto-Restart Chatter)
   const [showChatFeed, setShowChatFeed] = useState<boolean>(true);
   const [textInput, setTextInput] = useState<string>("");
-  const [autoListen, setAutoListen] = useState<boolean>(true);
+  const [autoListen, setAutoListen] = useState<boolean>(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome-1",
-      sender: "irris",
-      text: "IRRIS AI Operations Commander online. Ask for startup ideas, market analysis, or give operational commands naturally.",
+      sender: "blue",
+      text: "BLUE AI Commander online. Say 'Hey Blue', tap the mic, or type 'search this idea [your idea]' to generate startup blueprints.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -79,19 +81,12 @@ export function IrrisAssistant({
   useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
   useEffect(() => { isThinkingRef.current = isThinking; }, [isThinking]);
 
-  // Multi-Step Conversational Onboarding Consultation State
-  const [consultationStep, setConsultationStep] = useState<"idle" | "awaiting_idea" | "awaiting_region">("idle");
-  const [pendingIdea, setPendingIdea] = useState<string>("");
-
-
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const prevStepRef = useRef<string | undefined>(currentAgentStep);
-
-
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
-  // Asynchronously load and store available browser/OS voices
+  // Load available browser/OS voices
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       synthRef.current = window.speechSynthesis;
@@ -111,7 +106,7 @@ export function IrrisAssistant({
   }, []);
 
   // Helper to append message to Chatbot Intelligence Feed Box
-  const addMessage = useCallback((sender: "user" | "irris", text: string, action?: string) => {
+  const addMessage = useCallback((sender: "user" | "blue", text: string, action?: string) => {
     const newMsg: ChatMessage = {
       id: Date.now().toString() + Math.random().toString().slice(2, 6),
       sender,
@@ -127,11 +122,11 @@ export function IrrisAssistant({
     }, 50);
   }, []);
 
-  // Speak response function with Alexa/Siri-like Neural Voice Selection & Chat Logging
-  const speak = useCallback((text: string, onEndCallback?: () => void, isWarm?: boolean) => {
+  // Speak response function with MALE Neural Voice Selection
+  const speak = useCallback((text: string, onEndCallback?: () => void) => {
     setLastResponse(text);
     setShowCaption(true);
-    addMessage("irris", text);
+    addMessage("blue", text);
 
     if (isMuted || !synthRef.current) {
       if (onEndCallback) onEndCallback();
@@ -142,30 +137,27 @@ export function IrrisAssistant({
     synthRef.current.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    if (isWarm) {
-      utterance.rate = 0.95;
-      utterance.pitch = 1.02;
-    } else {
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-    }
+    utterance.rate = 1.0;
+    utterance.pitch = 0.95; // Slightly deeper male tone
 
-    // Pick top Alexa/Siri-like Neural Voice
+    // Pick top MALE Neural Voice
     const available = voices.length > 0 ? voices : (synthRef.current ? synthRef.current.getVoices() : []);
     
     const preferredVoice = available.find(
       (v) => v.lang.startsWith("en") && (
-        v.name.includes("Natural") || 
-        v.name.includes("Neural") || 
-        v.name.includes("Jenny") || 
-        v.name.includes("Aria") || 
-        v.name.includes("Samantha") || 
-        v.name.includes("Siri") || 
-        v.name.includes("Google US English") || 
-        v.name.includes("Google UK English Female")
+        v.name.includes("Male") || 
+        v.name.includes("David") || 
+        v.name.includes("Guy") || 
+        v.name.includes("George") || 
+        v.name.includes("Ryan") || 
+        v.name.includes("Google US English Male") ||
+        v.name.includes("Microsoft David") ||
+        v.name.includes("Microsoft Guy") ||
+        v.name.includes("Daniel") ||
+        v.name.includes("James")
       )
     ) || available.find(
-      (v) => v.lang.startsWith("en") && (v.name.includes("Female") || v.name.includes("Google") || v.name.includes("Zira"))
+      (v) => v.lang.startsWith("en") && (!v.name.includes("Female") && !v.name.includes("Zira") && !v.name.includes("Jenny"))
     ) || available.find((v) => v.lang.startsWith("en")) || available[0];
 
     if (preferredVoice) utterance.voice = preferredVoice;
@@ -173,7 +165,7 @@ export function IrrisAssistant({
     utterance.onstart = () => {
       setIsSpeaking(true);
       setIsThinking(false);
-      // Stop recognition while IRRIS is speaking to avoid feedback loop
+      // Stop mic recognition while BLUE is speaking to avoid hearing himself
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch {}
       }
@@ -182,31 +174,23 @@ export function IrrisAssistant({
     utterance.onend = () => {
       setIsSpeaking(false);
       if (onEndCallback) onEndCallback();
-
-      // CONTINUING CONVERSATION: Automatically restart mic after IRRIS finishes speaking!
-      setTimeout(() => {
-        startRecognition();
-      }, 350);
     };
 
     utterance.onerror = () => {
       setIsSpeaking(false);
       if (onEndCallback) onEndCallback();
-      setTimeout(() => {
-        startRecognition();
-      }, 350);
     };
 
     synthRef.current.speak(utterance);
   }, [isMuted, voices, addMessage]);
 
-  // Upgrade: Hybrid Instant Direct Controller + Conversational AI LLM Engine
+  // Command Processor: Exact operational controls & search execution
   const processVoiceCommand = useCallback(async (cmdRaw: string) => {
     const rawTrimmed = cmdRaw.trim();
     if (!rawTrimmed) return;
 
-    // Comprehensive Phonetic Wake-Word Matching (irris, iris, irish, earis, hey iris, hi iris, hello iris, etc.)
-    const wakeWordRegex = /^(?:hey|hi|hello|ok|okay)?\s*(?:irris|iris|irish|earis|eares|ariz|eres)[\s,.:!]*/i;
+    // Wake-Word Matching: "hey blue", "hi blue", "blue"
+    const wakeWordRegex = /^(?:hey|hi|hello|ok|okay)?\s*(?:blue|bloo|bleu)[\s,.:!]*/i;
     let cleanSpeech = rawTrimmed.replace(wakeWordRegex, "").trim();
     if (!cleanSpeech) cleanSpeech = rawTrimmed;
 
@@ -216,236 +200,169 @@ export function IrrisAssistant({
 
     const cleanCmd = cleanSpeech.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
 
-
     // -------------------------------------------------------------
-    // 0. ACTIVE CONSULTATION STEPS
+    // 1. SEARCH THIS IDEA / STARTUP RESULT COMMANDS
     // -------------------------------------------------------------
-    if (consultationStep === "awaiting_idea") {
-      if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
-        setConsultationStep("idle");
-        setPendingIdea("");
-        speak("Consultation cancelled, Boss.");
-        setIsThinking(false);
-        return;
-      }
-
-      const cleanIdea = cleanCmd
-        .replace(/^(my\s+idea\s+is|it\s+is|a|an|the|i\s+want\s+to\s+build|i\s+want\s+to\s+start|i\s+was\s+thinking\s+of|how\s+about)\s+/i, "")
-        .trim();
-
-      if (cleanIdea.length > 2) {
-        const formattedIdea = cleanIdea
-          .split(" ")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-
-        setPendingIdea(formattedIdea);
-        setConsultationStep("awaiting_region");
-        speak(`Idea registered: ${formattedIdea}. Which target region should the agents analyze? Options: India, United States, Europe, Southeast Asia, or Global?`);
+    const searchMatch = cleanCmd.match(/(?:search\s+(?:this\s+)?idea|search\s+for\s+(?:startup\s+result\s+for\s+)?|search\s+for|search|find\s+startup\s+for|analyze\s+idea|generate\s+blueprint\s+for)\s+(.+)/i);
+    if (searchMatch && searchMatch[1]) {
+      const targetIdea = searchMatch[1].trim();
+      if (targetIdea.length > 1) {
+        speak(`Searching startup results and initiating agent swarm for: ${targetIdea}, Boss.`);
+        onStartProject(targetIdea, "Global");
         setIsThinking(false);
         return;
       }
     }
 
-    if (consultationStep === "awaiting_region") {
-      if (/(?:cancel|abort|stop|nevermind|exit)/i.test(cleanCmd)) {
-        setConsultationStep("idle");
-        setPendingIdea("");
-        speak("Consultation cancelled, Boss.");
+    // -------------------------------------------------------------
+    // 2. OPEN SPECIFIC HISTORY ITEM BY INDEX NUMBER ("open number 1 result from history box")
+    // -------------------------------------------------------------
+    const historyIndexMatch = cleanCmd.match(/(?:open|show|load|view)\s+(?:this\s+|number\s+|num\s+)?(\d+)(?:st|nd|rd|th)?\s*(?:result|project|blueprint|item)?(?:\s*from\s*history\s*box|\s*from\s*history)?/i) ||
+                              cleanCmd.match(/open\s+(\d+)(?:st|nd|rd|th)?\s+result/i);
+    if (historyIndexMatch && historyIndexMatch[1] && onOpenHistoryIndex) {
+      const idx = parseInt(historyIndexMatch[1], 10);
+      if (idx > 0) {
+        speak(`Loading result number ${idx} from history box, Boss.`);
+        onOpenHistoryIndex(idx - 1); // 1-indexed to 0-indexed
         setIsThinking(false);
         return;
       }
+    }
 
-      const selectedRegion = cleanCmd
-        .replace(/^(target\s+market|region|in|for|the)\s+/i, "")
-        .trim();
-
-      const formattedRegion = selectedRegion
-        .split(" ")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-
-      const finalIdea = pendingIdea;
-      setConsultationStep("idle");
-      setPendingIdea("");
-
-      speak(`Affirmative, Boss. Initiating 8-agent swarm for: ${finalIdea} in target market: ${formattedRegion}.`, () => {
-        onStartProject(finalIdea, formattedRegion);
-      });
+    // -------------------------------------------------------------
+    // 3. NAVIGATE TO HISTORY BOX / OPEN HISTORY
+    // -------------------------------------------------------------
+    if (/(?:navigate\s+to\s+history\s+box|navigate\s+to\s+history|open\s+history\s+box|open\s+history|show\s+history|history\s+box|history)/i.test(cleanCmd)) {
+      if (onOpenHistory) onOpenHistory();
+      speak("Navigating to history box, Boss.");
       setIsThinking(false);
       return;
     }
 
-    // -------------------------------------------------------------
-    // 1. INSTANT DIRECT APP CONTROLS (Zero Latency, 100% Reliable)
-    // -------------------------------------------------------------
     if (/(?:close|hide|exit|dismiss).*(?:history|drawer|sidebar)/i.test(cleanCmd)) {
       if (onCloseHistory) onCloseHistory();
-      speak("Closing history drawer, Boss.");
+      speak("Closing history box, Boss.");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:open|show|view|display|check|my).*(?:history|past\s+projects|saved|blueprints|projects)/i.test(cleanCmd) || cleanCmd === "history") {
-      if (onOpenHistory) onOpenHistory();
-      speak("Opening project history drawer, Boss.");
+    // -------------------------------------------------------------
+    // 4. CLOSE STUDIO COMMAND
+    // -------------------------------------------------------------
+    if (/(?:close\s+studio|exit\s+studio|close\s+application|close\s+app|exit\s+app|go\s+home)/i.test(cleanCmd)) {
+      if (onExitStudio) onExitStudio();
+      speak("Closing studio application. Returning to home module, Boss.");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|create\s+new\s+blueprint|reset\s+workspace|clear|fresh\s+start)/i.test(cleanCmd)) {
-      setConsultationStep("idle");
-      setPendingIdea("");
+    if (/(?:open\s+new\s+blueprint|new\s+blueprint|start\s+new\s+project|new\s+project|reset\s+workspace|fresh\s+start)/i.test(cleanCmd)) {
       onNewProject();
       speak("Opening new blueprint workspace. Ready for your next concept, Boss.");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:close\s+application|close\s+app|close\s+studio|exit\s+app|exit\s+studio|go\s+home|cinematic|landing\s+page)/i.test(cleanCmd)) {
-      if (onExitStudio) onExitStudio();
-      speak("Closing studio application. Returning to main landing module.");
-      setIsThinking(false);
-      return;
-    }
-
-    if (/(?:mute|unmute|silence|quiet|audio\s+off|audio\s+on)/i.test(cleanCmd)) {
-      setIsMuted((prev) => !prev);
-      speak("Audio status toggled.");
-      setIsThinking(false);
-      return;
-    }
-
-    if (/(?:close\s+caption|hide\s+caption|dismiss\s+text|hide\s+box)/i.test(cleanCmd)) {
-      setShowCaption(false);
-      setIsThinking(false);
-      return;
-    }
-
-    if (/(?:help|commands?|shortcuts?|what\s*can\s*you\s*do|guide|manifest|capabilities|instructions)/i.test(cleanCmd)) {
-      setShowHelp(true);
-      speak("Displaying IRRIS Voice Operations command manifest. You can control navigation, trigger blueprints, and export reports.");
-      setIsThinking(false);
-      return;
-    }
-
     // -------------------------------------------------------------
-    // 2. INSTANT TAB NAVIGATION CONTROLS
+    // 5. TAB NAVIGATION CONTROLS
     // -------------------------------------------------------------
-    if (/(?:executive\s*summary|overview|summary|front\s*page|home\s*tab|main\s*page)/i.test(cleanCmd)) {
+    if (/(?:executive\s*summary|overview|summary|front\s*page|main\s*page)/i.test(cleanCmd)) {
       speak("Loading Executive Summary.");
       onNavigateTab("summary");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:business\s*category|category|classification|type|anti-patterns?|business\s*model\s*type)/i.test(cleanCmd)) {
-      speak("Opening Business Category & Anti-Patterns breakdown.");
+    if (/(?:business\s*category|category|classification|type|anti-patterns?)/i.test(cleanCmd)) {
+      speak("Opening Business Category breakdown.");
       onNavigateTab("classification");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:market\s*analysis|market\s*research|tam|sam|som|market\s*size|personas?|user\s*pain|customers?|target\s*audience)/i.test(cleanCmd)) {
+    if (/(?:market\s*analysis|market\s*research|tam|sam|som|market\s*size)/i.test(cleanCmd)) {
       speak("Displaying Market Research, TAM, SAM, and SOM metrics.");
       onNavigateTab("market");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:competitor|competition|rivals?|market\s*gap|moat|defensibility|who\s+are\s+the\s+competitors)/i.test(cleanCmd)) {
-      speak("Loading Competitor Intelligence matrix and defensibility gaps.");
+    if (/(?:competitor|competition|rivals?|market\s*gap|moat|defensibility)/i.test(cleanCmd)) {
+      speak("Loading Competitor Intelligence matrix.");
       onNavigateTab("competitors");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:product\s*spec|mvp|features?|priority\s*matrix|what\s+to\s+build|specification)/i.test(cleanCmd)) {
-      speak("Displaying MVP Feature Specification & Priority Matrix.");
+    if (/(?:product\s*spec|mvp|features?|priority\s*matrix)/i.test(cleanCmd)) {
+      speak("Displaying MVP Feature Specification.");
       onNavigateTab("product");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:roadmap|schedule|timeline|weeks?|execution\s*plan|action\s*items?)/i.test(cleanCmd)) {
-      speak("Opening 4-Week Agile Execution Roadmap.");
+    if (/(?:roadmap|schedule|timeline|weeks?|execution\s*plan)/i.test(cleanCmd)) {
+      speak("Opening 4-Week Execution Roadmap.");
       onNavigateTab("roadmap");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:pitch\s*deck|slides?|presentation|revenue|monetization|business\s*model|how\s+will\s+we\s+make\s+money|pitch\s*tab)/i.test(cleanCmd)) {
-      speak("Opening VC Pitch Deck & Revenue Streams.");
+    if (/(?:pitch\s*deck|slides?|presentation|revenue|monetization)/i.test(cleanCmd)) {
+      speak("Opening Pitch Deck & Revenue Streams.");
       onNavigateTab("pitch");
       setIsThinking(false);
       return;
     }
 
-    if (/(?:validation|scores?|risks?|verdict|mentor|yc|is\s+this\s+a\s+good\s+idea|viability)/i.test(cleanCmd)) {
-      speak("Loading Validation Assessment & VC Mentor Verdict.");
+    if (/(?:validation|scores?|risks?|verdict|mentor|yc|viability)/i.test(cleanCmd)) {
+      speak("Loading Validation Assessment & Verdict.");
       onNavigateTab("validation");
       setIsThinking(false);
       return;
     }
 
-    // -------------------------------------------------------------
-    // 3. INSTANT REPORT EXPORTS
-    // -------------------------------------------------------------
-    if (/(?:download|export|get|save).*(?:pdf|document|report)/i.test(cleanCmd) || cleanCmd === "pdf") {
-      speak("Compiling PDF Executive Report for instant download, Boss.");
+    // EXPORTS
+    if (/(?:download|export).*(?:pdf|document|report)/i.test(cleanCmd) || cleanCmd === "pdf") {
+      speak("Compiling PDF Executive Report for download, Boss.");
       onDownloadPdf();
       setIsThinking(false);
       return;
     }
 
-    if (/(?:download|export|get|save).*(?:ppt|pptx|powerpoint|slide|presentation)/i.test(cleanCmd) || cleanCmd === "ppt") {
-      speak("Generating 10-slide PowerPoint Pitch Deck for download.");
+    if (/(?:download|export).*(?:ppt|pptx|presentation)/i.test(cleanCmd) || cleanCmd === "ppt") {
+      speak("Generating 10-slide PowerPoint Pitch Deck.");
       onDownloadPpt();
       setIsThinking(false);
       return;
     }
 
-    // -------------------------------------------------------------
-    // 4. CONVERSATIONAL AI LLM BRAIN (For Smalltalk, Founder Empathy, Ideas & Q&A)
-    // -------------------------------------------------------------
+    // FALLBACK / BACKEND INTELLIGENCE CHAT
     try {
-      const res = await chatWithIrris(
-        cmdRaw, 
-        projectIdea, 
-        activeTab, 
-        consultationStep, 
-        pendingIdea
-      );
-
-      const reply = res.reply || "I am online and ready for your operational commands, Boss.";
-      const action = res.action;
-      const payload = res.payload || {};
-
-      speak(reply, () => {
-        if (action === "START_PROJECT" && payload.idea) {
-          setConsultationStep("idle");
-          setPendingIdea("");
-          onStartProject(payload.idea, payload.target_market || "Global");
-        } else if (action === "ASK_REGION" && payload.idea) {
-          setPendingIdea(payload.idea);
-          setConsultationStep("awaiting_region");
-        }
-      }, true);
-
+      const res = await chatWithIrris(cmdRaw, projectIdea, activeTab);
+      const reply = res.reply || "Ready for your commands, Boss. Say 'search this idea [idea]' to analyze a project.";
+      speak(reply);
     } catch (err) {
-      console.warn("Conversational AI backend fallback:", err);
-      speak("Command acknowledged, Boss. Tell me your startup idea or say 'Help' for system controls.", undefined, true);
+      speak("Command acknowledged, Boss. Say 'search this idea [idea]' or 'navigate to history box'.");
     } finally {
       setIsThinking(false);
     }
-  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onReadSummary, onReadValidation, onNewProject, onOpenHistory, onCloseHistory, onExitStudio, consultationStep, pendingIdea, projectIdea, activeTab, addMessage]);
+  }, [speak, onStartProject, onNavigateTab, onDownloadPdf, onDownloadPpt, onNewProject, onOpenHistory, onCloseHistory, onOpenHistoryIndex, onExitStudio, activeTab, projectIdea, addMessage]);
 
-  // Speech Recognition & Auto-Listen Setup
+  // Clean Microphone Toggle (No Auto-Restart Chatter)
   const toggleListening = () => {
-    if (isListening) {
+    if (isListening || autoListen) {
       setAutoListen(false);
+      autoListenRef.current = false;
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
+        try {
+          recognitionRef.current.onstart = null;
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current.abort();
+        } catch {}
+        recognitionRef.current = null;
       }
       setIsListening(false);
       setIsThinking(false);
@@ -453,6 +370,7 @@ export function IrrisAssistant({
     }
 
     setAutoListen(true);
+    autoListenRef.current = true;
     startRecognition();
   };
 
@@ -468,7 +386,14 @@ export function IrrisAssistant({
 
     try {
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
+        try {
+          recognitionRef.current.onstart = null;
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current.abort();
+        } catch {}
+        recognitionRef.current = null;
       }
 
       const recognition = new SpeechRecognition();
@@ -493,25 +418,14 @@ export function IrrisAssistant({
         }
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = () => {
         setIsListening(false);
         setIsThinking(false);
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        // Auto-restart recognition if autoListen mode is active and not currently speaking or thinking
-        if (autoListenRef.current && !isSpeakingRef.current && !isThinkingRef.current) {
-          setTimeout(() => {
-            try {
-              if (!isSpeakingRef.current) {
-                startRecognition();
-              }
-            } catch {}
-          }, 300);
-        }
       };
-
 
       recognitionRef.current = recognition;
       try {
@@ -522,19 +436,18 @@ export function IrrisAssistant({
     }
   };
 
-
   // Announce live agent step completions
   useEffect(() => {
     if (isExecuting && currentAgentStep && currentAgentStep !== prevStepRef.current) {
       prevStepRef.current = currentAgentStep;
       const stepNames: Record<string, string> = {
         classification: "Idea classification finalized.",
-        research: "Market research & TAM metrics complete.",
-        competitor: "Competitor intelligence & defensibility gaps identified.",
+        research: "Market research complete.",
+        competitor: "Competitor intelligence identified.",
         product: "MVP feature specification ready.",
-        roadmap: "4-Week agile execution roadmap generated.",
-        pitch: "VC pitch deck & monetization model compiled.",
-        validation: "Validation assessment & mentor verdict ready.",
+        roadmap: "4-Week execution roadmap generated.",
+        pitch: "VC pitch deck compiled.",
+        validation: "Validation assessment ready.",
         quality_control: "Quality control audit complete. Blueprint loaded, Boss."
       };
       if (stepNames[currentAgentStep]) {
@@ -545,7 +458,7 @@ export function IrrisAssistant({
 
   return (
     <>
-      {/* Neo-Brutalist HUD Assistant Widget (Fixed Bottom Right) */}
+      {/* Neo-Brutalist BLUE Assistant Widget (Fixed Bottom Right) */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 font-sans selection:bg-black selection:text-white">
         
         {/* Chatbot Intelligence Feed Box (Scrollable Log + Text Input) */}
@@ -553,9 +466,9 @@ export function IrrisAssistant({
           <div className="w-80 sm:w-96 p-4 bg-[#fefae0] border-4 border-black shadow-[6px_6px_0px_#000000] relative animate-in fade-in slide-in-from-bottom-3 duration-200">
             <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-[#f59e0b] border border-black animate-pulse" />
+                <span className="w-2.5 h-2.5 bg-[#3b82f6] border border-black animate-pulse" />
                 <span className="text-[11px] font-black uppercase tracking-wider text-black">
-                  IRRIS // CHAT & INTELLIGENCE FEED
+                  BLUE // COMMANDER
                 </span>
               </div>
               <div className="flex items-center gap-1">
@@ -579,30 +492,15 @@ export function IrrisAssistant({
             {/* Dynamic Status Badges */}
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
               <button 
-                onClick={() => setAutoListen(!autoListen)}
+                onClick={toggleListening}
                 className={`px-2 py-0.5 border-2 border-black text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all ${
-                  autoListen ? "bg-black text-white" : "bg-gray-200 text-gray-700"
+                  isListening ? "bg-[#ec4899] text-white animate-bounce" : "bg-black text-white"
                 }`}
-                title="Toggle Auto-Listen / Wake-Word mode"
+                title="Toggle Mic / Wake Word: BLUE"
               >
-                <Radio className={`w-2.5 h-2.5 ${autoListen ? "text-[#10b981] animate-pulse" : "text-gray-400"}`} />
-                WAKE-WORD: "IRRIS"
+                <Radio className={`w-2.5 h-2.5 ${isListening ? "text-white animate-pulse" : "text-[#3b82f6]"}`} />
+                {isListening ? "● LISTENING..." : 'WAKE-WORD: "BLUE"'}
               </button>
-              {consultationStep === "awaiting_idea" && (
-                <span className="px-2 py-0.5 bg-[#f59e0b] text-black border-2 border-black text-[10px] font-black uppercase tracking-wider animate-pulse">
-                  ⚡ STEP 1: TELL ME YOUR IDEA
-                </span>
-              )}
-              {consultationStep === "awaiting_region" && (
-                <span className="px-2 py-0.5 bg-[#3b82f6] text-white border-2 border-black text-[10px] font-black uppercase tracking-wider animate-pulse">
-                  ⚡ STEP 2: CHOOSE TARGET REGION
-                </span>
-              )}
-              {isListening && (
-                <span className="px-2 py-0.5 bg-[#ec4899] text-white border-2 border-black text-[10px] font-black uppercase tracking-wider animate-bounce">
-                  ● LISTENING
-                </span>
-              )}
               {isThinking && (
                 <span className="px-2 py-0.5 bg-[#f59e0b] text-black border-2 border-black text-[10px] font-black uppercase tracking-wider animate-pulse">
                   ⚡ PROCESSING COMMAND
@@ -610,7 +508,7 @@ export function IrrisAssistant({
               )}
               {isSpeaking && (
                 <span className="px-2 py-0.5 bg-[#10b981] text-black border-2 border-black text-[10px] font-black uppercase tracking-wider">
-                  🔊 TRANSMITTING VOICE
+                  🔊 MALE VOICE TRANSMITTING
                 </span>
               )}
             </div>
@@ -626,12 +524,12 @@ export function IrrisAssistant({
                     key={m.id}
                     className={`p-2 border-2 border-black text-xs font-bold ${
                       m.sender === "user"
-                        ? "bg-[#10b981]/20 text-black border-black text-right ml-6"
+                        ? "bg-[#3b82f6]/20 text-black border-black text-right ml-6"
                         : "bg-black text-white border-black text-left mr-2"
                     }`}
                   >
                     <div className="flex items-center justify-between text-[9px] opacity-70 mb-1 font-sans">
-                      <span>{m.sender === "user" ? "YOU" : "IRRIS COMMANDER"}</span>
+                      <span>{m.sender === "user" ? "YOU" : "BLUE COMMANDER"}</span>
                       <span>{m.timestamp}</span>
                     </div>
                     <p className="whitespace-pre-wrap leading-relaxed font-sans">{m.text}</p>
@@ -653,7 +551,7 @@ export function IrrisAssistant({
                     processVoiceCommand(val);
                   }
                 }}
-                placeholder="Type command or say 'IRRIS'..."
+                placeholder="Type 'search this idea [idea]'..."
                 className="flex-1 px-2 py-1 text-xs font-bold text-black outline-none placeholder:text-gray-500"
               />
               <button
@@ -673,7 +571,7 @@ export function IrrisAssistant({
           </div>
         )}
 
-        {/* Action Controls & Avatar Orb Row */}
+        {/* Action Controls & Avatar Button Row */}
         <div className="flex items-center gap-2">
           
           {/* Quick Chat Feed Toggle Button */}
@@ -683,11 +581,11 @@ export function IrrisAssistant({
               setShowChatFeed(!showChatFeed);
             }}
             className="p-3 bg-white text-black border-3 border-black shadow-[4px_4px_0px_#000000] hover:bg-[#fefae0] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all font-black relative"
-            title="Toggle IRRIS Chat & Feed"
+            title="Toggle BLUE Chat & Feed"
           >
             <MessageSquare className="w-5 h-5 stroke-[2.5]" />
             {messages.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#ec4899] text-white border border-black rounded-full text-[9px] font-black flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#3b82f6] text-white border border-black rounded-full text-[9px] font-black flex items-center justify-center">
                 {messages.length}
               </span>
             )}
@@ -711,26 +609,25 @@ export function IrrisAssistant({
             className={`p-3 border-3 border-black shadow-[4px_4px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all font-black ${
               isMuted ? "bg-rose-500 text-white" : "bg-white text-black hover:bg-[#fefae0]"
             }`}
-            title={isMuted ? "Unmute IRRIS Voice" : "Mute IRRIS Voice"}
+            title={isMuted ? "Unmute Male Voice" : "Mute Voice"}
           >
             {isMuted ? <VolumeX className="w-5 h-5 stroke-[2.5]" /> : <Volume2 className="w-5 h-5 stroke-[2.5]" />}
           </button>
 
-          {/* Main Floating Neo-Brutalist IRRIS Avatar & Microphone Button */}
+          {/* Floating BLUE Avatar & Mic Button */}
           <button
             onClick={toggleListening}
             className={`relative group p-4 border-4 border-black shadow-[6px_6px_0px_#000000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_#000000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none transition-all flex items-center justify-center ${
               isListening
                 ? "bg-[#ec4899] text-white animate-pulse"
                 : isSpeaking
-                ? "bg-[#10b981] text-black"
+                ? "bg-[#3b82f6] text-white"
                 : isThinking
                 ? "bg-[#f59e0b] text-black"
-                : "bg-[#000000] text-white hover:bg-[#18181b]"
+                : "bg-black text-white hover:bg-zinc-900"
             }`}
-            title={isListening ? "Listening... Click to pause auto-listen" : "Click to wake up IRRIS voice assistant"}
+            title={isListening ? "Listening... Click to stop" : "Click to speak to BLUE"}
           >
-            {/* Equalizer Wave / Mic Core */}
             <div className="flex items-center gap-1.5 h-6 px-1">
               <span className={`w-1.5 bg-current border border-black transition-all duration-150 ${isSpeaking || isListening ? "h-6 animate-pulse" : "h-3"}`} />
               <span className={`w-1.5 bg-current border border-black transition-all duration-150 ${isSpeaking || isListening ? "h-4 animate-bounce" : "h-5"}`} />
@@ -743,115 +640,70 @@ export function IrrisAssistant({
               <span className={`w-1.5 bg-current border border-black transition-all duration-150 ${isSpeaking || isListening ? "h-6 animate-pulse" : "h-3"}`} />
             </div>
 
-            {/* Glowing Status Ring */}
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#f59e0b] border-2 border-black flex items-center justify-center text-[8px] font-black text-black">
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#3b82f6] border-2 border-black flex items-center justify-center text-[8px] font-black text-white">
               ★
             </span>
           </button>
         </div>
       </div>
 
-      {/* Neo-Brutalist Voice Commands Help Drawer / Modal */}
+      {/* Help Modal */}
       {showHelp && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border-4 border-black shadow-[10px_10px_0px_#000000] w-full max-w-xl p-6 sm:p-8 relative animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            
-            {/* Modal Header */}
+          <div className="bg-white border-4 border-black shadow-[10px_10px_0px_#000000] w-full max-w-xl p-6 sm:p-8 relative animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto font-sans">
             <div className="flex items-center justify-between border-b-4 border-black pb-4 mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#f59e0b] border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center font-black text-black">
+                <div className="w-10 h-10 bg-[#3b82f6] border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center font-black text-white">
                   <Command className="w-6 h-6 stroke-[3]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-black uppercase text-black">
-                    IRRIS // COMMAND MANIFEST
+                    BLUE // COMMAND MANIFEST
                   </h3>
                   <p className="text-xs font-bold text-gray-700">
-                    AI Operations Commander Voice Shortcuts
+                    Voice & text command reference for BLUE Commander
                   </p>
                 </div>
               </div>
-              <button
+              <button 
                 onClick={() => setShowHelp(false)}
-                className="p-2 bg-rose-500 text-white border-3 border-black shadow-[3px_3px_0px_#000000] hover:bg-rose-600 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all font-black"
+                className="p-1 hover:bg-black hover:text-white border-2 border-black text-black transition-colors"
               >
-                <X className="w-5 h-5 stroke-[3]" />
+                <X className="w-5 h-5 stroke-[2.5]" />
               </button>
             </div>
 
-            {/* Supported Commands Grid */}
-            <div className="space-y-4 text-xs font-bold text-black">
-              
-              {/* Category 1: Generation */}
-              <div className="p-4 bg-[#fefae0] border-3 border-black shadow-[4px_4px_0px_#000000]">
-                <h4 className="font-black text-black uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-black stroke-[3]" />
-                  <span>Blueprint Generation</span>
-                </h4>
-                <div className="space-y-1.5">
-                  <div className="p-2 bg-white border-2 border-black flex items-center justify-between">
-                    <span className="font-black text-black">"Create a startup for [your idea]"</span>
-                    <span className="text-[10px] bg-black text-white px-2 py-0.5 font-black">AUTO EXECUTE</span>
-                  </div>
-                  <div className="p-2 bg-white border-2 border-black flex items-center justify-between">
-                    <span className="font-black text-black">"Generate blueprint"</span>
-                    <span className="text-[10px] bg-black text-white px-2 py-0.5 font-black">LAUNCH SWARM</span>
-                  </div>
-                </div>
+            <div className="space-y-4 text-xs font-bold">
+              <div className="p-3 bg-[#fefae0] border-2 border-black">
+                <h4 className="text-sm font-black uppercase text-black mb-1">⚡ 1. SEARCH THIS IDEA</h4>
+                <p className="text-gray-800 font-mono">"search this idea [your idea]" or "search [idea]"</p>
+                <p className="text-[11px] text-gray-600 font-normal mt-0.5">Triggers 8-agent swarm analysis for your concept.</p>
               </div>
 
-              {/* Category 2: Navigation */}
-              <div className="p-4 bg-white border-3 border-black shadow-[4px_4px_0px_#000000]">
-                <h4 className="font-black text-black uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-black stroke-[3]" />
-                  <span>Tab Navigation Shortcuts</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {["Show executive summary", "Show business category", "Show market analysis", "Show competitors", "Open product spec", "Open roadmap", "Open pitch deck", "Open validation"].map((cmd, i) => (
-                    <div key={i} className="p-2 bg-[#f3f4f6] border-2 border-black text-[11px] font-black">
-                      "{cmd}"
-                    </div>
-                  ))}
-                </div>
+              <div className="p-3 bg-[#fefae0] border-2 border-black">
+                <h4 className="text-sm font-black uppercase text-black mb-1">📂 2. NAVIGATE TO HISTORY BOX</h4>
+                <p className="text-gray-800 font-mono">"navigate to history box" or "open history"</p>
+                <p className="text-[11px] text-gray-600 font-normal mt-0.5">Opens project history drawer.</p>
               </div>
 
-              {/* Category 3: Downloads & Audio */}
-              <div className="p-4 bg-[#10b981]/20 border-3 border-black shadow-[4px_4px_0px_#000000]">
-                <h4 className="font-black text-black uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-black stroke-[3]" />
-                  <span>Reports & Audio Narration</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div className="p-2 bg-white border-2 border-black">
-                    <span className="font-black">"Download PDF"</span> / <span className="font-black">"Download PPT"</span>
-                  </div>
-                  <div className="p-2 bg-white border-2 border-black">
-                    <span className="font-black">"Read executive summary"</span>
-                  </div>
-                  <div className="p-2 bg-white border-2 border-black">
-                    <span className="font-black">"Read validation verdict"</span>
-                  </div>
-                  <div className="p-2 bg-white border-2 border-black">
-                    <span className="font-black">"Start new project"</span>
-                  </div>
-                </div>
+              <div className="p-3 bg-[#fefae0] border-2 border-black">
+                <h4 className="text-sm font-black uppercase text-black mb-1">🎯 3. OPEN SPECIFIC RESULT FROM HISTORY</h4>
+                <p className="text-gray-800 font-mono">"open number 1 result from history box" or "open 2nd result"</p>
+                <p className="text-[11px] text-gray-600 font-normal mt-0.5">Opens the exact saved blueprint by history index number.</p>
               </div>
 
+              <div className="p-3 bg-[#fefae0] border-2 border-black">
+                <h4 className="text-sm font-black uppercase text-black mb-1">🚪 4. CLOSE STUDIO</h4>
+                <p className="text-gray-800 font-mono">"close studio" or "exit studio"</p>
+                <p className="text-[11px] text-gray-600 font-normal mt-0.5">Returns to home landing screen.</p>
+              </div>
             </div>
-
-            {/* Footer */}
-            <div className="mt-6 pt-4 border-t-3 border-black flex justify-end">
-              <button
-                onClick={() => setShowHelp(false)}
-                className="px-6 py-2.5 bg-[#f59e0b] text-black border-3 border-black shadow-[4px_4px_0px_#000000] hover:bg-[#d97706] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all font-black uppercase text-xs tracking-wider"
-              >
-                Acknowledge // Close
-              </button>
-            </div>
-
           </div>
         </div>
       )}
     </>
   );
 }
+
+// Export BlueAssistant alias as well
+export const BlueAssistant = IrrisAssistant;
