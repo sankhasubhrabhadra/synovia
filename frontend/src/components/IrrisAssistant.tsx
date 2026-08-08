@@ -67,7 +67,7 @@ export function IrrisAssistant({
       id: "welcome-1",
       sender: "blue",
       text: "BLUE AI Commander online. Say 'Hey Blue', tap the mic, or type 'search this idea [your idea]' to generate startup blueprints.",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: "10:00 AM"
     }
   ]);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
@@ -530,7 +530,7 @@ export function IrrisAssistant({
                   >
                     <div className="flex items-center justify-between text-[9px] opacity-70 mb-1 font-sans">
                       <span>{m.sender === "user" ? "YOU" : "BLUE COMMANDER"}</span>
-                      <span>{m.timestamp}</span>
+                      <span suppressHydrationWarning>{m.timestamp}</span>
                     </div>
                     <p className="whitespace-pre-wrap leading-relaxed font-sans">{m.text}</p>
                   </div>
